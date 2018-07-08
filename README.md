@@ -18,6 +18,8 @@ KOPS Console User Interface
   * MacOS
   * Linux (centos, ubuntu ...)
 
+## Run
+
 ```bash
 git clone https://github.com/nalbam/kops-cui
 ./kops-cui/run.sh
