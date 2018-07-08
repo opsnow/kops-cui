@@ -63,15 +63,14 @@ if [ "${DATE}" != "${VERSION}" ]; then
     fi
 
     if [ "${OS_TYPE}" == "apt" ]; then
-        sudo apt install -y jq git make wget telnet python-pip
+        sudo apt install -y jq git make wget python-pip
     elif [ "${OS_TYPE}" == "yum" ]; then
-        sudo yum install -y jq git make wget telnet python-pip
+        sudo yum install -y jq git make wget python-pip
     elif [ "${OS_TYPE}" == "brew" ]; then
         command -v jq > /dev/null || brew install jq
         command -v git > /dev/null || brew install git
         command -v make > /dev/null || brew install make
         command -v wget > /dev/null || brew install wget
-        command -v telnet > /dev/null || brew install telnet
     fi
 
     DATE="${VERSION}"

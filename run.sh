@@ -82,7 +82,7 @@ title() {
     tput sgr0
     echo
     print "${KOPS_STATE_STORE} > ${KOPS_CLUSTER_NAME}"
-	echo
+    echo
 }
 
 prepare() {
@@ -95,6 +95,9 @@ prepare() {
     fi
 
     NEED_BASTION=
+    command -v jq > /dev/null || export NEED_BASTION=YES
+    command -v git > /dev/null || export NEED_BASTION=YES
+    command -v wget > /dev/null || export NEED_BASTION=YES
     command -v aws > /dev/null || export NEED_BASTION=YES
     command -v kubectl > /dev/null || export NEED_BASTION=YES
     command -v kops > /dev/null || export NEED_BASTION=YES
@@ -150,7 +153,7 @@ cluster_menu() {
     title
 
     if [ "${CLUSTER}" == "0" ]; then
-    	print "1. Create Cluster"
+        print "1. Create Cluster"
         print "2. Install Tools"
     else
         print "1. Get Cluster"
@@ -166,7 +169,7 @@ cluster_menu() {
 
     echo
     question
-	echo
+    echo
 
     case ${ANSWER} in
         1)
@@ -217,17 +220,17 @@ cluster_menu() {
 addons_menu() {
     title
 
-	print "1. Metrics Server"
-	print "2. Ingress Controller"
-	print "3. Dashboard"
-	print "4. Heapster (deprecated)"
-	print "5. Cluster Autoscaler"
-	echo
-	print "7. Sample Spring App"
+    print "1. Metrics Server"
+    print "2. Ingress Controller"
+    print "3. Dashboard"
+    print "4. Heapster (deprecated)"
+    print "5. Cluster Autoscaler"
+    echo
+    print "7. Sample Spring App"
 
     echo
     question
-	echo
+    echo
 
     case ${ANSWER} in
         1)
@@ -257,23 +260,23 @@ addons_menu() {
 create_cluster() {
     title
 
-	print "   cloud=${cloud}"
-	print "   name=${KOPS_CLUSTER_NAME}"
-	print "   state=s3://${KOPS_STATE_STORE}"
-	print "1. master-size=${master_size}"
-	print "   master-count=${master_count}"
-	print "   master-zones=${master_zones}"
-	print "4. node-size=${node_size}"
-	print "5. node-count=${node_count}"
-	print "   zones=${zones}"
-	print "7. network-cidr=${network_cidr}"
-	print "8. networking=${networking}"
+    print "   cloud=${cloud}"
+    print "   name=${KOPS_CLUSTER_NAME}"
+    print "   state=s3://${KOPS_STATE_STORE}"
+    print "1. master-size=${master_size}"
+    print "   master-count=${master_count}"
+    print "   master-zones=${master_zones}"
+    print "4. node-size=${node_size}"
+    print "5. node-count=${node_count}"
+    print "   zones=${zones}"
+    print "7. network-cidr=${network_cidr}"
+    print "8. networking=${networking}"
     echo
-	print "0. create"
+    print "0. create"
 
     echo
     question
-	echo
+    echo
 
     case ${ANSWER} in
         1)
@@ -352,6 +355,7 @@ save_kops_config() {
 }
 
 clear_kops_config() {
+    #KOPS_STATE_STORE=
     KOPS_CLUSTER_NAME=
     ROOT_DOMAIN=
     BASE_DOMAIN=
@@ -370,8 +374,6 @@ read_state_store() {
         DEFAULT="${KOPS_STATE_STORE}"
     fi
 
-    KOPS_STATE_STORE=
-
     echo
     question "Enter cluster store [${DEFAULT}] : "
     echo
@@ -386,6 +388,7 @@ read_state_store() {
     BUCKET=$(aws s3api get-bucket-acl --bucket ${KOPS_STATE_STORE} | jq '.Owner.ID')
     if [ "${BUCKET}" == "" ]; then
         aws s3 mb s3://${KOPS_STATE_STORE} --region ${REGION}
+        sleep 1
 
         BUCKET=$(aws s3api get-bucket-acl --bucket ${KOPS_STATE_STORE} | jq '.Owner.ID')
         if [ "${BUCKET}" == "" ]; then
