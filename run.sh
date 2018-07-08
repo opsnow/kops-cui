@@ -581,21 +581,6 @@ kops_delete() {
     state_store
 }
 
-apply_metrics_server() {
-    if [ ! -d /tmp/metrics-server ]; then
-        git clone https://github.com/kubernetes-incubator/metrics-server /tmp/metrics-server
-    fi
-
-    cd /tmp/metrics-server
-    git pull
-
-    echo
-    kubectl apply -f /tmp/metrics-server/deploy/1.8+/
-
-    waiting
-    addons_menu
-}
-
 get_ingress_elb_name() {
     ELB_NAME=
 
@@ -738,6 +723,24 @@ read_root_domain() {
             done < ${HOST_LIST}
         fi
     fi
+}
+
+apply_metrics_server() {
+    if [ ! -d /tmp/metrics-server ]; then
+        git clone https://github.com/kubernetes-incubator/metrics-server /tmp/metrics-server
+    fi
+
+    cd /tmp/metrics-server
+    git pull
+
+    echo
+    kubectl apply -f /tmp/metrics-server/deploy/1.8+/
+
+    echo
+    kubectl get hpa
+
+    waiting
+    addons_menu
 }
 
 apply_ingress_controller() {
@@ -909,6 +912,9 @@ apply_cluster_autoscaler() {
 
     echo
     kubectl apply -f ${ADDON}
+
+    echo
+    kubectl get node
 
     waiting
     addons_menu
