@@ -35,7 +35,9 @@ git clone https://github.com/nalbam/kops-cui
 
 ![](./images/03_create_cluster.png)
 
-![](./images/04_create_cluster.png)
+### Update Cluster
+
+![](images/04_update_cluster.png)
 
 ### Addons
 
