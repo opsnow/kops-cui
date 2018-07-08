@@ -1,0 +1,16 @@
+{
+  "Changes": [
+    {
+      "Action": "UPSERT",
+      "ResourceRecordSet": {
+        "Name": "{{DOMAIN}}",
+        "Type": "A",
+        "AliasTarget": {
+          "HostedZoneId": "{{ELB_ZONE_ID}}",
+          "DNSName": "{{ELB_DNS_NAME}}",
+          "EvaluateTargetHealth": false
+        }
+      }
+    }
+  ]
+}

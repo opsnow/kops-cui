@@ -1,0 +1,144 @@
+# ------------------- Deployment ------------------- #
+
+kind: Deployment
+apiVersion: apps/v1
+metadata:
+  name: sample-spring
+  namespace: default
+  labels:
+    app: sample-spring
+spec:
+  replicas: 2
+  revisionHistoryLimit: 10
+  strategy:
+    type: RollingUpdate
+    rollingUpdate:
+      maxUnavailable: 25%
+  selector:
+    matchLabels:
+      k8s-app: sample-spring
+  template:
+    metadata:
+      labels:
+        k8s-app: sample-spring
+    spec:
+      containers:
+      - name: sample-spring
+        image: nalbam/sample-spring:alpine
+        imagePullPolicy: Always
+        ports:
+        - containerPort: 8080
+          protocol: TCP
+        livenessProbe:
+          httpGet:
+            path: /live
+            port: 8080
+          initialDelaySeconds: 30
+          timeoutSeconds: 3
+          periodSeconds: 15
+        readinessProbe:
+          httpGet:
+            path: /read
+            port: 8080
+          initialDelaySeconds: 30
+          timeoutSeconds: 3
+          periodSeconds: 15
+        resources:
+          requests:
+            memory: "512Mi"
+            cpu: "200m"
+          limits:
+            memory: "1Gi"
+            cpu: "500m"
+#        env:
+#        - name: PROFILE
+#          valueFrom:
+#            configMapKeyRef:
+#              name: sample-spring-dev
+#              key: PROFILE
+#        - name: SLACK_WEBHOOK
+#          valueFrom:
+#            configMapKeyRef:
+#              name: sample-spring-dev
+#              key: SLACK_WEBHOOK
+#        - name: SLACK_CHANNEL
+#          valueFrom:
+#            configMapKeyRef:
+#              name: sample-spring-dev
+#              key: SLACK_CHANNEL
+
+---
+# ------------------- Service ------------------- #
+
+kind: Service
+apiVersion: v1
+metadata:
+  name: sample-spring
+  namespace: default
+  labels:
+    app: sample-spring
+    dns: route53
+  annotations:
+    domainName: "sample-spring.apps.nalbam.com"
+    #service.beta.kubernetes.io/aws-load-balancer-ssl-ports: "443"
+    #service.beta.kubernetes.io/aws-load-balancer-ssl-cert: "{{SSL_CERT_ARN}}"
+    #service.beta.kubernetes.io/aws-load-balancer-backend-protocol: http
+spec:
+  type: LoadBalancer
+  ports:
+    - name: http
+      port: 80
+      targetPort: 8080
+    - name: https
+      port: 443
+      targetPort: 8080
+  selector:
+    k8s-app: sample-spring
+
+---
+# ------------------- HorizontalPodAutoscaler ------------------- #
+
+kind: HorizontalPodAutoscaler
+apiVersion: autoscaling/v1
+metadata:
+  name: sample-spring
+  namespace: default
+  labels:
+    app: sample-spring
+spec:
+  scaleTargetRef:
+    kind: Deployment
+    name: sample-spring
+    apiVersion: apps/v1
+  minReplicas: 1
+  maxReplicas: 100
+  targetCPUUtilizationPercentage: 50
+
+#apiVersion: autoscaling/v2beta1
+#kind: HorizontalPodAutoscaler
+#metadata:
+#  name: sample-spring
+#  namespace: default
+#spec:
+#  scaleTargetRef:
+#    apiVersion: apps/v1
+#    kind: Deployment
+#    name: sample-spring
+#  minReplicas: 1
+#  maxReplicas: 100
+#  metrics:
+#  - type: Resource
+#    resource:
+#      name: cpu
+#      targetAverageUtilization: 50
+#status:
+#  observedGeneration: 1
+#  lastScaleTime: <some-time>
+#  currentReplicas: 1
+#  desiredReplicas: 1
+#  currentMetrics:
+#  - type: Resource
+#    resource:
+#      name: cpu
+#      currentAverageUtilization: 0
+#      currentAverageValue: 0
