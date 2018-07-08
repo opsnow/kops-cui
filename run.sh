@@ -94,6 +94,27 @@ prepare() {
         ssh-keygen -q -f ~/.ssh/id_rsa -N ''
     fi
 
+    NEED_BASTION=
+    command -v aws > /dev/null || export NEED_BASTION=YES
+    command -v kubectl > /dev/null || export NEED_BASTION=YES
+    command -v kops > /dev/null || export NEED_BASTION=YES
+
+    if [ "${NEED_BASTION}" != "" ]; then
+        echo
+        question "Do you want to install the required tools? (awscli,kubectl,kops) [Y/n] : "
+        echo
+
+        if [ "${ANSWER}" == "" ]; then
+            ANSWER="Y"
+        fi
+
+        if [ "${ANSWER}" == "Y" ]; then
+            ${SHELL_DIR}/helper/bastion.sh
+        else
+            error
+        fi
+    fi
+
     # iam user
     IAM_USER=$(aws iam get-user | grep Arn | cut -d'"' -f4 | cut -d':' -f5)
     if [ "${IAM_USER}" == "" ]; then
