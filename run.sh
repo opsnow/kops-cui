@@ -587,6 +587,12 @@ get_ingress_elb_name() {
 get_ingress_elb_domain() {
     ELB_DOMAIN=
 
+    INGRESS=$(kubectl get ns | grep kube-ingress | wc -l | xargs)
+
+    if [ "${INGRESS}" == "0" ]; then
+        return
+    fi
+
     IDX=0
     while [ 1 ]; do
         # ingress-nginx 의 ELB Domain 을 획득
@@ -614,11 +620,16 @@ get_ingress_domain() {
 
     get_ingress_elb_domain
 
+    if [ "${ELB_DOMAIN}" == "" ]; then
+        return
+    fi
+
     IDX=0
     while [ 1 ]; do
         ELB_IP=$(dig +short ${ELB_DOMAIN} | head -n 1)
 
         if [ "${ELB_IP}" != "" ]; then
+            BASE_DOMAIN="apps.${ELB_IP}.nip.io"
             break
         fi
 
@@ -630,10 +641,6 @@ get_ingress_domain() {
 
         sleep 3
     done
-
-    if [ "${ELB_IP}" != "" ]; then
-        BASE_DOMAIN="apps.${ELB_IP}.nip.io"
-    fi
 
     print ${BASE_DOMAIN}
     echo
@@ -660,7 +667,7 @@ read_root_domain() {
     while read VAR; do
         IDX=$(( ${IDX} + 1 ))
 
-        print "${IDX}. ${VAR::-1}"
+        print "${IDX}. $(echo ${VAR} | sed 's/.$//')"
     done < ${HOST_LIST}
 
     ROOT_DOMAIN=
@@ -679,7 +686,7 @@ read_root_domain() {
                 IDX=$(( ${IDX} + 1 ))
 
                 if [ "${IDX}" == "${ANSWER}" ]; then
-                    ROOT_DOMAIN="${VAR::-1}"
+                    ROOT_DOMAIN="$(echo ${VAR} | sed 's/.$//')"
                     break
                 fi
             done < ${HOST_LIST}
