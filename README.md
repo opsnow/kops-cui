@@ -25,11 +25,11 @@ git clone https://github.com/nalbam/kops-cui
 ./kops-cui/run.sh
 ```
 
-## Configure
+### Configure
 
 ![](./images/01_configure.png)
 
-## Create Cluster
+### Create Cluster
 
 ![](./images/02_create_cluster.png)
 
@@ -37,6 +37,6 @@ git clone https://github.com/nalbam/kops-cui
 
 ![](./images/04_create_cluster.png)
 
-## Addons
+### Addons
 
 ![](./images/05_addons.png)
