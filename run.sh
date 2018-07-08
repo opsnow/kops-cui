@@ -6,6 +6,7 @@ L_PAD="$(printf %3s)"
 
 ANSWER=
 CLUSTER=
+PROGRESS=1
 
 REGION=
 
@@ -32,6 +33,18 @@ fi
 
 print() {
     echo -e "${L_PAD}$@"
+}
+
+progress() {
+    if [ "$1" == "start" ]; then
+        PROGRESS=1
+    elif [ "$1" == "end" ]; then
+        printf '.\n'
+    else
+        PROGRESS=$(( ${PROGRESS} + 1 ))
+        printf '.'
+        sleep 2
+    fi
 }
 
 question() {
@@ -586,26 +599,29 @@ apply_metrics_server() {
 get_ingress_elb_name() {
     ELB_NAME=
 
+    progress start
+
     IDX=0
     while [ 1 ]; do
         # ingress-nginx 의 ELB Name 을 획득
         ELB_NAME=$(kubectl get svc -n kube-ingress -o wide | grep ingress-nginx | grep LoadBalancer | awk '{print $4}' | cut -d'-' -f1)
 
         if [ "${ELB_NAME}" != "" ]; then
+            progress end
             break
         fi
 
         IDX=$(( ${IDX} + 1 ))
 
         if [ "${IDX}" == "20" ]; then
+            progress end
             break
         fi
 
-        sleep 3
+        progress
     done
 
     print ${ELB_NAME}
-    echo
 }
 
 get_ingress_elb_domain() {
@@ -617,26 +633,29 @@ get_ingress_elb_domain() {
         return
     fi
 
+    progress start
+
     IDX=0
     while [ 1 ]; do
         # ingress-nginx 의 ELB Domain 을 획득
         ELB_DOMAIN=$(kubectl get svc -n kube-ingress -o wide | grep ingress-nginx | grep amazonaws | awk '{print $4}')
 
         if [ "${ELB_DOMAIN}" != "" ]; then
+            progress end
             break
         fi
 
         IDX=$(( ${IDX} + 1 ))
 
         if [ "${IDX}" == "20" ]; then
+            progress end
             break
         fi
 
-        sleep 3
+        progress
     done
 
     print ${ELB_DOMAIN}
-    echo
 }
 
 get_ingress_domain() {
@@ -648,26 +667,29 @@ get_ingress_domain() {
         return
     fi
 
+    progress start
+
     IDX=0
     while [ 1 ]; do
         ELB_IP=$(dig +short ${ELB_DOMAIN} | head -n 1)
 
         if [ "${ELB_IP}" != "" ]; then
             BASE_DOMAIN="apps.${ELB_IP}.nip.io"
+            progress end
             break
         fi
 
         IDX=$(( ${IDX} + 1 ))
 
         if [ "${IDX}" == "50" ]; then
+            progress end
             break
         fi
 
-        sleep 3
+        progress
     done
 
     print ${BASE_DOMAIN}
-    echo
 }
 
 get_template() {
@@ -755,13 +777,13 @@ apply_ingress_controller() {
 
     echo
     kubectl apply -f ${ADDON}
+
     echo
     kubectl get pod,svc -n kube-ingress
-    echo
 
-    print "Pending ELB..."
-    sleep 3
     echo
+    print "Pending ELB..."
+    sleep 1
 
     if [ "${BASE_DOMAIN}" == "" ]; then
         get_ingress_domain
@@ -826,8 +848,24 @@ apply_dashboard() {
 
     echo
     kubectl apply -f ${ADDON}
+
+    SECRET=$(kubectl get secret -n kube-system | grep admin-token | awk '{print $1}')
+
+    if [ "${SECRET}" == "" ]; then
+        # add ServiceAccount admin
+        kubectl create serviceaccount admin -n kube-system
+
+        # add ClusterRoleBinding cluster-admin
+        kubectl create clusterrolebinding cluster-admin:kube-system:admin \
+                --serviceaccount=kube-system:admin \
+                --clusterrole=cluster-admin
+    fi
+
     echo
     kubectl get pod,svc,ing -n kube-system
+
+    echo
+    kubectl describe secret -n kube-system $(kubectl get secret -n kube-system | grep admin-token | awk '{print $1}')
 
     waiting
     addons_menu
@@ -840,6 +878,7 @@ apply_heapster() {
 
     echo
     kubectl apply -f ${ADDON}
+
     echo
     kubectl get pod,svc -n kube-system
 
@@ -904,6 +943,7 @@ apply_sample_spring() {
 
     echo
     kubectl apply -f ${ADDON}
+
     echo
     kubectl get pod,svc,ing -n default
 
