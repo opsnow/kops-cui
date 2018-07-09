@@ -103,17 +103,17 @@ prepare() {
         ssh-keygen -q -f ~/.ssh/id_rsa -N ''
     fi
 
-    NEED_BASTION=
-    command -v jq > /dev/null || export NEED_BASTION=YES
-    command -v git > /dev/null || export NEED_BASTION=YES
-    command -v wget > /dev/null || export NEED_BASTION=YES
-    command -v aws > /dev/null || export NEED_BASTION=YES
-    command -v kubectl > /dev/null || export NEED_BASTION=YES
-    command -v kops > /dev/null || export NEED_BASTION=YES
+    NEED_TOOL=
+    command -v jq > /dev/null      || export NEED_TOOL=jq
+    command -v git > /dev/null     || export NEED_TOOL=git
+    command -v wget > /dev/null    || export NEED_TOOL=wget
+    command -v aws > /dev/null     || export NEED_TOOL=awscli
+    command -v kubectl > /dev/null || export NEED_TOOL=kubectl
+    command -v kops > /dev/null    || export NEED_TOOL=kops
 
-    if [ "${NEED_BASTION}" != "" ]; then
+    if [ "${NEED_TOOL}" != "" ]; then
         echo
-        question "Do you want to install the required tools? (awscli,kubectl,kops) [Y/n] : "
+        question "Do you want to install the required tools? (awscli,kubectl,kops...) [Y/n] : "
         echo
 
         if [ "${ANSWER}" == "" ]; then
@@ -585,7 +585,7 @@ get_ingress_elb_name() {
         # ingress-nginx 의 ELB Name 을 획득
         ELB_NAME=$(kubectl get svc -n kube-ingress -o wide | grep ingress-nginx | grep LoadBalancer | awk '{print $4}' | cut -d'-' -f1)
 
-        if [ "${ELB_NAME}" != "" ]; then
+        if [ "${ELB_NAME}" != "" ] && [ "${ELB_NAME}" != "<pending>" ]; then
             break
         fi
 
@@ -617,7 +617,7 @@ get_ingress_elb_domain() {
         # ingress-nginx 의 ELB Domain 을 획득
         ELB_DOMAIN=$(kubectl get svc -n kube-ingress -o wide | grep ingress-nginx | grep amazonaws | awk '{print $4}')
 
-        if [ "${ELB_DOMAIN}" != "" ]; then
+        if [ "${ELB_NAME}" != "" ] && [ "${ELB_NAME}" != "<pending>" ]; then
             break
         fi
 
@@ -776,7 +776,7 @@ apply_ingress_controller() {
 
     echo
     print "Pending ELB..."
-    sleep 1
+    sleep 2
 
     if [ "${BASE_DOMAIN}" == "" ]; then
         get_ingress_domain
