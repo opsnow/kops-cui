@@ -731,8 +731,9 @@ apply_metrics_server() {
         git clone https://github.com/kubernetes-incubator/metrics-server /tmp/metrics-server
     fi
 
-    cd /tmp/metrics-server
+    pushd /tmp/metrics-server
     git pull
+    popd
 
     echo
     kubectl apply -f /tmp/metrics-server/deploy/1.8+/
