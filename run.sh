@@ -665,7 +665,7 @@ get_ingress_domain() {
 
         IDX=$(( ${IDX} + 1 ))
 
-        if [ "${IDX}" == "50" ]; then
+        if [ "${IDX}" == "100" ]; then
             BASE_DOMAIN=
             break
         fi
