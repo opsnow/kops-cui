@@ -32,6 +32,8 @@ KUBECTL=
 KOPS=
 HELM=
 
+mkdir -p ~/.kops
+
 CONFIG=~/.kops/bastion
 if [ -f ${CONFIG} ]; then
   . ${CONFIG}
@@ -51,29 +53,28 @@ fi
 echo "================================================================================"
 echo "# update... "
 
-VERSION=$(date '+%Y-%m-%d %H')
+DATE=$(date '+%Y-%m-%d %H:%M:%S')
 
-if [ "${DATE}" != "${VERSION}" ]; then
-    if [ "${OS_TYPE}" == "apt" ]; then
-        sudo apt update
-    elif [ "${OS_TYPE}" == "yum" ]; then
-        sudo yum update -y
-    elif [ "${OS_TYPE}" == "brew" ]; then
-        brew update && brew upgrade
-    fi
-
-    if [ "${OS_TYPE}" == "apt" ]; then
-        sudo apt install -y jq git make wget python-pip
-    elif [ "${OS_TYPE}" == "yum" ]; then
-        sudo yum install -y jq git make wget python-pip
-    elif [ "${OS_TYPE}" == "brew" ]; then
-        command -v jq > /dev/null || brew install jq
-        command -v git > /dev/null || brew install git
-        command -v make > /dev/null || brew install make
-        command -v wget > /dev/null || brew install wget
-    fi
-
-    DATE="${VERSION}"
+if [ "${OS_TYPE}" == "apt" ]; then
+    sudo apt update && sudo apt upgrade -y
+    command -v jq > /dev/null   || sudo apt install -y jq
+    command -v git > /dev/null  || sudo apt install -y git
+    command -v make > /dev/null || sudo apt install -y make
+    command -v wget > /dev/null || sudo apt install -y wget
+    command -v pip > /dev/null  || sudo apt install -y python-pip
+elif [ "${OS_TYPE}" == "yum" ]; then
+    sudo yum update -y
+    command -v jq > /dev/null   || sudo yum install -y jq
+    command -v git > /dev/null  || sudo yum install -y git
+    command -v make > /dev/null || sudo yum install -y make
+    command -v wget > /dev/null || sudo yum install -y wget
+    command -v pip > /dev/null  || sudo yum install -y python-pip
+elif [ "${OS_TYPE}" == "brew" ]; then
+    brew update && brew upgrade
+    command -v jq > /dev/null   || brew install jq
+    command -v git > /dev/null  || brew install git
+    command -v make > /dev/null || brew install make
+    command -v wget > /dev/null || brew install wget
 fi
 
 # aws-cli

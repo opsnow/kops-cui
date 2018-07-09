@@ -6,7 +6,6 @@ L_PAD="$(printf %3s)"
 
 ANSWER=
 CLUSTER=
-PROGRESS=1
 
 REGION=
 
@@ -26,6 +25,8 @@ zones=ap-northeast-2a,ap-northeast-2c
 network_cidr=10.10.0.0/16
 networking=calico
 
+mkdir -p ~/.kops
+
 CONFIG=~/.kops/config
 if [ -f ${CONFIG} ]; then
     . ${CONFIG}
@@ -36,12 +37,9 @@ print() {
 }
 
 progress() {
-    if [ "$1" == "start" ]; then
-        PROGRESS=1
-    elif [ "$1" == "end" ]; then
+    if [ "$1" == "end" ]; then
         printf '.\n'
     else
-        PROGRESS=$(( ${PROGRESS} + 1 ))
         printf '.'
         sleep 2
     fi
@@ -100,8 +98,6 @@ title() {
 
 prepare() {
     logo
-
-    mkdir -p ~/.kops
 
     if [ ! -f ~/.ssh/id_rsa ]; then
         ssh-keygen -q -f ~/.ssh/id_rsa -N ''
@@ -167,7 +163,7 @@ cluster_menu() {
 
     if [ "${CLUSTER}" == "0" ]; then
         print "1. Create Cluster"
-        print "2. Install Tools"
+        print "2. Update Tools"
     else
         print "1. Get Cluster"
         print "2. Edit Cluster"
@@ -584,27 +580,25 @@ kops_delete() {
 get_ingress_elb_name() {
     ELB_NAME=
 
-    progress start
-
     IDX=0
     while [ 1 ]; do
         # ingress-nginx 의 ELB Name 을 획득
         ELB_NAME=$(kubectl get svc -n kube-ingress -o wide | grep ingress-nginx | grep LoadBalancer | awk '{print $4}' | cut -d'-' -f1)
 
         if [ "${ELB_NAME}" != "" ]; then
-            progress end
             break
         fi
 
         IDX=$(( ${IDX} + 1 ))
 
         if [ "${IDX}" == "20" ]; then
-            progress end
             break
         fi
 
         progress
     done
+
+    progress end
 
     print ${ELB_NAME}
 }
@@ -618,27 +612,25 @@ get_ingress_elb_domain() {
         return
     fi
 
-    progress start
-
     IDX=0
     while [ 1 ]; do
         # ingress-nginx 의 ELB Domain 을 획득
         ELB_DOMAIN=$(kubectl get svc -n kube-ingress -o wide | grep ingress-nginx | grep amazonaws | awk '{print $4}')
 
         if [ "${ELB_DOMAIN}" != "" ]; then
-            progress end
             break
         fi
 
         IDX=$(( ${IDX} + 1 ))
 
         if [ "${IDX}" == "20" ]; then
-            progress end
             break
         fi
 
         progress
     done
+
+    progress end
 
     print ${ELB_DOMAIN}
 }
@@ -652,27 +644,25 @@ get_ingress_domain() {
         return
     fi
 
-    progress start
-
     IDX=0
     while [ 1 ]; do
         ELB_IP=$(dig +short ${ELB_DOMAIN} | head -n 1)
 
         if [ "${ELB_IP}" != "" ]; then
             BASE_DOMAIN="apps.${ELB_IP}.nip.io"
-            progress end
             break
         fi
 
         IDX=$(( ${IDX} + 1 ))
 
         if [ "${IDX}" == "50" ]; then
-            progress end
             break
         fi
 
         progress
     done
+
+    progress end
 
     print ${BASE_DOMAIN}
 }
