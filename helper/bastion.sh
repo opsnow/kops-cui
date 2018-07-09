@@ -59,22 +59,16 @@ if [ "${OS_TYPE}" == "apt" ]; then
     sudo apt update && sudo apt upgrade -y
     command -v jq > /dev/null   || sudo apt install -y jq
     command -v git > /dev/null  || sudo apt install -y git
-    command -v make > /dev/null || sudo apt install -y make
-    command -v wget > /dev/null || sudo apt install -y wget
     command -v pip > /dev/null  || sudo apt install -y python-pip
 elif [ "${OS_TYPE}" == "yum" ]; then
     sudo yum update -y
     command -v jq > /dev/null   || sudo yum install -y jq
     command -v git > /dev/null  || sudo yum install -y git
-    command -v make > /dev/null || sudo yum install -y make
-    command -v wget > /dev/null || sudo yum install -y wget
     command -v pip > /dev/null  || sudo yum install -y python-pip
 elif [ "${OS_TYPE}" == "brew" ]; then
     brew update && brew upgrade
     command -v jq > /dev/null   || brew install jq
     command -v git > /dev/null  || brew install git
-    command -v make > /dev/null || brew install make
-    command -v wget > /dev/null || brew install wget
 fi
 
 # aws-cli
@@ -109,7 +103,7 @@ else
     VERSION=$(curl -s https://storage.googleapis.com/kubernetes-release/release/stable.txt)
 
     if [ "${KUBECTL}" != "${VERSION}" ]; then
-        wget https://storage.googleapis.com/kubernetes-release/release/${VERSION}/bin/${OS_NAME}/amd64/kubectl
+        curl -LO https://storage.googleapis.com/kubernetes-release/release/${VERSION}/bin/${OS_NAME}/amd64/kubectl
         chmod +x kubectl && sudo mv kubectl /usr/local/bin/kubectl
 
         KUBECTL="${VERSION}"
@@ -128,7 +122,7 @@ else
     VERSION=$(curl -s https://api.github.com/repos/kubernetes/kops/releases/latest | jq --raw-output '.tag_name')
 
     if [ "${KOPS}" != "${VERSION}" ]; then
-        wget https://github.com/kubernetes/kops/releases/download/${VERSION}/kops-${OS_NAME}-amd64
+        curl -LO https://github.com/kubernetes/kops/releases/download/${VERSION}/kops-${OS_NAME}-amd64
         chmod +x kops-${OS_NAME}-amd64 && sudo mv kops-${OS_NAME}-amd64 /usr/local/bin/kops
 
         KOPS="${VERSION}"
@@ -161,6 +155,7 @@ echo "# clean all... "
 
 if [ "${OS_TYPE}" == "apt" ]; then
     sudo apt clean all
+    sudo apt autoremove -y
 elif [ "${OS_TYPE}" == "yum" ]; then
     sudo yum clean all
 elif [ "${OS_TYPE}" == "brew" ]; then
