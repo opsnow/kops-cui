@@ -198,7 +198,7 @@ spec:
       serviceAccountName: cluster-autoscaler
       containers:
         - name: cluster-autoscaler
-          image: {{IMAGE}}
+          image: k8s.gcr.io/cluster-autoscaler:v1.2.2
           livenessProbe:
             httpGet:
               path: /health-check
@@ -218,7 +218,7 @@ spec:
             - ./cluster-autoscaler
             - --v=4
             - --stderrthreshold=info
-            - --cloud-provider={{CLOUD_PROVIDER}}
+            - --cloud-provider=aws
             - --skip-nodes-with-local-storage=false
             - --nodes={{MIN_NODES}}:{{MAX_NODES}}:{{GROUP_NAME}}
           env:
@@ -226,7 +226,7 @@ spec:
               value: {{AWS_REGION}}
           volumeMounts:
             - name: ssl-certs
-              mountPath: {{SSL_CERT_PATH}}
+              mountPath: /etc/ssl/certs/ca-certificates.crt
               readOnly: true
       volumes:
         - name: ssl-certs

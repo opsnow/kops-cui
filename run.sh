@@ -907,21 +907,15 @@ apply_cluster_autoscaler() {
 
     get_template addons/cluster-autoscaler-v1.8.0.yml ${ADDON}
 
-    CLOUD_PROVIDER=aws
-    IMAGE=k8s.gcr.io/cluster-autoscaler:v1.2.2
     MIN_NODES=2
     MAX_NODES=8
     AWS_REGION=${REGION}
     GROUP_NAME="nodes.${KOPS_CLUSTER_NAME}"
-    SSL_CERT_PATH="/etc/ssl/certs/ca-certificates.crt"
 
-    sed -i -e "s@{{CLOUD_PROVIDER}}@${CLOUD_PROVIDER}@g" "${ADDON}"
-    sed -i -e "s@{{IMAGE}}@${IMAGE}@g" "${ADDON}"
     sed -i -e "s@{{MIN_NODES}}@${MIN_NODES}@g" "${ADDON}"
     sed -i -e "s@{{MAX_NODES}}@${MAX_NODES}@g" "${ADDON}"
     sed -i -e "s@{{GROUP_NAME}}@${GROUP_NAME}@g" "${ADDON}"
     sed -i -e "s@{{AWS_REGION}}@${AWS_REGION}@g" "${ADDON}"
-    sed -i -e "s@{{SSL_CERT_PATH}}@${SSL_CERT_PATH}@g" "${ADDON}"
 
     echo
     kubectl apply -f ${ADDON}
