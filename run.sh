@@ -903,7 +903,7 @@ apply_heapster() {
 }
 
 apply_cluster_autoscaler() {
-    ADDON=/tmp/cluster_autoscaler.yml
+    ADDON=/tmp/cluster-autoscaler.yml
 
     get_template addons/cluster-autoscaler-v1.8.0.yml ${ADDON}
 
