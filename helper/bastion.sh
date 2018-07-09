@@ -32,9 +32,9 @@ KUBECTL=
 KOPS=
 HELM=
 
-mkdir -p ~/.kops
+mkdir -p ~/.kops-cui
 
-CONFIG=~/.kops/bastion
+CONFIG=~/.kops-cui/bastion
 if [ -f ${CONFIG} ]; then
   . ${CONFIG}
 fi

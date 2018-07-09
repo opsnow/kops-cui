@@ -25,9 +25,9 @@ zones=ap-northeast-2a,ap-northeast-2c
 network_cidr=10.10.0.0/16
 networking=calico
 
-mkdir -p ~/.kops
+mkdir -p ~/.kops-cui
 
-CONFIG=~/.kops/config
+CONFIG=~/.kops-cui/config
 if [ -f ${CONFIG} ]; then
     . ${CONFIG}
 fi
@@ -37,7 +37,9 @@ print() {
 }
 
 progress() {
-    if [ "$1" == "end" ]; then
+    if [ "$1" == "start" ]; then
+        printf '%3s'
+    elif [ "$1" == "end" ]; then
         printf '.\n'
     else
         printf '.'
@@ -580,6 +582,8 @@ kops_delete() {
 get_ingress_elb_name() {
     ELB_NAME=
 
+    progress start
+
     IDX=0
     while [ 1 ]; do
         # ingress-nginx 의 ELB Name 을 획득
@@ -592,6 +596,7 @@ get_ingress_elb_name() {
         IDX=$(( ${IDX} + 1 ))
 
         if [ "${IDX}" == "20" ]; then
+            ELB_NAME=
             break
         fi
 
@@ -612,18 +617,21 @@ get_ingress_elb_domain() {
         return
     fi
 
+    progress start
+
     IDX=0
     while [ 1 ]; do
         # ingress-nginx 의 ELB Domain 을 획득
         ELB_DOMAIN=$(kubectl get svc -n kube-ingress -o wide | grep ingress-nginx | grep amazonaws | awk '{print $4}')
 
-        if [ "${ELB_NAME}" != "" ] && [ "${ELB_NAME}" != "<pending>" ]; then
+        if [ "${ELB_DOMAIN}" != "" ] && [ "${ELB_DOMAIN}" != "<pending>" ]; then
             break
         fi
 
         IDX=$(( ${IDX} + 1 ))
 
         if [ "${IDX}" == "20" ]; then
+            ELB_DOMAIN=
             break
         fi
 
@@ -644,6 +652,8 @@ get_ingress_domain() {
         return
     fi
 
+    progress start
+
     IDX=0
     while [ 1 ]; do
         ELB_IP=$(dig +short ${ELB_DOMAIN} | head -n 1)
@@ -656,6 +666,7 @@ get_ingress_domain() {
         IDX=$(( ${IDX} + 1 ))
 
         if [ "${IDX}" == "50" ]; then
+            BASE_DOMAIN=
             break
         fi
 
@@ -771,12 +782,13 @@ apply_ingress_controller() {
     echo
     kubectl apply -f ${ADDON}
 
+    sleep 2
+
     echo
     kubectl get pod,svc -n kube-ingress
 
     echo
     print "Pending ELB..."
-    sleep 2
 
     if [ "${BASE_DOMAIN}" == "" ]; then
         get_ingress_domain
@@ -813,13 +825,9 @@ apply_ingress_controller() {
 }
 
 apply_dashboard() {
-    if [ "${BASE_DOMAIN}" == "" ]; then
-        get_ingress_domain
-    fi
-
     ADDON=/tmp/dashboard.yml
 
-    if [ "${BASE_DOMAIN}" == "" ]; then
+    if [ "${ROOT_DOMAIN}" == "" ]; then
         get_template addons/dashboard-v1.8.3.yml ${ADDON}
     else
         get_template addons/dashboard-v1.8.3-ing.yml ${ADDON}
@@ -854,8 +862,21 @@ apply_dashboard() {
                 --clusterrole=cluster-admin
     fi
 
-    echo
-    kubectl get pod,svc,ing -n kube-system
+    sleep 2
+
+    if [ "${ROOT_DOMAIN}" == "" ]; then
+        echo
+        kubectl get pod -n kube-system
+        echo
+        kubectl get svc -n kube-system -o wide
+    else
+        echo
+        kubectl get pod -n kube-system
+        echo
+        kubectl get svc -n kube-system
+        echo
+        kubectl get ing -n kube-system
+    fi
 
     echo
     kubectl describe secret -n kube-system $(kubectl get secret -n kube-system | grep admin-token | awk '{print $1}')
@@ -871,6 +892,8 @@ apply_heapster() {
 
     echo
     kubectl apply -f ${ADDON}
+
+    sleep 2
 
     echo
     kubectl get pod,svc -n kube-system
@@ -939,6 +962,8 @@ apply_sample_spring() {
 
     echo
     kubectl apply -f ${ADDON}
+
+    sleep 2
 
     echo
     kubectl get pod,svc,ing -n default
