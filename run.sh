@@ -275,7 +275,7 @@ create_cluster() {
     print "   name=${KOPS_CLUSTER_NAME}"
     print "   state=s3://${KOPS_STATE_STORE}"
     print "1. master-size=${master_size}"
-    print "   master-count=${master_count}"
+    print "2. master-count=${master_count}"
     print "   master-zones=${master_zones}"
     print "4. node-size=${node_size}"
     print "5. node-count=${node_count}"
@@ -297,6 +297,21 @@ create_cluster() {
             fi
             create_cluster
             ;;
+        2)
+            question "Enter master count [${master_count}] : "
+            if [ "${ANSWER}" != "" ]; then
+                master_count=${ANSWER}
+                if [ "${master_count}" == "1" ]; then
+                    master_zones=$(get_az_one)
+                else
+                    master_zones=$(get_az_list)
+                fi
+            fi
+            create_cluster
+            ;;
+        3)
+            create_cluster
+            ;;
         4)
             question "Enter node size [${node_size}] : "
             if [ "${ANSWER}" != "" ]; then
@@ -308,7 +323,15 @@ create_cluster() {
             question "Enter node count [${node_count}] : "
             if [ "${ANSWER}" != "" ]; then
                 node_count=${ANSWER}
+                if [ "${node_count}" == "1" ]; then
+                    zones=$(get_az_one)
+                else
+                    zones=$(get_az_list)
+                fi
             fi
+            create_cluster
+            ;;
+        6)
             create_cluster
             ;;
         7)
@@ -965,6 +988,14 @@ apply_sample_spring() {
 
     waiting
     addons_menu
+}
+
+get_az_one() {
+    echo "$(aws ec2 describe-availability-zones | grep ZoneName | cut -d'"' -f4 | head -1)"
+}
+
+get_az_list() {
+    echo "$(aws ec2 describe-availability-zones | grep ZoneName | cut -d'"' -f4 | head -3 | tr -s '\r\n' ',' | sed 's/.$//')"
 }
 
 install_tools() {
