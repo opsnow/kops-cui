@@ -119,9 +119,7 @@ prepare() {
         question "Do you want to install the required tools? (awscli,kubectl,kops...) [Y/n] : "
         echo
 
-        if [ "${ANSWER}" == "" ]; then
-            ANSWER="Y"
-        fi
+        ANSWER=${ANSWER:-Y}
 
         if [ "${ANSWER}" == "Y" ]; then
             ${SHELL_DIR}/helper/bastion.sh
@@ -298,17 +296,13 @@ create_cluster() {
     case ${ANSWER} in
         1)
             question "Enter master size [${master_size}] : "
-            if [ "${ANSWER}" != "" ]; then
-                master_size=${ANSWER}
-            fi
+            master_size=${ANSWER:-${master_size}}
             create_cluster
             ;;
         2)
             question "Enter master count [${master_count}] : "
-            if [ "${ANSWER}" != "" ]; then
-                master_count=${ANSWER}
-                get_master_zones
-            fi
+            master_count=${ANSWER:-${master_count}}
+            get_master_zones
             create_cluster
             ;;
         3)
@@ -316,17 +310,13 @@ create_cluster() {
             ;;
         4)
             question "Enter node size [${node_size}] : "
-            if [ "${ANSWER}" != "" ]; then
-                node_size=${ANSWER}
-            fi
+            node_size=${ANSWER:-${node_size}}
             create_cluster
             ;;
         5)
             question "Enter node count [${node_count}] : "
-            if [ "${ANSWER}" != "" ]; then
-                node_count=${ANSWER}
-                get_node_zones
-            fi
+            node_count=${ANSWER:-${node_count}}
+            get_node_zones
             create_cluster
             ;;
         6)
@@ -334,16 +324,12 @@ create_cluster() {
             ;;
         7)
             question "Enter network cidr [${network_cidr}] : "
-            if [ "${ANSWER}" != "" ]; then
-                network_cidr=${ANSWER}
-            fi
+            network_cidr=${ANSWER:-${network_cidr}}
             create_cluster
             ;;
         8)
             question "Enter networking [${networking}] : "
-            if [ "${ANSWER}" != "" ]; then
-                networking=${ANSWER}
-            fi
+            networking=${ANSWER:-${networking}}
             create_cluster
             ;;
         0)
@@ -410,11 +396,7 @@ read_state_store() {
     question "Enter cluster store [${DEFAULT}] : "
     echo
 
-    if [ "${ANSWER}" == "" ]; then
-        KOPS_STATE_STORE="${DEFAULT}"
-    else
-        KOPS_STATE_STORE="${ANSWER}"
-    fi
+    KOPS_STATE_STORE=${ANSWER:-${DEFAULT}}
 
     # S3 Bucket
     BUCKET=$(aws s3api get-bucket-acl --bucket ${KOPS_STATE_STORE} | jq '.Owner.ID')
@@ -458,24 +440,13 @@ read_cluster_list() {
         echo
         question "Enter cluster (0-${IDX})[1] : "
 
-        if [ "${ANSWER}" == "" ]; then
-            ANSWER="1"
-        fi
+        ANSWER=${ANSWER:-1}
 
         if [ "${ANSWER}" == "0" ]; then
             read_cluster_name
         else
-            IDX=0
-            while read VAR; do
-                ARR=(${VAR})
-
-                if [ "${IDX}" == "${ANSWER}" ]; then
-                    KOPS_CLUSTER_NAME="${ARR[0]}"
-                    break
-                fi
-
-                IDX=$(( ${IDX} + 1 ))
-            done < ${CLUSTER_LIST}
+            ARR=($(sed -n $(( ${ANSWER} + 1 ))p ${CLUSTER_LIST}))
+            KOPS_CLUSTER_NAME="${ARR[0]}"
         fi
     fi
 
@@ -492,11 +463,7 @@ read_cluster_name() {
     question "Enter your cluster name [${DEFAULT}] : "
     echo
 
-    if [ "${ANSWER}" == "" ]; then
-        KOPS_CLUSTER_NAME="${DEFAULT}"
-    else
-        KOPS_CLUSTER_NAME="${ANSWER}"
-    fi
+    KOPS_CLUSTER_NAME=${ANSWER:-${DEFAULT}}
 }
 
 kops_get() {
@@ -535,27 +502,13 @@ kops_edit() {
 
     if [ "${ANSWER}" == "0" ]; then
         SELECTED="cluster"
-
-        kops edit ${SELECTED} --name=${KOPS_CLUSTER_NAME} --state=s3://${KOPS_STATE_STORE}
-    else
-        IDX=0
-        while read VAR; do
-            ARR=(${VAR})
-
-            if [ "${IDX}" == "${ANSWER}" ]; then
-                SELECTED="${ARR[0]}"
-                break
-            fi
-
-            IDX=$(( ${IDX} + 1 ))
-        done < ${IG_LIST}
-
-        if [ "${SELECTED}" != "" ]; then
-            kops edit ig ${SELECTED} --name=${KOPS_CLUSTER_NAME} --state=s3://${KOPS_STATE_STORE}
-        fi
+    elif [ "${ANSWER}" != "" ]; then
+        ARR=($(sed -n $(( ${ANSWER} + 1 ))p ${IG_LIST}))
+        SELECTED="ig ${ARR[0]}"
     fi
 
     if [ "${SELECTED}" != "" ]; then
+        kops edit ig ${SELECTED} --name=${KOPS_CLUSTER_NAME} --state=s3://${KOPS_STATE_STORE}
         waiting
     fi
 
@@ -724,15 +677,7 @@ read_root_domain() {
         echo
 
         if [ "${ANSWER}" != "" ]; then
-            IDX=0
-            while read VAR; do
-                IDX=$(( ${IDX} + 1 ))
-
-                if [ "${IDX}" == "${ANSWER}" ]; then
-                    ROOT_DOMAIN="$(echo ${VAR} | sed 's/.$//')"
-                    break
-                fi
-            done < ${HOST_LIST}
+            ROOT_DOMAIN=$(sed -n ${ANSWER}p ${HOST_LIST} | sed 's/.$//')
         fi
     fi
 }
@@ -766,11 +711,7 @@ apply_ingress_controller() {
         question "Enter your ingress domain [${DEFAULT}] : "
         echo
 
-        if [ "${ANSWER}" == "" ]; then
-            BASE_DOMAIN="${DEFAULT}"
-        else
-            BASE_DOMAIN="${ANSWER}"
-        fi
+        BASE_DOMAIN=${ANSWER:-${DEFAULT}}
     fi
 
     ADDON=/tmp/ingress-nginx.yml
@@ -848,11 +789,7 @@ apply_dashboard() {
         question "Enter your dashboard domain [${DEFAULT}] : "
         echo
 
-        DOMAIN="${ANSWER}"
-
-        if [ "${DOMAIN}" == "" ]; then
-            DOMAIN="${DEFAULT}"
-        fi
+        DOMAIN=${ANSWER:-${DEFAULT}}
 
         sed -i -e "s@dashboard.apps.nalbam.com@${DOMAIN}@g" ${ADDON}
 
@@ -955,11 +892,7 @@ apply_sample_spring() {
         question "Enter your sample-spring domain [${DEFAULT}] : "
         echo
 
-        DOMAIN="${ANSWER}"
-
-        if [ "${DOMAIN}" == "" ]; then
-            DOMAIN="${DEFAULT}"
-        fi
+        DOMAIN=${ANSWER:-${DEFAULT}}
 
         sed -i -e "s@sample-spring.apps.nalbam.com@${DOMAIN}@g" ${ADDON}
 
