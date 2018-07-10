@@ -578,6 +578,9 @@ kops_rolling_update() {
 
 kops_validate() {
     kops validate cluster --name=${KOPS_CLUSTER_NAME} --state=s3://${KOPS_STATE_STORE}
+
+    echo
+    kubectl get nodes --show-labels
     echo
     kubectl get pod --all-namespaces
 
