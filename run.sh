@@ -272,9 +272,7 @@ addons_menu() {
 create_cluster() {
     title
 
-    if [ "${AZ_LIST}" == "" ]; then
-        AZ_LIST="$(aws ec2 describe-availability-zones | grep ZoneName | cut -d'"' -f4 | head -3 | tr -s '\r\n' ',' | sed 's/.$//')"
-    fi
+    get_az_list
 
     get_master_zones
     get_node_zones
@@ -987,6 +985,12 @@ get_template() {
     fi
     if [ ! -f ${2} ]; then
         error "Template does not exists. [${1}]"
+    fi
+}
+
+get_az_list() {
+    if [ "${AZ_LIST}" == "" ]; then
+        AZ_LIST="$(aws ec2 describe-availability-zones | grep ZoneName | cut -d'"' -f4 | head -3 | tr -s '\r\n' ',' | sed 's/.$//')"
     fi
 }
 
