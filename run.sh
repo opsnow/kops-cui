@@ -508,7 +508,8 @@ kops_edit() {
     fi
 
     if [ "${SELECTED}" != "" ]; then
-        kops edit ig ${SELECTED} --name=${KOPS_CLUSTER_NAME} --state=s3://${KOPS_STATE_STORE}
+        kops edit ${SELECTED} --name=${KOPS_CLUSTER_NAME} --state=s3://${KOPS_STATE_STORE}
+
         waiting
     fi
 
