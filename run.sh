@@ -231,10 +231,10 @@ cluster_menu() {
 addons_menu() {
     title
 
-    print "1. Metrics Server"
-    print "2. Ingress Controller"
-    print "3. Dashboard"
-    print "4. Heapster (deprecated)"
+    print "1. Ingress Controller"
+    print "2. Dashboard"
+    print "3. Heapster (deprecated)"
+    print "4. Metrics Server"
     print "5. Cluster Autoscaler"
     echo
     print "7. Sample Spring App"
@@ -245,16 +245,16 @@ addons_menu() {
 
     case ${ANSWER} in
         1)
-            apply_metrics_server
-            ;;
-        2)
             apply_ingress_controller
             ;;
-        3)
+        2)
             apply_dashboard
             ;;
-        4)
+        3)
             apply_heapster
+            ;;
+        4)
+            apply_metrics_server
             ;;
         5)
             apply_cluster_autoscaler
