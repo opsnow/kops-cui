@@ -433,6 +433,7 @@ read_state_store() {
 
 read_cluster_list() {
     CLUSTER_LIST=/tmp/kops-cluster-list
+
     kops get cluster --state=s3://${KOPS_STATE_STORE} > ${CLUSTER_LIST}
 
     IDX=0
