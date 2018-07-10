@@ -8,6 +8,7 @@ ANSWER=
 CLUSTER=
 
 REGION=
+AZ_LIST=
 
 KOPS_STATE_STORE=
 KOPS_CLUSTER_NAME=
@@ -18,10 +19,10 @@ BASE_DOMAIN=
 cloud=aws
 master_size=c4.large
 master_count=1
-master_zones=ap-northeast-2a
+master_zones=
 node_size=t2.medium
 node_count=2
-zones=ap-northeast-2a,ap-northeast-2c
+zones=
 network_cidr=10.10.0.0/16
 networking=calico
 
@@ -141,7 +142,7 @@ prepare() {
         fi
     fi
 
-    REGION=$(aws configure get profile.default.region)
+    REGION="$(aws configure get profile.default.region)"
 
     state_store
 }
@@ -271,6 +272,13 @@ addons_menu() {
 create_cluster() {
     title
 
+    if [ "${AZ_LIST}" == "" ]; then
+        AZ_LIST="$(aws ec2 describe-availability-zones | grep ZoneName | cut -d'"' -f4 | head -3 | tr -s '\r\n' ',' | sed 's/.$//')"
+    fi
+
+    get_master_zones
+    get_node_zones
+
     print "   cloud=${cloud}"
     print "   name=${KOPS_CLUSTER_NAME}"
     print "   state=s3://${KOPS_STATE_STORE}"
@@ -301,11 +309,7 @@ create_cluster() {
             question "Enter master count [${master_count}] : "
             if [ "${ANSWER}" != "" ]; then
                 master_count=${ANSWER}
-                if [ "${master_count}" == "1" ]; then
-                    master_zones=$(get_az_one)
-                else
-                    master_zones=$(get_az_list)
-                fi
+                get_master_zones
             fi
             create_cluster
             ;;
@@ -323,11 +327,7 @@ create_cluster() {
             question "Enter node count [${node_count}] : "
             if [ "${ANSWER}" != "" ]; then
                 node_count=${ANSWER}
-                if [ "${node_count}" == "1" ]; then
-                    zones=$(get_az_one)
-                else
-                    zones=$(get_az_list)
-                fi
+                get_node_zones
             fi
             create_cluster
             ;;
@@ -701,18 +701,6 @@ get_ingress_domain() {
     print ${BASE_DOMAIN}
 }
 
-get_template() {
-    rm -rf ${2}
-    if [ -f "${SHELL_DIR}/${1}" ]; then
-        cp -rf "${SHELL_DIR}/${1}" ${2}
-    else
-        curl -s https://raw.githubusercontent.com/nalbam/kops-cui/master/${1} > ${2}
-    fi
-    if [ ! -f ${2} ]; then
-        error "Template does not exists. [${1}]"
-    fi
-}
-
 read_root_domain() {
     HOST_LIST=/tmp/hosted-zones
 
@@ -990,12 +978,32 @@ apply_sample_spring() {
     addons_menu
 }
 
-get_az_one() {
-    echo "$(aws ec2 describe-availability-zones | grep ZoneName | cut -d'"' -f4 | head -1)"
+get_template() {
+    rm -rf ${2}
+    if [ -f "${SHELL_DIR}/${1}" ]; then
+        cp -rf "${SHELL_DIR}/${1}" ${2}
+    else
+        curl -s https://raw.githubusercontent.com/nalbam/kops-cui/master/${1} > ${2}
+    fi
+    if [ ! -f ${2} ]; then
+        error "Template does not exists. [${1}]"
+    fi
 }
 
-get_az_list() {
-    echo "$(aws ec2 describe-availability-zones | grep ZoneName | cut -d'"' -f4 | head -3 | tr -s '\r\n' ',' | sed 's/.$//')"
+get_master_zones() {
+    if [ "${master_count}" == "1" ]; then
+        master_zones=$(echo "${AZ_LIST}" | cut -d',' -f1)
+    else
+        master_zones="${AZ_LIST}"
+    fi
+}
+
+get_node_zones() {
+    if [ "${node_count}" == "1" ]; then
+        zones=$(echo "${AZ_LIST}" | cut -d',' -f1)
+    else
+        zones="${AZ_LIST}"
+    fi
 }
 
 install_tools() {
