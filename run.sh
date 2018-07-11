@@ -102,6 +102,9 @@ title() {
 prepare() {
     logo
 
+    mkdir -p ~/.ssh
+    mkdir -p ~/.aws
+
     if [ ! -f ~/.ssh/id_rsa ]; then
         ssh-keygen -q -f ~/.ssh/id_rsa -N ''
     fi
@@ -128,19 +131,17 @@ prepare() {
         fi
     fi
 
-    # iam user
-    IAM_USER=$(aws iam get-user | grep Arn | cut -d'"' -f4 | cut -d':' -f5)
-    if [ "${IAM_USER}" == "" ]; then
+    if [ ! -r ~/.aws/config ] || [ ! -r ~/.aws/credentials ]; then
+        aws configure set default.region ap-northeast-2
         aws configure
 
-        IAM_USER=$(aws iam get-user | grep Arn | cut -d'"' -f4 | cut -d':' -f5)
-        if [ "${IAM_USER}" == "" ]; then
+        if [ ! -r ~/.aws/config ] || [ ! -r ~/.aws/credentials ]; then
             clear_kops_config
             error
         fi
     fi
 
-    REGION="$(aws configure get profile.default.region)"
+    REGION="$(aws configure get default.region)"
 
     state_store
 }
