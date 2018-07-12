@@ -1,5 +1,9 @@
 #!/bin/bash
 
+title() {
+    echo -e "$(tput setaf 3)$@$(tput sgr0)"
+}
+
 OS_NAME="$(uname | awk '{print tolower($0)}')"
 OS_FULL="$(uname -a)"
 OS_TYPE=
@@ -51,7 +55,7 @@ fi
 
 # update
 echo "================================================================================"
-echo "# update... "
+title "# update... "
 
 DATE=$(date '+%Y-%m-%d %H:%M:%S')
 
@@ -73,7 +77,7 @@ fi
 
 # aws-cli
 echo "================================================================================"
-echo "# install aws-cli... "
+title "# install aws-cli... "
 
 if [ "${OS_TYPE}" == "brew" ]; then
     command -v aws > /dev/null || brew install awscli
@@ -95,7 +99,7 @@ fi
 
 # kubectl
 echo "================================================================================"
-echo "# install kubectl... "
+title "# install kubectl... "
 
 if [ "${OS_TYPE}" == "brew" ]; then
     command -v kubectl > /dev/null || brew install kubernetes-cli
@@ -114,7 +118,7 @@ kubectl version --client --short
 
 # kops
 echo "================================================================================"
-echo "# install kops... "
+title "# install kops... "
 
 if [ "${OS_TYPE}" == "brew" ]; then
     command -v kops > /dev/null || brew install kops
@@ -133,7 +137,7 @@ kops version
 
 # helm
 echo "================================================================================"
-echo "# install helm... "
+title "# install helm... "
 
 if [ "${OS_TYPE}" == "brew" ]; then
     command -v helm > /dev/null || brew install kubernetes-helm
@@ -151,7 +155,7 @@ fi
 helm version --client --short
 
 echo "================================================================================"
-echo "# clean all... "
+title "# clean all... "
 
 if [ "${OS_TYPE}" == "apt" ]; then
     sudo apt clean all
@@ -170,4 +174,4 @@ echo "KUBECTL=\"${KUBECTL}\"" >> ${CONFIG}
 echo "KOPS=\"${KOPS}\"" >> ${CONFIG}
 echo "HELM=\"${HELM}\"" >> ${CONFIG}
 
-echo "# Done."
+title "# Done."
