@@ -237,7 +237,8 @@ addons_menu() {
     print "4. Metrics Server"
     print "5. Cluster Autoscaler"
     echo
-    print "7. Sample Spring App"
+    print "7. Sample Node App"
+    print "8. Sample Spring App"
 
     echo
     question
@@ -260,7 +261,10 @@ addons_menu() {
             apply_cluster_autoscaler
             ;;
         7)
-            apply_sample_spring
+            apply_sample_app 'sample-node'
+            ;;
+        8)
+            apply_sample_app 'sample-spring'
             ;;
         *)
             cluster_menu
@@ -878,25 +882,27 @@ apply_cluster_autoscaler() {
     addons_menu
 }
 
-apply_sample_spring() {
+apply_sample_app() {
     if [ "${BASE_DOMAIN}" == "" ]; then
         get_ingress_domain
     fi
 
-    ADDON=/tmp/sample-spring.yml
+    APP_NAME=$1
+
+    ADDON=/tmp/${APP_NAME}.yml
 
     if [ "${BASE_DOMAIN}" == "" ]; then
-        get_template sample/sample-spring.yml ${ADDON}
+        get_template sample/${APP_NAME}.yml ${ADDON}
     else
-        get_template sample/sample-spring-ing.yml ${ADDON}
+        get_template sample/${APP_NAME}-ing.yml ${ADDON}
 
-        DEFAULT="sample-spring.${BASE_DOMAIN}"
-        question "Enter your sample-spring domain [${DEFAULT}] : "
+        DEFAULT="${APP_NAME}.${BASE_DOMAIN}"
+        question "Enter your ${APP_NAME} domain [${DEFAULT}] : "
         echo
 
         DOMAIN=${ANSWER:-${DEFAULT}}
 
-        sed -i -e "s@sample-spring.apps.nalbam.com@${DOMAIN}@g" ${ADDON}
+        sed -i -e "s@${APP_NAME}.apps.nalbam.com@${DOMAIN}@g" ${ADDON}
 
         print "${DOMAIN}"
     fi

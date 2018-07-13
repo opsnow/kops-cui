@@ -1,0 +1,108 @@
+# ------------------- Deployment ------------------- #
+
+kind: Deployment
+apiVersion: apps/v1
+metadata:
+  name: sample-node
+  namespace: default
+  labels:
+    app: sample-node
+spec:
+  replicas: 2
+  revisionHistoryLimit: 10
+  strategy:
+    type: RollingUpdate
+    rollingUpdate:
+      maxUnavailable: 25%
+  selector:
+    matchLabels:
+      k8s-app: sample-node
+  template:
+    metadata:
+      labels:
+        k8s-app: sample-node
+    spec:
+      containers:
+      - name: sample-node
+        image: nalbam/sample-node:alpine
+        imagePullPolicy: Always
+        ports:
+        - containerPort: 3000
+          protocol: TCP
+        livenessProbe:
+          httpGet:
+            path: /
+            port: 3000
+          initialDelaySeconds: 30
+          timeoutSeconds: 3
+          periodSeconds: 15
+        resources:
+          requests:
+            memory: "256Mi"
+            cpu: "250m"
+          limits:
+            memory: "512Mi"
+            cpu: "500m"
+        env:
+        - name: REDIS_URL
+          value: "redis://redis-master:6379"
+
+---
+# ------------------- Service ------------------- #
+
+kind: Service
+apiVersion: v1
+metadata:
+  name: sample-node
+  namespace: default
+  labels:
+    app: sample-node
+spec:
+  type: NodePort
+  ports:
+    - name: http
+      port: 80
+      targetPort: 3000
+  selector:
+    k8s-app: sample-node
+
+---
+# ------------------- Ingress ------------------- #
+
+apiVersion: extensions/v1beta1
+kind: Ingress
+metadata:
+  name: sample-node
+  namespace: default
+  labels:
+    app: sample-node
+  annotations:
+    kubernetes.io/ingress.class: nginx
+spec:
+  rules:
+  - host: sample-node.apps.nalbam.com
+    http:
+      paths:
+      - path: /
+        backend:
+          serviceName: sample-node
+          servicePort: 80
+
+---
+# ------------------- HorizontalPodAutoscaler ------------------- #
+
+kind: HorizontalPodAutoscaler
+apiVersion: autoscaling/v1
+metadata:
+  name: sample-node
+  namespace: default
+  labels:
+    app: sample-node
+spec:
+  scaleTargetRef:
+    kind: Deployment
+    name: sample-node
+    apiVersion: apps/v1
+  minReplicas: 2
+  maxReplicas: 100
+  targetCPUUtilizationPercentage: 50
