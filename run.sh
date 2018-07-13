@@ -239,7 +239,6 @@ addons_menu() {
     echo
     print "7. Sample Node App"
     print "8. Sample Spring App"
-    print "9. Sample Web App"
 
     echo
     question
@@ -266,9 +265,6 @@ addons_menu() {
             ;;
         8)
             apply_sample_app 'sample-spring'
-            ;;
-        9)
-            apply_sample_app 'sample-web'
             ;;
         *)
             cluster_menu
