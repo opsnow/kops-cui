@@ -17,7 +17,7 @@ ROOT_DOMAIN=
 BASE_DOMAIN=
 
 cloud=aws
-master_size=c4.large
+master_size=t2.medium
 master_count=1
 master_zones=
 node_size=t2.medium
