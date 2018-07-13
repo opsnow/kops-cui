@@ -37,15 +37,11 @@ print() {
     echo -e "${L_PAD}$@"
 }
 
-progress() {
-    if [ "$1" == "start" ]; then
-        printf '%3s'
-    elif [ "$1" == "end" ]; then
-        printf '.\n'
-    else
-        printf '.'
-        sleep 2
-    fi
+error() {
+    echo
+    echo -e "${L_PAD}$(tput setaf 2)$@$(tput sgr0)"
+    echo
+    exit 1
 }
 
 question() {
@@ -62,13 +58,15 @@ waiting() {
     echo
 }
 
-error() {
-    echo
-    tput setaf 1
-    print "$@"
-    tput sgr0
-    echo
-    exit 1
+progress() {
+    if [ "$1" == "start" ]; then
+        printf '%3s'
+    elif [ "$1" == "end" ]; then
+        printf '.\n'
+    else
+        printf '.'
+        sleep 2
+    fi
 }
 
 logo() {
@@ -173,9 +171,12 @@ cluster_menu() {
         print "4. Rolling Update Cluster"
         print "5. Validate Cluster"
         print "6. Export Kubernetes Config"
+        echo
         print "7. Addons..."
         echo
         print "9. Delete Cluster"
+        echo
+        print "x. Exit"
     fi
 
     echo
@@ -222,6 +223,9 @@ cluster_menu() {
                 cluster_menu
             fi
             ;;
+        x)
+            kops_exit
+            ;;
         *)
             cluster_menu
             ;;
@@ -236,6 +240,8 @@ addons_menu() {
     print "3. Heapster (deprecated)"
     print "4. Metrics Server"
     print "5. Cluster Autoscaler"
+    echo
+    print "6. Redis Master"
     echo
     print "7. Sample Node App"
     print "8. Sample Spring App"
@@ -259,6 +265,9 @@ addons_menu() {
             ;;
         5)
             apply_cluster_autoscaler
+            ;;
+        6)
+            apply_redis_master
             ;;
         7)
             apply_sample_app 'sample-node'
@@ -700,6 +709,8 @@ apply_metrics_server() {
     echo
     kubectl apply -f /tmp/metrics-server/deploy/1.8+/
 
+    sleep 2
+
     echo
     kubectl get hpa
 
@@ -875,8 +886,27 @@ apply_cluster_autoscaler() {
     echo
     kubectl apply -f ${ADDON}
 
+    sleep 2
+
     echo
     kubectl get node
+
+    waiting
+    addons_menu
+}
+
+apply_redis_master() {
+    ADDON=/tmp/sample-redis.yml
+
+    get_template sample/sample-redis.yml ${ADDON}
+
+    echo
+    kubectl apply -f ${ADDON}
+
+    sleep 2
+
+    echo
+    kubectl get pod,svc -n default
 
     waiting
     addons_menu
@@ -958,6 +988,11 @@ install_tools() {
 
     waiting
     cluster_menu
+}
+
+kops_exit() {
+    echo
+    exit 0
 }
 
 prepare
