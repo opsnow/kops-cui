@@ -27,18 +27,18 @@ git clone https://github.com/nalbam/kops-cui
 
 ### Configure
 
-![](./images/01_configure.png)
+![configure](./images/01_configure.png)
 
 ### Create Cluster
 
-![](./images/02_create_cluster.png)
+![create_cluster](./images/02_create_cluster.png)
 
-![](./images/03_create_cluster.png)
+![create_cluster](./images/03_create_cluster.png)
 
 ### Update Cluster
 
-![](images/04_update_cluster.png)
+![update_cluster](images/04_update_cluster.png)
 
 ### Addons
 
-![](./images/05_addons.png)
+![addons](./images/05_addons.png)
