@@ -801,12 +801,13 @@ apply_dashboard() {
 
     # git_checkout ${GIT_USER} ${GIT_NAME}
 
-    ADDON=/tmp/dashboard.yml
-
     if [ "${ROOT_DOMAIN}" == "" ]; then
-        get_template addons/dashboard/with-elb.yml ${ADDON}
+        echo
+        kubectl apply -f ${SHELL_DIR}/addons/dashboard/secure.yml
     else
-        get_template addons/dashboard/with-ingress.yml ${ADDON}
+        ADDON=/tmp/dashboard.yml
+
+        get_template addons/dashboard.yml ${ADDON}
 
         DEFAULT="dashboard.${BASE_DOMAIN}"
         question "Enter your dashboard domain [${DEFAULT}] : "
@@ -817,10 +818,11 @@ apply_dashboard() {
         sed -i -e "s@dashboard.apps.nalbam.com@${DOMAIN}@g" ${ADDON}
 
         print "${DOMAIN}"
-    fi
 
-    echo
-    kubectl apply -f ${ADDON}
+        echo
+        kubectl apply -f ${SHELL_DIR}/addons/dashboard/insecure.yml
+        kubectl apply -f ${ADDON}
+    fi
 
     SECRET=$(kubectl get secret -n kube-system | grep admin-token | awk '{print $1}')
 
@@ -861,8 +863,28 @@ apply_heapster() {
 
     # git_checkout ${GIT_USER} ${GIT_NAME} release-1.5
 
-    echo
-    kubectl apply -f ${SHELL_DIR}/addons/heapster/
+    if [ "${ROOT_DOMAIN}" != "" ]; then
+        echo
+        kubectl apply -f ${SHELL_DIR}/addons/heapster/
+    else
+        ADDON=/tmp/grafana.yml
+
+        get_template addons/grafana.yml ${ADDON}
+
+        DEFAULT="grafana.${BASE_DOMAIN}"
+        question "Enter your grafana domain [${DEFAULT}] : "
+        echo
+
+        DOMAIN=${ANSWER:-${DEFAULT}}
+
+        sed -i -e "s@grafana.apps.nalbam.com@${DOMAIN}@g" ${ADDON}
+
+        print "${DOMAIN}"
+
+        echo
+        kubectl apply -f ${SHELL_DIR}/addons/heapster/
+        kubectl apply -f ${ADDON}
+    fi
 
     sleep 2
 
