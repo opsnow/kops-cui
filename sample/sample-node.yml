@@ -43,6 +43,9 @@ spec:
           limits:
             memory: "512Mi"
             cpu: "500m"
+        env:
+        - name: REDIS_URL
+          value: "redis://redis-master:6379"
 
 ---
 # ------------------- Service ------------------- #
