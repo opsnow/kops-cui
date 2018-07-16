@@ -1,7 +1,7 @@
 # ------------------- Deployment ------------------- #
 
-kind: Deployment
 apiVersion: apps/v1
+kind: Deployment
 metadata:
   name: sample-node
   namespace: default
@@ -43,15 +43,12 @@ spec:
           limits:
             memory: "512Mi"
             cpu: "500m"
-        env:
-        - name: REDIS_URL
-          value: "redis://redis-master:6379"
 
 ---
 # ------------------- Service ------------------- #
 
-kind: Service
 apiVersion: v1
+kind: Service
 metadata:
   name: sample-node
   namespace: default
@@ -91,8 +88,8 @@ spec:
 ---
 # ------------------- HorizontalPodAutoscaler ------------------- #
 
-kind: HorizontalPodAutoscaler
 apiVersion: autoscaling/v1
+kind: HorizontalPodAutoscaler
 metadata:
   name: sample-node
   namespace: default

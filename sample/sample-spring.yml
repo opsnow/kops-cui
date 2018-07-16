@@ -1,7 +1,7 @@
 # ------------------- Deployment ------------------- #
 
-kind: Deployment
 apiVersion: apps/v1
+kind: Deployment
 metadata:
   name: sample-spring
   namespace: default
@@ -70,8 +70,8 @@ spec:
 ---
 # ------------------- Service ------------------- #
 
-kind: Service
 apiVersion: v1
+kind: Service
 metadata:
   name: sample-spring
   namespace: default
@@ -98,8 +98,8 @@ spec:
 ---
 # ------------------- HorizontalPodAutoscaler ------------------- #
 
-kind: HorizontalPodAutoscaler
 apiVersion: autoscaling/v1
+kind: HorizontalPodAutoscaler
 metadata:
   name: sample-spring
   namespace: default
@@ -114,31 +114,26 @@ spec:
   maxReplicas: 100
   targetCPUUtilizationPercentage: 50
 
-#apiVersion: autoscaling/v2beta1
-#kind: HorizontalPodAutoscaler
-#metadata:
-#  name: sample-spring
-#  namespace: default
-#spec:
-#  scaleTargetRef:
-#    apiVersion: apps/v1
-#    kind: Deployment
-#    name: sample-spring
-#  minReplicas: 1
-#  maxReplicas: 100
-#  metrics:
-#  - type: Resource
-#    resource:
-#      name: cpu
-#      targetAverageUtilization: 50
-#status:
-#  observedGeneration: 1
-#  lastScaleTime: <some-time>
-#  currentReplicas: 1
-#  desiredReplicas: 1
-#  currentMetrics:
-#  - type: Resource
-#    resource:
-#      name: cpu
-#      currentAverageUtilization: 0
-#      currentAverageValue: 0
+# ---
+
+# apiVersion: autoscaling/v2beta1
+# kind: HorizontalPodAutoscaler
+# metadata:
+#   name: sample-spring
+#   namespace: default
+# spec:
+#   scaleTargetRef:
+#     apiVersion: apps/v1
+#     kind: Deployment
+#     name: sample-spring
+#   minReplicas: 1
+#   maxReplicas: 100
+#   metrics:
+#   - type: Resource
+#     resource:
+#       name: cpu
+#       targetAverageUtilization: 50
+#   - type: Pods
+#     pods:
+#       metricName: packets-per-second
+#       targetAverageValue: 1k
