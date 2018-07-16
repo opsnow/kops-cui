@@ -727,7 +727,6 @@ apply_ingress_controller() {
     if [ "${ROOT_DOMAIN}" != "" ]; then
         DEFAULT="apps.${ROOT_DOMAIN}"
         question "Enter your ingress domain [${DEFAULT}] : "
-        echo
 
         BASE_DOMAIN=${ANSWER:-${DEFAULT}}
     fi
@@ -743,6 +742,7 @@ apply_ingress_controller() {
             error "Certificate ARN does not exists. [*.${BASE_DOMAIN}][${REGION}]"
         fi
 
+        echo
         print "CertificateArn: ${SSL_CERT_ARN}"
 
         sed -i -e "s@arn:aws:acm:us-west-2:XXXXXXXX:certificate/XXXXXX-XXXXXXX-XXXXXXX-XXXXXXXX@${SSL_CERT_ARN}@g" ${ADDON}
@@ -811,12 +811,12 @@ apply_dashboard() {
 
         DEFAULT="dashboard.${BASE_DOMAIN}"
         question "Enter your dashboard domain [${DEFAULT}] : "
-        echo
 
         DOMAIN=${ANSWER:-${DEFAULT}}
 
         sed -i -e "s@dashboard.apps.nalbam.com@${DOMAIN}@g" ${ADDON}
 
+        echo
         print "${DOMAIN}"
 
         echo
@@ -873,12 +873,12 @@ apply_heapster() {
 
         DEFAULT="grafana.${BASE_DOMAIN}"
         question "Enter your grafana domain [${DEFAULT}] : "
-        echo
 
         DOMAIN=${ANSWER:-${DEFAULT}}
 
         sed -i -e "s@grafana.apps.nalbam.com@${DOMAIN}@g" ${ADDON}
 
+        echo
         print "${DOMAIN}"
 
         echo
@@ -978,12 +978,12 @@ apply_sample_app() {
 
         DEFAULT="${APP_NAME}.${BASE_DOMAIN}"
         question "Enter your ${APP_NAME} domain [${DEFAULT}] : "
-        echo
 
         DOMAIN=${ANSWER:-${DEFAULT}}
 
         sed -i -e "s@${APP_NAME}.apps.nalbam.com@${DOMAIN}@g" ${ADDON}
 
+        echo
         print "${DOMAIN}"
     fi
 
