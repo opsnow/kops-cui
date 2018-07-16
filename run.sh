@@ -697,28 +697,29 @@ read_root_domain() {
     fi
 }
 
-apply_metrics_server() {
-    if [ ! -d /tmp/metrics-server ]; then
-        git clone https://github.com/kubernetes-incubator/metrics-server /tmp/metrics-server
+git_checkout() {
+    GIT_USER=$1
+    GIT_NAME=$2
+
+    if [ ! -d /tmp/${GIT_USER}/${GIT_NAME} ]; then
+        mkdir -p /tmp/${GIT_USER}
+        git clone https://github.com/${GIT_USER}/${GIT_NAME} /tmp/${GIT_USER}/${GIT_NAME}
     fi
 
-    pushd /tmp/metrics-server
+    pushd /tmp/${GIT_USER}/${GIT_NAME}
+    if [ "$3" != "" ]; then
+        git checkout $3
+    fi
     git pull
     popd
-
-    echo
-    kubectl apply -f /tmp/metrics-server/deploy/1.8+/
-
-    sleep 2
-
-    echo
-    kubectl get hpa
-
-    waiting
-    addons_menu
 }
 
 apply_ingress_controller() {
+    # GIT_USER=kubernetes
+    # GIT_NAME=ingress-nginx
+
+    # git_checkout ${GIT_USER} ${GIT_NAME}
+
     read_root_domain
 
     BASE_DOMAIN=
@@ -731,13 +732,11 @@ apply_ingress_controller() {
         BASE_DOMAIN=${ANSWER:-${DEFAULT}}
     fi
 
-    ADDON=/tmp/ingress-nginx.yml
+    ADDON=/tmp/ingress-nginx-service.yml
 
-    if [ "${BASE_DOMAIN}" == "" ]; then
-        get_template addons/ingress-nginx-v1.6.0.yml ${ADDON}
-    else
-        get_template addons/ingress-nginx-v1.6.0-ssl.yml ${ADDON}
+    cp -rf ${SHELL_DIR}/addons/ingress-nginx/service-l7.yaml ${ADDON}
 
+    if [ "${BASE_DOMAIN}" != "" ]; then
         SSL_CERT_ARN=$(aws acm list-certificates | DOMAIN="*.${BASE_DOMAIN}" jq '[.CertificateSummaryList[] | select(.DomainName==env.DOMAIN)][0]' | grep CertificateArn | cut -d'"' -f4)
 
         if [ "${SSL_CERT_ARN}" == "" ]; then
@@ -746,10 +745,12 @@ apply_ingress_controller() {
 
         print "CertificateArn: ${SSL_CERT_ARN}"
 
-        sed -i -e "s@{{SSL_CERT_ARN}}@${SSL_CERT_ARN}@g" ${ADDON}
+        sed -i -e "s@arn:aws:acm:us-west-2:XXXXXXXX:certificate/XXXXXX-XXXXXXX-XXXXXXX-XXXXXXXX@${SSL_CERT_ARN}@g" ${ADDON}
     fi
 
     echo
+    kubectl apply -f ${SHELL_DIR}/addons/ingress-nginx/mandatory.yaml
+    kubectl apply -f ${SHELL_DIR}/addons/ingress-nginx/patch-configmap-l7.yaml
     kubectl apply -f ${ADDON}
 
     sleep 2
@@ -795,12 +796,17 @@ apply_ingress_controller() {
 }
 
 apply_dashboard() {
+    # GIT_USER=kubernetes
+    # GIT_NAME=dashboard
+
+    # git_checkout ${GIT_USER} ${GIT_NAME}
+
     ADDON=/tmp/dashboard.yml
 
     if [ "${ROOT_DOMAIN}" == "" ]; then
-        get_template addons/dashboard-v1.8.3.yml ${ADDON}
+        get_template addons/dashboard/with-elb.yml ${ADDON}
     else
-        get_template addons/dashboard-v1.8.3-ing.yml ${ADDON}
+        get_template addons/dashboard/with-ingress.yml ${ADDON}
 
         DEFAULT="dashboard.${BASE_DOMAIN}"
         question "Enter your dashboard domain [${DEFAULT}] : "
@@ -832,16 +838,14 @@ apply_dashboard() {
 
     if [ "${ROOT_DOMAIN}" == "" ]; then
         echo
-        kubectl get pod -n kube-system
+        kubectl get pod -n kube-system | grep -E 'NAME|kubernetes-dashboard'
         echo
-        kubectl get svc -n kube-system -o wide
+        kubectl get svc -n kube-system -o wide | grep -E 'NAME|kubernetes-dashboard'
     else
         echo
-        kubectl get pod -n kube-system
+        kubectl get pod -n kube-system | grep -E 'NAME|kubernetes-dashboard'
         echo
-        kubectl get svc -n kube-system
-        echo
-        kubectl get ing -n kube-system
+        kubectl get ing -n kube-system -o wide | grep -E 'NAME|kubernetes-dashboard'
     fi
 
     echo
@@ -852,42 +856,66 @@ apply_dashboard() {
 }
 
 apply_heapster() {
-    ADDON=/tmp/heapster.yml
+    # GIT_USER=kubernetes
+    # GIT_NAME=heapster
 
-    get_template addons/heapster-v1.7.0.yml ${ADDON}
+    # git_checkout ${GIT_USER} ${GIT_NAME} release-1.5
 
     echo
-    kubectl apply -f ${ADDON}
+    kubectl apply -f ${SHELL_DIR}/addons/heapster/
 
     sleep 2
 
     echo
-    kubectl get pod,svc -n kube-system
+    kubectl get pod -n kube-system | grep -E 'NAME|heapster'
+
+    waiting
+    addons_menu
+}
+
+apply_metrics_server() {
+    # GIT_USER=kubernetes-incubator
+    # GIT_NAME=metrics-server
+
+    # git_checkout ${GIT_USER} ${GIT_NAME}
+
+    echo
+    kubectl apply -f ${SHELL_DIR}/addons/metrics-server/
+
+    sleep 2
+
+    echo
+    kubectl get pod -n kube-system | grep -E 'NAME|metrics-server'
+    echo
+    kubectl get hpa
 
     waiting
     addons_menu
 }
 
 apply_cluster_autoscaler() {
+    # GIT_USER=kubernetes
+    # GIT_NAME=autoscaler
+
+    # git_checkout ${GIT_USER} ${GIT_NAME}
+
     ADDON=/tmp/cluster-autoscaler.yml
 
-    get_template addons/cluster-autoscaler-v1.8.0.yml ${ADDON}
+    get_template addons/cluster-autoscaler/deploy.yml ${ADDON}
 
-    MIN_NODES=2
-    MAX_NODES=8
     AWS_REGION=${REGION}
     GROUP_NAME="nodes.${KOPS_CLUSTER_NAME}"
 
-    sed -i -e "s@{{MIN_NODES}}@${MIN_NODES}@g" "${ADDON}"
-    sed -i -e "s@{{MAX_NODES}}@${MAX_NODES}@g" "${ADDON}"
-    sed -i -e "s@{{GROUP_NAME}}@${GROUP_NAME}@g" "${ADDON}"
-    sed -i -e "s@{{AWS_REGION}}@${AWS_REGION}@g" "${ADDON}"
+    sed -i -e "s@us-east-1@${AWS_REGION}@g" "${ADDON}"
+    sed -i -e "s@<YOUR CLUSTER NAME>@${KOPS_CLUSTER_NAME}@g" "${ADDON}"
 
     echo
     kubectl apply -f ${ADDON}
 
     sleep 2
 
+    echo
+    kubectl get pod -n kube-system | grep -E 'NAME|cluster-autoscaler'
     echo
     kubectl get node
 

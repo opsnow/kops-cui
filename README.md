@@ -8,10 +8,10 @@ KOPS Console User Interface
   * AWS
 
 * Support Addon
-  * Metrics Server
   * Ingress Controller
   * Dashboard
   * Heapster (deprecated)
+  * Metrics Server
   * Cluster Autoscaler
 
 * Support OS

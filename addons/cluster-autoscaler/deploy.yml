@@ -220,10 +220,12 @@ spec:
             - --stderrthreshold=info
             - --cloud-provider=aws
             - --skip-nodes-with-local-storage=false
-            - --nodes={{MIN_NODES}}:{{MAX_NODES}}:{{GROUP_NAME}}
+            - --expander=least-waste
+            - --node-group-auto-discovery=asg:tag=k8s.io/cluster-autoscaler/enabled,k8s.io/cluster-autoscaler/<YOUR CLUSTER NAME>
+            # - --nodes={{MIN_NODES}}:{{MAX_NODES}}:{{GROUP_NAME}}
           env:
             - name: AWS_REGION
-              value: {{AWS_REGION}}
+              value: us-east-1
           volumeMounts:
             - name: ssl-certs
               mountPath: /etc/ssl/certs/ca-certificates.crt
