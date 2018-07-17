@@ -863,7 +863,7 @@ apply_heapster() {
 
     # git_checkout ${GIT_USER} ${GIT_NAME} release-1.5
 
-    if [ "${ROOT_DOMAIN}" != "" ]; then
+    if [ "${ROOT_DOMAIN}" == "" ]; then
         echo
         kubectl apply -f ${SHELL_DIR}/addons/heapster/
     else
