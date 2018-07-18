@@ -35,6 +35,7 @@ DATE=
 KUBECTL=
 KOPS=
 HELM=
+DRAFT=
 
 mkdir -p ~/.kops-cui
 
@@ -55,7 +56,7 @@ fi
 
 # update
 echo "================================================================================"
-title "# update... "
+title "# update..."
 
 DATE=$(date '+%Y-%m-%d %H:%M:%S')
 
@@ -77,7 +78,7 @@ fi
 
 # aws-cli
 echo "================================================================================"
-title "# install aws-cli... "
+title "# install aws-cli..."
 
 if [ "${OS_TYPE}" == "brew" ]; then
     command -v aws > /dev/null || brew install awscli
@@ -99,7 +100,7 @@ fi
 
 # kubectl
 echo "================================================================================"
-title "# install kubectl... "
+title "# install kubectl..."
 
 if [ "${OS_TYPE}" == "brew" ]; then
     command -v kubectl > /dev/null || brew install kubernetes-cli
@@ -118,7 +119,7 @@ kubectl version --client --short
 
 # kops
 echo "================================================================================"
-title "# install kops... "
+title "# install kops..."
 
 if [ "${OS_TYPE}" == "brew" ]; then
     command -v kops > /dev/null || brew install kops
@@ -137,7 +138,7 @@ kops version
 
 # helm
 echo "================================================================================"
-title "# install helm... "
+title "# install helm..."
 
 if [ "${OS_TYPE}" == "brew" ]; then
     command -v helm > /dev/null || brew install kubernetes-helm
@@ -154,8 +155,27 @@ fi
 
 helm version --client --short
 
+# draft
 echo "================================================================================"
-title "# clean all... "
+title "# install draft..."
+
+#if [ "${OS_TYPE}" == "brew" ]; then
+#    command -v draft > /dev/null || brew install draft
+#else
+    VERSION=$(curl -s https://api.github.com/repos/Azure/draft/releases/latest | jq --raw-output '.tag_name')
+
+    if [ "${DRAFT}" != "${VERSION}" ]; then
+        curl -L https://azuredraft.blob.core.windows.net/draft/draft-${VERSION}-${OS_NAME}-amd64.tar.gz | tar xz
+        sudo mv ${OS_NAME}-amd64/draft /usr/local/bin/draft && rm -rf ${OS_NAME}-amd64
+
+        DRAFT="${VERSION}"
+    fi
+#fi
+
+draft version --short
+
+echo "================================================================================"
+title "# clean all..."
 
 if [ "${OS_TYPE}" == "apt" ]; then
     sudo apt clean all
@@ -173,5 +193,6 @@ echo "DATE=\"${DATE}\"" >> ${CONFIG}
 echo "KUBECTL=\"${KUBECTL}\"" >> ${CONFIG}
 echo "KOPS=\"${KOPS}\"" >> ${CONFIG}
 echo "HELM=\"${HELM}\"" >> ${CONFIG}
+echo "DRAFT=\"${DRAFT}\"" >> ${CONFIG}
 
 title "# Done."
