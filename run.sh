@@ -52,10 +52,27 @@ question() {
     read -p "${L_PAD}$(tput setaf 2)$Q$(tput sgr0)" ANSWER
 }
 
-waiting() {
+press_enter() {
     echo
     read -p "${L_PAD}$(tput setaf 4)Press Enter to continue...$(tput sgr0)"
     echo
+}
+
+waiting() {
+    SEC=${1:-2}
+
+    progress start
+
+    IDX=0
+    while [ 1 ]; do
+        if [ "${IDX}" == "${SEC}" ]; then
+            break
+        fi
+        IDX=$(( ${IDX} + 1 ))
+        progress
+    done
+
+    progress end
 }
 
 progress() {
@@ -360,7 +377,7 @@ create_cluster() {
                 --network-cidr=${network_cidr} \
                 --networking=${networking}
 
-            waiting
+            press_enter
 
             get_kops_cluster
 
@@ -416,7 +433,8 @@ read_state_store() {
     BUCKET=$(aws s3api get-bucket-acl --bucket ${KOPS_STATE_STORE} | jq '.Owner.ID')
     if [ "${BUCKET}" == "" ]; then
         aws s3 mb s3://${KOPS_STATE_STORE} --region ${REGION}
-        sleep 1
+
+        waiting 2
 
         BUCKET=$(aws s3api get-bucket-acl --bucket ${KOPS_STATE_STORE} | jq '.Owner.ID')
         if [ "${BUCKET}" == "" ]; then
@@ -483,7 +501,7 @@ read_cluster_name() {
 kops_get() {
     kops get --name=${KOPS_CLUSTER_NAME} --state=s3://${KOPS_STATE_STORE}
 
-    waiting
+    press_enter
     cluster_menu
 }
 
@@ -524,7 +542,7 @@ kops_edit() {
     if [ "${SELECTED}" != "" ]; then
         kops edit ${SELECTED} --name=${KOPS_CLUSTER_NAME} --state=s3://${KOPS_STATE_STORE}
 
-        waiting
+        press_enter
     fi
 
     cluster_menu
@@ -533,14 +551,14 @@ kops_edit() {
 kops_update() {
     kops update cluster --name=${KOPS_CLUSTER_NAME} --state=s3://${KOPS_STATE_STORE} --yes
 
-    waiting
+    press_enter
     cluster_menu
 }
 
 kops_rolling_update() {
     kops rolling-update cluster --name=${KOPS_CLUSTER_NAME} --state=s3://${KOPS_STATE_STORE} --yes
 
-    waiting
+    press_enter
     cluster_menu
 }
 
@@ -550,14 +568,14 @@ kops_validate() {
     echo
     kubectl get pod --all-namespaces
 
-    waiting
+    press_enter
     cluster_menu
 }
 
 kops_export() {
     kops export kubecfg --name ${KOPS_CLUSTER_NAME} --state=s3://${KOPS_STATE_STORE}
 
-    waiting
+    press_enter
     cluster_menu
 }
 
@@ -566,7 +584,7 @@ kops_delete() {
 
     clear_kops_config
 
-    waiting
+    press_enter
     state_store
 }
 
@@ -736,8 +754,11 @@ apply_ingress_controller() {
     cp -rf ${SHELL_DIR}/addons/ingress-nginx/service-l7.yaml ${ADDON}
 
     if [ "${BASE_DOMAIN}" != "" ]; then
-        SSL_CERT_ARN=$(aws acm list-certificates | DOMAIN="*.${BASE_DOMAIN}" jq '[.CertificateSummaryList[] | select(.DomainName==env.DOMAIN)][0]' | grep CertificateArn | cut -d'"' -f4)
+        get_ssl_cert_arn
 
+        if [ "${SSL_CERT_ARN}" == "" ]; then
+            set_record_cname
+        fi
         if [ "${SSL_CERT_ARN}" == "" ]; then
             error "Certificate ARN does not exists. [*.${BASE_DOMAIN}][${REGION}]"
         fi
@@ -753,10 +774,10 @@ apply_ingress_controller() {
     kubectl apply -f ${SHELL_DIR}/addons/ingress-nginx/patch-configmap-l7.yaml
     kubectl apply -f ${ADDON}
 
-    sleep 2
+    waiting 2
 
     echo
-    kubectl get pod,svc -n kube-ingress
+    kubectl get pod,svc -n kube-ingress -o wide
 
     echo
     print "Pending ELB..."
@@ -766,33 +787,68 @@ apply_ingress_controller() {
     else
         get_ingress_elb_name
 
-        # ELB 에서 Hosted Zone ID, DNS Name 을 획득
-        ELB_ZONE_ID=$(aws elb describe-load-balancers --load-balancer-name ${ELB_NAME} | grep CanonicalHostedZoneNameID | cut -d'"' -f4)
-        ELB_DNS_NAME=$(aws elb describe-load-balancers --load-balancer-name ${ELB_NAME} | grep '"DNSName"' | cut -d'"' -f4)
-
-        # Route53 에서 해당 도메인의 Hosted Zone ID 를 획득
-        ZONE_ID=$(aws route53 list-hosted-zones | ROOT_DOMAIN="${ROOT_DOMAIN}." jq '.HostedZones[] | select(.Name==env.ROOT_DOMAIN)' | grep '"Id"' | cut -d'"' -f4 | cut -d'/' -f3)
-
-        # record sets
-        RECORD=/tmp/record-sets.json
-
-        get_template addons/record-sets.json ${RECORD}
-
-        # replace
-        sed -i -e "s@{{DOMAIN}}@*.${BASE_DOMAIN}@g" "${RECORD}"
-        sed -i -e "s@{{ELB_ZONE_ID}}@${ELB_ZONE_ID}@g" "${RECORD}"
-        sed -i -e "s@{{ELB_DNS_NAME}}@${ELB_DNS_NAME}@g" "${RECORD}"
-
-        cat ${RECORD}
-
-        # Route53 의 Record Set 에 입력/수정
-        aws route53 change-resource-record-sets --hosted-zone-id ${ZONE_ID} --change-batch file://${RECORD}
+        set_record_alias
     fi
 
     save_kops_config
 
-    waiting
+    press_enter
     addons_menu
+}
+
+get_ssl_cert_arn() {
+    # get certificate arn
+    SSL_CERT_ARN=$(aws acm list-certificates | DOMAIN="*.${BASE_DOMAIN}" jq '[.CertificateSummaryList[] | select(.DomainName==env.DOMAIN)][0]' | grep CertificateArn | cut -d'"' -f4)
+}
+
+set_record_cname() {
+    # request certificate
+    SSL_CERT_ARN=$(aws acm request-certificate --domain-name "*.${BASE_DOMAIN}" --validation-method DNS | grep CertificateArn | cut -d'"' -f4)
+
+    waiting 2
+
+    # domain validate
+    CERT_DNS_NAME=$(aws acm describe-certificate --certificate-arn ${SSL_CERT_ARN} | jq '.Certificate.DomainValidationOptions[].ResourceRecord' | grep Name | cut -d'"' -f4)
+    CERT_DNS_VALUE=$(aws acm describe-certificate --certificate-arn ${SSL_CERT_ARN} | jq '.Certificate.DomainValidationOptions[].ResourceRecord' | grep Value | cut -d'"' -f4)
+
+    # Route53 에서 해당 도메인의 Hosted Zone ID 를 획득
+    ZONE_ID=$(aws route53 list-hosted-zones | ROOT_DOMAIN="${ROOT_DOMAIN}." jq '.HostedZones[] | select(.Name==env.ROOT_DOMAIN)' | grep '"Id"' | cut -d'"' -f4 | cut -d'/' -f3)
+
+    # record sets
+    RECORD=/tmp/record-sets-cname.json
+    get_template addons/record-sets-cname.json ${RECORD}
+
+    # replace
+    sed -i -e "s@{{DOMAIN}}@${CERT_DNS_NAME}@g" "${RECORD}"
+    sed -i -e "s@{{DNS_NAME}}@${CERT_DNS_VALUE}@g" "${RECORD}"
+
+    cat ${RECORD}
+
+    # Route53 의 Record Set 에 입력/수정
+    aws route53 change-resource-record-sets --hosted-zone-id ${ZONE_ID} --change-batch file://${RECORD}
+}
+
+set_record_alias() {
+    # ELB 에서 Hosted Zone ID, DNS Name 을 획득
+    ELB_ZONE_ID=$(aws elb describe-load-balancers --load-balancer-name ${ELB_NAME} | grep CanonicalHostedZoneNameID | cut -d'"' -f4)
+    ELB_DNS_NAME=$(aws elb describe-load-balancers --load-balancer-name ${ELB_NAME} | grep '"DNSName"' | cut -d'"' -f4)
+
+    # Route53 에서 해당 도메인의 Hosted Zone ID 를 획득
+    ZONE_ID=$(aws route53 list-hosted-zones | ROOT_DOMAIN="${ROOT_DOMAIN}." jq '.HostedZones[] | select(.Name==env.ROOT_DOMAIN)' | grep '"Id"' | cut -d'"' -f4 | cut -d'/' -f3)
+
+    # record sets
+    RECORD=/tmp/record-sets-alias.json
+    get_template addons/record-sets-alias.json ${RECORD}
+
+    # replace
+    sed -i -e "s@{{DOMAIN}}@*.${BASE_DOMAIN}@g" "${RECORD}"
+    sed -i -e "s@{{ZONE_ID}}@${ELB_ZONE_ID}@g" "${RECORD}"
+    sed -i -e "s@{{DNS_NAME}}@${ELB_DNS_NAME}@g" "${RECORD}"
+
+    cat ${RECORD}
+
+    # Route53 의 Record Set 에 입력/수정
+    aws route53 change-resource-record-sets --hosted-zone-id ${ZONE_ID} --change-batch file://${RECORD}
 }
 
 apply_dashboard() {
@@ -836,7 +892,7 @@ apply_dashboard() {
                 --clusterrole=cluster-admin
     fi
 
-    sleep 2
+    waiting 2
 
     if [ "${ROOT_DOMAIN}" == "" ]; then
         echo
@@ -853,7 +909,7 @@ apply_dashboard() {
     echo
     kubectl describe secret -n kube-system $(kubectl get secret -n kube-system | grep admin-token | awk '{print $1}')
 
-    waiting
+    press_enter
     addons_menu
 }
 
@@ -886,12 +942,12 @@ apply_heapster() {
         kubectl apply -f ${ADDON}
     fi
 
-    sleep 2
+    waiting 2
 
     echo
     kubectl get pod -n kube-system | grep -E 'NAME|heapster'
 
-    waiting
+    press_enter
     addons_menu
 }
 
@@ -904,14 +960,14 @@ apply_metrics_server() {
     echo
     kubectl apply -f ${SHELL_DIR}/addons/metrics-server/
 
-    sleep 2
+    waiting 2
 
     echo
     kubectl get pod -n kube-system | grep -E 'NAME|metrics-server'
     echo
     kubectl get hpa
 
-    waiting
+    press_enter
     addons_menu
 }
 
@@ -934,14 +990,14 @@ apply_cluster_autoscaler() {
     echo
     kubectl apply -f ${ADDON}
 
-    sleep 2
+    waiting 2
 
     echo
     kubectl get pod -n kube-system | grep -E 'NAME|cluster-autoscaler'
     echo
     kubectl get node
 
-    waiting
+    press_enter
     addons_menu
 }
 
@@ -953,12 +1009,12 @@ apply_redis_master() {
     echo
     kubectl apply -f ${ADDON}
 
-    sleep 2
+    waiting 2
 
     echo
     kubectl get pod,svc -n default
 
-    waiting
+    press_enter
     addons_menu
 }
 
@@ -990,12 +1046,12 @@ apply_sample_app() {
     echo
     kubectl apply -f ${ADDON}
 
-    sleep 2
+    waiting 2
 
     echo
     kubectl get pod,svc,ing -n default
 
-    waiting
+    press_enter
     addons_menu
 }
 
@@ -1036,7 +1092,7 @@ get_node_zones() {
 install_tools() {
     ${SHELL_DIR}/helper/bastion.sh
 
-    waiting
+    press_enter
     cluster_menu
 }
 
