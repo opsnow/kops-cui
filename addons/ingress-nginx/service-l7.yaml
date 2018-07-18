@@ -2,7 +2,7 @@ kind: Service
 apiVersion: v1
 metadata:
   name: ingress-nginx
-  namespace: kube-ingress
+  namespace: kube-system
   labels:
     app: ingress-nginx
   annotations:

@@ -596,7 +596,7 @@ get_ingress_elb_name() {
     IDX=0
     while [ 1 ]; do
         # ingress-nginx 의 ELB Name 을 획득
-        ELB_NAME=$(kubectl get svc -n kube-ingress -o wide | grep ingress-nginx | grep LoadBalancer | awk '{print $4}' | cut -d'-' -f1)
+        ELB_NAME=$(kubectl get svc -n kube-system -o wide | grep ingress-nginx | grep LoadBalancer | awk '{print $4}' | cut -d'-' -f1)
 
         if [ "${ELB_NAME}" != "" ] && [ "${ELB_NAME}" != "<pending>" ]; then
             break
@@ -620,7 +620,7 @@ get_ingress_elb_name() {
 get_ingress_elb_domain() {
     ELB_DOMAIN=
 
-    INGRESS=$(kubectl get ns | grep kube-ingress | wc -l | xargs)
+    INGRESS=$(kubectl get ns | grep kube-system | wc -l | xargs)
 
     if [ "${INGRESS}" == "0" ]; then
         return
@@ -631,7 +631,7 @@ get_ingress_elb_domain() {
     IDX=0
     while [ 1 ]; do
         # ingress-nginx 의 ELB Domain 을 획득
-        ELB_DOMAIN=$(kubectl get svc -n kube-ingress -o wide | grep ingress-nginx | grep amazonaws | awk '{print $4}')
+        ELB_DOMAIN=$(kubectl get svc -n kube-system -o wide | grep ingress-nginx | grep amazonaws | awk '{print $4}')
 
         if [ "${ELB_DOMAIN}" != "" ] && [ "${ELB_DOMAIN}" != "<pending>" ]; then
             break
@@ -777,7 +777,7 @@ apply_ingress_controller() {
     waiting 2
 
     echo
-    kubectl get pod,svc -n kube-ingress -o wide
+    kubectl get pod,svc -n kube-system -o wide
 
     echo
     print "Pending ELB..."
