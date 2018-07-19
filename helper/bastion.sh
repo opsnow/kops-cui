@@ -144,7 +144,7 @@ title "# install helm..."
 if [ "${OS_TYPE}" == "brew" ]; then
     command -v helm > /dev/null || brew install kubernetes-helm
 else
-    VERSION=$(curl -s https://api.github.com/repos/kubernetes/helm/releases/latest | jq --raw-output '.tag_name')
+    VERSION=$(curl -s https://api.github.com/repos/helm/helm/releases/latest | jq --raw-output '.tag_name')
 
     if [ "${HELM}" != "${VERSION}" ]; then
         curl -L https://storage.googleapis.com/kubernetes-helm/helm-${VERSION}-${OS_NAME}-amd64.tar.gz | tar xz
