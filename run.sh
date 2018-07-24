@@ -49,7 +49,9 @@ question() {
     if [ "$Q" == "" ]; then
         Q="Enter your choice : "
     fi
+    echo
     read -p "${L_PAD}$(tput setaf 2)$Q$(tput sgr0)" ANSWER
+    echo
 }
 
 press_enter() {
@@ -61,6 +63,7 @@ press_enter() {
 waiting() {
     SEC=${1:-2}
 
+    echo
     progress start
 
     IDX=0
@@ -73,6 +76,7 @@ waiting() {
     done
 
     progress end
+    echo
 }
 
 progress() {
@@ -133,9 +137,7 @@ prepare() {
     command -v kops > /dev/null    || export NEED_TOOL=kops
 
     if [ "${NEED_TOOL}" != "" ]; then
-        echo
         question "Do you want to install the required tools? (awscli,kubectl,kops...) [Y/n] : "
-        echo
 
         ANSWER=${ANSWER:-Y}
 
@@ -189,16 +191,14 @@ cluster_menu() {
         print "5. Validate Cluster"
         print "6. Export Kubernetes Config"
         echo
-        print "7. Addons..."
+        print "7. Addons.."
         echo
         print "9. Delete Cluster"
         echo
         print "x. Exit"
     fi
 
-    echo
     question
-    echo
 
     case ${ANSWER} in
         1)
@@ -232,7 +232,6 @@ cluster_menu() {
             ;;
         9)
             question "Are you sure? (YES/[no]) : "
-            echo
 
             if [ "${ANSWER}" == "YES" ]; then
                 kops_delete
@@ -258,14 +257,11 @@ addons_menu() {
     print "4. Metrics Server"
     print "5. Cluster Autoscaler"
     echo
-    print "6. Redis Master"
+    print "6. Helm.."
     echo
-    print "7. Sample Node App"
-    print "8. Sample Spring App"
+    print "7. Sample.."
 
-    echo
     question
-    echo
 
     case ${ANSWER} in
         1)
@@ -284,16 +280,65 @@ addons_menu() {
             apply_cluster_autoscaler
             ;;
         6)
-            apply_redis_master
+            helm_menu
             ;;
         7)
-            apply_sample_app 'sample-node'
-            ;;
-        8)
-            apply_sample_app 'sample-spring'
+            sample_menu
             ;;
         *)
             cluster_menu
+            ;;
+    esac
+}
+
+helm_menu() {
+    title
+
+    print "1. Helm Init"
+    echo
+    print "3. DevOps (Jenkins, Nexus, Registry)"
+    print "4. Monitor (Prometheus, Grafana)"
+
+    question
+
+    case ${ANSWER} in
+        1)
+            helm_init
+            ;;
+        3)
+            helm_devops
+            ;;
+        4)
+            helm_monitor
+            ;;
+        *)
+            addons_menu
+            ;;
+    esac
+}
+
+sample_menu() {
+    title
+
+    print "1. Sample Node App"
+    print "2. Sample Spring App"
+    echo
+    print "4. Sample Redis"
+
+    question
+
+    case ${ANSWER} in
+        1)
+            apply_sample_app 'sample-node'
+            ;;
+        2)
+            apply_sample_app 'sample-spring'
+            ;;
+        4)
+            apply_redis_master
+            ;;
+        *)
+            addons_menu
             ;;
     esac
 }
@@ -320,9 +365,7 @@ create_cluster() {
     echo
     print "0. create"
 
-    echo
     question
-    echo
 
     case ${ANSWER} in
         1)
@@ -423,9 +466,7 @@ read_state_store() {
         DEFAULT="${KOPS_STATE_STORE}"
     fi
 
-    echo
     question "Enter cluster store [${DEFAULT}] : "
-    echo
 
     KOPS_STATE_STORE=${ANSWER:-${DEFAULT}}
 
@@ -469,7 +510,6 @@ read_cluster_list() {
         echo
         print "0. new"
 
-        echo
         question "Enter cluster (0-${IDX})[1] : "
 
         ANSWER=${ANSWER:-1}
@@ -491,9 +531,7 @@ read_cluster_list() {
 read_cluster_name() {
     DEFAULT="cluster.k8s.local"
 
-    echo
     question "Enter your cluster name [${DEFAULT}] : "
-    echo
 
     KOPS_CLUSTER_NAME=${ANSWER:-${DEFAULT}}
 }
@@ -526,9 +564,7 @@ kops_edit() {
     echo
     print "0. cluster"
 
-    echo
     question
-    echo
 
     SELECTED=
 
@@ -705,9 +741,7 @@ read_root_domain() {
         echo
         print "0. nip.io"
 
-        echo
         question "Enter root domain (0-${IDX})[0] : "
-        echo
 
         if [ "${ANSWER}" != "" ]; then
             ROOT_DOMAIN=$(sed -n ${ANSWER}p ${HOST_LIST} | sed 's/.$//')
@@ -763,23 +797,21 @@ apply_ingress_controller() {
             error "Certificate ARN does not exists. [*.${BASE_DOMAIN}][${REGION}]"
         fi
 
-        echo
         print "CertificateArn: ${SSL_CERT_ARN}"
+        echo
 
         sed -i -e "s@arn:aws:acm:us-west-2:XXXXXXXX:certificate/XXXXXX-XXXXXXX-XXXXXXX-XXXXXXXX@${SSL_CERT_ARN}@g" ${ADDON}
     fi
 
-    echo
     kubectl apply -f ${SHELL_DIR}/addons/ingress-nginx/mandatory.yaml
     kubectl apply -f ${SHELL_DIR}/addons/ingress-nginx/patch-configmap-l7.yaml
     kubectl apply -f ${ADDON}
 
     waiting 2
 
-    echo
     kubectl get pod,svc -n kube-system -o wide
-
     echo
+
     print "Pending ELB..."
 
     if [ "${BASE_DOMAIN}" == "" ]; then
@@ -858,7 +890,6 @@ apply_dashboard() {
     # git_checkout ${GIT_USER} ${GIT_NAME}
 
     if [ "${ROOT_DOMAIN}" == "" ]; then
-        echo
         kubectl apply -f ${SHELL_DIR}/addons/dashboard/secure.yml
     else
         ADDON=/tmp/dashboard.yml
@@ -872,10 +903,9 @@ apply_dashboard() {
 
         sed -i -e "s@dashboard.apps.nalbam.com@${DOMAIN}@g" ${ADDON}
 
-        echo
         print "${DOMAIN}"
-
         echo
+
         kubectl apply -f ${SHELL_DIR}/addons/dashboard/insecure.yml
         kubectl apply -f ${ADDON}
     fi
@@ -883,10 +913,8 @@ apply_dashboard() {
     SECRET=$(kubectl get secret -n kube-system | grep admin-token | awk '{print $1}')
 
     if [ "${SECRET}" == "" ]; then
-        # add ServiceAccount admin
+        # dashboard admin
         kubectl create serviceaccount admin -n kube-system
-
-        # add ClusterRoleBinding cluster-admin
         kubectl create clusterrolebinding cluster-admin:kube-system:admin \
                 --serviceaccount=kube-system:admin \
                 --clusterrole=cluster-admin
@@ -895,12 +923,10 @@ apply_dashboard() {
     waiting 2
 
     if [ "${ROOT_DOMAIN}" == "" ]; then
-        echo
         kubectl get pod -n kube-system | grep -E 'NAME|kubernetes-dashboard'
         echo
         kubectl get svc -n kube-system -o wide | grep -E 'NAME|kubernetes-dashboard'
     else
-        echo
         kubectl get pod -n kube-system | grep -E 'NAME|kubernetes-dashboard'
         echo
         kubectl get ing -n kube-system -o wide | grep -E 'NAME|kubernetes-dashboard'
@@ -920,7 +946,6 @@ apply_heapster() {
     # git_checkout ${GIT_USER} ${GIT_NAME} release-1.5
 
     if [ "${ROOT_DOMAIN}" == "" ]; then
-        echo
         kubectl apply -f ${SHELL_DIR}/addons/heapster/
     else
         ADDON=/tmp/grafana.yml
@@ -934,17 +959,15 @@ apply_heapster() {
 
         sed -i -e "s@grafana.apps.nalbam.com@${DOMAIN}@g" ${ADDON}
 
-        echo
         print "${DOMAIN}"
-
         echo
+
         kubectl apply -f ${SHELL_DIR}/addons/heapster/
         kubectl apply -f ${ADDON}
     fi
 
     waiting 2
 
-    echo
     kubectl get pod -n kube-system | grep -E 'NAME|heapster'
 
     press_enter
@@ -957,12 +980,10 @@ apply_metrics_server() {
 
     # git_checkout ${GIT_USER} ${GIT_NAME}
 
-    echo
     kubectl apply -f ${SHELL_DIR}/addons/metrics-server/
 
     waiting 2
 
-    echo
     kubectl get pod -n kube-system | grep -E 'NAME|metrics-server'
     echo
     kubectl get hpa
@@ -987,12 +1008,10 @@ apply_cluster_autoscaler() {
     sed -i -e "s@us-east-1@${AWS_REGION}@g" "${ADDON}"
     sed -i -e "s@<YOUR CLUSTER NAME>@${KOPS_CLUSTER_NAME}@g" "${ADDON}"
 
-    echo
     kubectl apply -f ${ADDON}
 
     waiting 2
 
-    echo
     kubectl get pod -n kube-system | grep -E 'NAME|cluster-autoscaler'
     echo
     kubectl get node
@@ -1001,21 +1020,63 @@ apply_cluster_autoscaler() {
     addons_menu
 }
 
+helm_init() {
+    TILLER=$(kubectl get serviceaccount -n kube-system | grep 'tiller' | wc -l)
+
+    if [ "${TILLER}" == "0" ]; then
+        kubectl create serviceaccount tiller -n kube-system
+        echo
+    fi
+
+    ROLL=$(kubectl get clusterrolebinding | grep 'cluster-admin:kube-system:tiller' | wc -l)
+
+    if [ "${ROLL}" == "0" ]; then
+        kubectl create clusterrolebinding cluster-admin:kube-system:tiller --clusterrole=cluster-admin --serviceaccount=kube-system:tiller
+        echo
+    fi
+
+    helm init --upgrade --service-account=tiller
+
+    press_enter
+    helm_menu
+}
+
+helm_uninit() {
+    kubectl delete deployment tiller-deploy -n kube-system
+    echo
+    kubectl delete clusterrolebinding tiller
+    echo
+    kubectl delete serviceaccount tiller -n kube-system
+
+    press_enter
+    helm_menu
+}
+
+helm_devops() {
+
+    press_enter
+    helm_menu
+}
+
+helm_monitor() {
+
+    press_enter
+    helm_menu
+}
+
 apply_redis_master() {
     ADDON=/tmp/sample-redis.yml
 
     get_template sample/sample-redis.yml ${ADDON}
 
-    echo
     kubectl apply -f ${ADDON}
 
     waiting 2
 
-    echo
     kubectl get pod,svc -n default
 
     press_enter
-    addons_menu
+    sample_menu
 }
 
 apply_sample_app() {
@@ -1033,26 +1094,25 @@ apply_sample_app() {
         get_template sample/${APP_NAME}-ing.yml ${ADDON}
 
         DEFAULT="${APP_NAME}.${BASE_DOMAIN}"
+
         question "Enter your ${APP_NAME} domain [${DEFAULT}] : "
 
         DOMAIN=${ANSWER:-${DEFAULT}}
 
         sed -i -e "s@${APP_NAME}.apps.nalbam.com@${DOMAIN}@g" ${ADDON}
 
-        echo
         print "${DOMAIN}"
+        echo
     fi
 
-    echo
     kubectl apply -f ${ADDON}
 
     waiting 2
 
-    echo
     kubectl get pod,svc,ing -n default
 
     press_enter
-    addons_menu
+    sample_menu
 }
 
 get_template() {
