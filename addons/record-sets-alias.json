@@ -3,11 +3,11 @@
     {
       "Action": "UPSERT",
       "ResourceRecordSet": {
-        "Name": "{{DOMAIN}}",
+        "Name": "DOMAIN",
         "Type": "A",
         "AliasTarget": {
-          "HostedZoneId": "{{ZONE_ID}}",
-          "DNSName": "{{DNS_NAME}}",
+          "HostedZoneId": "ZONE_ID",
+          "DNSName": "DNS_NAME",
           "EvaluateTargetHealth": false
         }
       }

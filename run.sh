@@ -118,7 +118,7 @@ title() {
     echo
 }
 
-prepare() {
+run() {
     logo
 
     mkdir -p ~/.ssh
@@ -529,8 +529,9 @@ read_cluster_list() {
 }
 
 read_cluster_name() {
-    DEFAULT="cluster.k8s.local"
+    WORD=$(cat ${SHELL_DIR}/sample/words.json | jq --raw-output '.data[].word' | shuf -n 1)
 
+    DEFAULT="${WORD}.k8s.local"
     question "Enter your cluster name [${DEFAULT}] : "
 
     KOPS_CLUSTER_NAME=${ANSWER:-${DEFAULT}}
@@ -620,6 +621,8 @@ kops_delete() {
 
     clear_kops_config
 
+    rm -rf ~/.helm ~/.draft
+
     press_enter
     state_store
 }
@@ -640,7 +643,7 @@ get_ingress_elb_name() {
 
         IDX=$(( ${IDX} + 1 ))
 
-        if [ "${IDX}" == "20" ]; then
+        if [ "${IDX}" == "50" ]; then
             ELB_NAME=
             break
         fi
@@ -675,7 +678,7 @@ get_ingress_elb_domain() {
 
         IDX=$(( ${IDX} + 1 ))
 
-        if [ "${IDX}" == "20" ]; then
+        if [ "${IDX}" == "50" ]; then
             ELB_DOMAIN=
             break
         fi
@@ -710,7 +713,7 @@ get_ingress_domain() {
 
         IDX=$(( ${IDX} + 1 ))
 
-        if [ "${IDX}" == "100" ]; then
+        if [ "${IDX}" == "50" ]; then
             BASE_DOMAIN=
             break
         fi
@@ -777,7 +780,9 @@ apply_ingress_controller() {
     BASE_DOMAIN=
 
     if [ "${ROOT_DOMAIN}" != "" ]; then
-        DEFAULT="apps.${ROOT_DOMAIN}"
+        WORD=$(echo ${KOPS_CLUSTER_NAME} | cut -d'.' -f1)
+
+        DEFAULT="${WORD}.${ROOT_DOMAIN}"
         question "Enter your ingress domain [${DEFAULT}] : "
 
         BASE_DOMAIN=${ANSWER:-${DEFAULT}}
@@ -792,6 +797,7 @@ apply_ingress_controller() {
 
         if [ "${SSL_CERT_ARN}" == "" ]; then
             set_record_cname
+            echo
         fi
         if [ "${SSL_CERT_ARN}" == "" ]; then
             error "Certificate ARN does not exists. [*.${BASE_DOMAIN}][${REGION}]"
@@ -818,8 +824,10 @@ apply_ingress_controller() {
         get_ingress_domain
     else
         get_ingress_elb_name
+        echo
 
         set_record_alias
+        echo
     fi
 
     save_kops_config
@@ -837,6 +845,8 @@ set_record_cname() {
     # request certificate
     SSL_CERT_ARN=$(aws acm request-certificate --domain-name "*.${BASE_DOMAIN}" --validation-method DNS | grep CertificateArn | cut -d'"' -f4)
 
+    print "Request Certificate..."
+
     waiting 2
 
     # domain validate
@@ -851,8 +861,8 @@ set_record_cname() {
     get_template addons/record-sets-cname.json ${RECORD}
 
     # replace
-    sed -i -e "s@{{DOMAIN}}@${CERT_DNS_NAME}@g" "${RECORD}"
-    sed -i -e "s@{{DNS_NAME}}@${CERT_DNS_VALUE}@g" "${RECORD}"
+    sed -i -e "s/DOMAIN/${CERT_DNS_NAME}/g" ${RECORD}
+    sed -i -e "s/DNS_NAME/${CERT_DNS_VALUE}/g" ${RECORD}
 
     cat ${RECORD}
 
@@ -873,9 +883,9 @@ set_record_alias() {
     get_template addons/record-sets-alias.json ${RECORD}
 
     # replace
-    sed -i -e "s@{{DOMAIN}}@*.${BASE_DOMAIN}@g" "${RECORD}"
-    sed -i -e "s@{{ZONE_ID}}@${ELB_ZONE_ID}@g" "${RECORD}"
-    sed -i -e "s@{{DNS_NAME}}@${ELB_DNS_NAME}@g" "${RECORD}"
+    sed -i -e "s/DOMAIN/*.${BASE_DOMAIN}/g" ${RECORD}
+    sed -i -e "s/ZONE_ID/${ELB_ZONE_ID}/g" ${RECORD}
+    sed -i -e "s/DNS_NAME/${ELB_DNS_NAME}/g" ${RECORD}
 
     cat ${RECORD}
 
@@ -901,7 +911,7 @@ apply_dashboard() {
 
         DOMAIN=${ANSWER:-${DEFAULT}}
 
-        sed -i -e "s@dashboard.apps.nalbam.com@${DOMAIN}@g" ${ADDON}
+        sed -i -e "s/dashboard.apps.nalbam.com/${DOMAIN}/g" ${ADDON}
 
         print "${DOMAIN}"
         echo
@@ -957,7 +967,7 @@ apply_heapster() {
 
         DOMAIN=${ANSWER:-${DEFAULT}}
 
-        sed -i -e "s@grafana.apps.nalbam.com@${DOMAIN}@g" ${ADDON}
+        sed -i -e "s/grafana.apps.nalbam.com/${DOMAIN}/g" ${ADDON}
 
         print "${DOMAIN}"
         echo
@@ -1005,8 +1015,8 @@ apply_cluster_autoscaler() {
     AWS_REGION=${REGION}
     GROUP_NAME="nodes.${KOPS_CLUSTER_NAME}"
 
-    sed -i -e "s@us-east-1@${AWS_REGION}@g" "${ADDON}"
-    sed -i -e "s@<YOUR CLUSTER NAME>@${KOPS_CLUSTER_NAME}@g" "${ADDON}"
+    sed -i -e "s/us-east-1/${AWS_REGION}/g" "${ADDON}"
+    sed -i -e "s/<YOUR CLUSTER NAME>/${KOPS_CLUSTER_NAME}/g" "${ADDON}"
 
     kubectl apply -f ${ADDON}
 
@@ -1094,12 +1104,11 @@ apply_sample_app() {
         get_template sample/${APP_NAME}-ing.yml ${ADDON}
 
         DEFAULT="${APP_NAME}.${BASE_DOMAIN}"
-
         question "Enter your ${APP_NAME} domain [${DEFAULT}] : "
 
         DOMAIN=${ANSWER:-${DEFAULT}}
 
-        sed -i -e "s@${APP_NAME}.apps.nalbam.com@${DOMAIN}@g" ${ADDON}
+        sed -i -e "s/${APP_NAME}.apps.nalbam.com/${DOMAIN}/g" ${ADDON}
 
         print "${DOMAIN}"
         echo
@@ -1158,7 +1167,9 @@ install_tools() {
 
 kops_exit() {
     echo
+    print "See you soon!"
+    echo
     exit 0
 }
 
-prepare
+run
