@@ -8,7 +8,7 @@ controller:
   service:
     annotations:
       # replace with the correct value of the generated certificate in the AWS console
-      service.beta.kubernetes.io/aws-load-balancer-ssl-cert: arn:aws:acm:ap-northeast-2:759871273906:certificate/6f3572a9-7489-4ad5-98f6-2698003d757a
+      service.beta.kubernetes.io/aws-load-balancer-ssl-cert: ""
       # the backend instances are HTTP
       service.beta.kubernetes.io/aws-load-balancer-backend-protocol: "http"
       # Map port 443
