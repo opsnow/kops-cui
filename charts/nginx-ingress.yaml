@@ -1,0 +1,20 @@
+controller:
+  autoscaling:
+    enabled: true
+    minReplicas: 2
+    maxReplicas: 9
+    targetCPUUtilizationPercentage: 50
+    targetMemoryUtilizationPercentage: 50
+  service:
+    annotations:
+      # replace with the correct value of the generated certificate in the AWS console
+      service.beta.kubernetes.io/aws-load-balancer-ssl-cert: arn:aws:acm:ap-northeast-2:759871273906:certificate/6f3572a9-7489-4ad5-98f6-2698003d757a
+      # the backend instances are HTTP
+      service.beta.kubernetes.io/aws-load-balancer-backend-protocol: "http"
+      # Map port 443
+      service.beta.kubernetes.io/aws-load-balancer-ssl-ports: "https"
+      # Increase the ELB idle timeout to avoid issues with WebSockets or Server-Sent Events.
+      service.beta.kubernetes.io/aws-load-balancer-connection-idle-timeout: '3600'
+    targetPorts:
+      http: http
+      https: http

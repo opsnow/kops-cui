@@ -1,0 +1,20 @@
+nameOverride: kubernetes-dashboard
+
+# extraArgs:
+#   - --enable-insecure-login=true
+#   - --insecure-bind-address=0.0.0.0
+#   - --insecure-port=9090
+
+service:
+  type: LoadBalancer
+  externalPort: 443
+
+# ingress:
+#   enabled: true
+#   path: /
+#   hosts:
+#     - dashboard.domain.com
+
+rbac:
+  create: true
+  clusterAdminRole: true

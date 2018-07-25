@@ -251,13 +251,13 @@ cluster_menu() {
 addons_menu() {
     title
 
-    print "1. Ingress Controller"
-    print "2. Dashboard"
-    print "3. Heapster (deprecated)"
-    print "4. Metrics Server"
-    print "5. Cluster Autoscaler"
+    print "1. Helm init"
     echo
-    print "6. Helm.."
+    print "2. Ingress Controller"
+    print "3. Dashboard"
+    print "4. Heapster (deprecated)"
+    print "5. Metrics Server"
+    print "6. Cluster Autoscaler"
     echo
     print "7. Sample.."
 
@@ -265,22 +265,22 @@ addons_menu() {
 
     case ${ANSWER} in
         1)
-            apply_ingress_controller
+            helm_init
             ;;
         2)
-            apply_dashboard
+            apply_ingress_controller
             ;;
         3)
-            apply_heapster
+            apply_dashboard
             ;;
         4)
-            apply_metrics_server
+            apply_heapster
             ;;
         5)
-            apply_cluster_autoscaler
+            apply_metrics_server
             ;;
         6)
-            helm_menu
+            apply_cluster_autoscaler
             ;;
         7)
             sample_menu
@@ -529,7 +529,7 @@ read_cluster_list() {
 }
 
 read_cluster_name() {
-    WORD=$(cat ${SHELL_DIR}/sample/words.txt | shuf -n 1)
+    WORD=$(cat ${SHELL_DIR}/addons/words.txt | shuf -n 1)
 
     DEFAULT="${WORD}.k8s.local"
     question "Enter your cluster name [${DEFAULT}] : "
@@ -630,28 +630,10 @@ kops_delete() {
 get_ingress_elb_name() {
     ELB_NAME=
 
-    progress start
+    get_ingress_elb_domain
+    echo
 
-    IDX=0
-    while [ 1 ]; do
-        # ingress-nginx 의 ELB Name 을 획득
-        ELB_NAME=$(kubectl get svc -n kube-system -o wide | grep ingress-nginx | grep LoadBalancer | awk '{print $4}' | cut -d'-' -f1)
-
-        if [ "${ELB_NAME}" != "" ] && [ "${ELB_NAME}" != "<pending>" ]; then
-            break
-        fi
-
-        IDX=$(( ${IDX} + 1 ))
-
-        if [ "${IDX}" == "50" ]; then
-            ELB_NAME=
-            break
-        fi
-
-        progress
-    done
-
-    progress end
+    ELB_NAME=$(echo ${ELB_DOMAIN} | cut -d'-' -f1)
 
     print ${ELB_NAME}
 }
@@ -670,7 +652,7 @@ get_ingress_elb_domain() {
     IDX=0
     while [ 1 ]; do
         # ingress-nginx 의 ELB Domain 을 획득
-        ELB_DOMAIN=$(kubectl get svc -n kube-system -o wide | grep ingress-nginx | grep amazonaws | awk '{print $4}')
+        ELB_DOMAIN=$(kubectl get svc --all-namespaces -o wide | grep nginx | grep ingress | grep LoadBalancer | awk '{print $5}' | head -1)
 
         if [ "${ELB_DOMAIN}" != "" ] && [ "${ELB_DOMAIN}" != "<pending>" ]; then
             break
@@ -770,10 +752,7 @@ git_checkout() {
 }
 
 apply_ingress_controller() {
-    # GIT_USER=kubernetes
-    # GIT_NAME=ingress-nginx
-
-    # git_checkout ${GIT_USER} ${GIT_NAME}
+    NAMESPACE="kube-ingress"
 
     read_root_domain
 
@@ -787,10 +766,6 @@ apply_ingress_controller() {
 
         BASE_DOMAIN=${ANSWER:-${DEFAULT}}
     fi
-
-    ADDON=/tmp/ingress-nginx-service.yml
-
-    cp -rf ${SHELL_DIR}/addons/ingress-nginx/service-l7.yaml ${ADDON}
 
     if [ "${BASE_DOMAIN}" != "" ]; then
         get_ssl_cert_arn
@@ -806,16 +781,26 @@ apply_ingress_controller() {
         print "CertificateArn: ${SSL_CERT_ARN}"
         echo
 
-        sed -i -e "s@arn:aws:acm:us-west-2:XXXXXXXX:certificate/XXXXXX-XXXXXXX-XXXXXXX-XXXXXXXX@${SSL_CERT_ARN}@g" ${ADDON}
+        sed -i -e "s@aws-load-balancer-ssl-cert:.*@aws-load-balancer-ssl-cert: ${SSL_CERT_ARN}@" ${SHELL_DIR}/charts/nginx-ingress.yaml
     fi
 
-    kubectl apply -f ${SHELL_DIR}/addons/ingress-nginx/mandatory.yaml
-    kubectl apply -f ${SHELL_DIR}/addons/ingress-nginx/patch-configmap-l7.yaml
-    kubectl apply -f ${ADDON}
+    create_namespace ${NAMESPACE}
+
+    COUNT=$(helm ls | grep nginx-ingress | grep ${NAMESPACE} | wc -l)
+
+    if [ "${COUNT}" == "0" ]; then
+        helm install stable/nginx-ingress --name nginx-ingress --namespace ${NAMESPACE} \
+                     -f "${SHELL_DIR}/charts/nginx-ingress.yaml"
+    else
+        helm upgrade nginx-ingress stable/nginx-ingress \
+                     -f "${SHELL_DIR}/charts/nginx-ingress.yaml"
+    fi
 
     waiting 2
 
-    kubectl get pod,svc -n kube-system -o wide
+    helm history nginx-ingress
+    echo
+    kubectl get pod,svc -n ${NAMESPACE}
     echo
 
     print "Pending ELB..."
@@ -878,6 +863,10 @@ set_record_alias() {
     # Route53 에서 해당 도메인의 Hosted Zone ID 를 획득
     ZONE_ID=$(aws route53 list-hosted-zones | ROOT_DOMAIN="${ROOT_DOMAIN}." jq '.HostedZones[] | select(.Name==env.ROOT_DOMAIN)' | grep '"Id"' | cut -d'"' -f4 | cut -d'/' -f3)
 
+    if [ "${ZONE_ID}" == "" ]; then
+        return
+    fi
+
     # record sets
     RECORD=/tmp/record-sets-alias.json
     get_template addons/record-sets-alias.json ${RECORD}
@@ -894,107 +883,79 @@ set_record_alias() {
 }
 
 apply_dashboard() {
-    # GIT_USER=kubernetes
-    # GIT_NAME=dashboard
+    NAMESPACE="kube-system"
 
-    # git_checkout ${GIT_USER} ${GIT_NAME}
+    # create_namespace ${NAMESPACE}
 
-    if [ "${ROOT_DOMAIN}" == "" ]; then
-        kubectl apply -f ${SHELL_DIR}/addons/dashboard/secure.yml
+    COUNT=$(helm ls | grep kubernetes-dashboard | grep ${NAMESPACE} | wc -l)
+
+    if [ "${COUNT}" == "0" ]; then
+        helm install stable/kubernetes-dashboard --name kubernetes-dashboard --namespace ${NAMESPACE} \
+                     -f "${SHELL_DIR}/charts/dashboard.yaml"
     else
-        ADDON=/tmp/dashboard.yml
-
-        get_template addons/dashboard.yml ${ADDON}
-
-        DEFAULT="dashboard.${BASE_DOMAIN}"
-        question "Enter your dashboard domain [${DEFAULT}] : "
-
-        DOMAIN=${ANSWER:-${DEFAULT}}
-
-        sed -i -e "s/dashboard.apps.nalbam.com/${DOMAIN}/g" ${ADDON}
-
-        print "${DOMAIN}"
-        echo
-
-        kubectl apply -f ${SHELL_DIR}/addons/dashboard/insecure.yml
-        kubectl apply -f ${ADDON}
-    fi
-
-    SECRET=$(kubectl get secret -n kube-system | grep admin-token | awk '{print $1}')
-
-    if [ "${SECRET}" == "" ]; then
-        # dashboard admin
-        kubectl create serviceaccount admin -n kube-system
-        kubectl create clusterrolebinding cluster-admin:kube-system:admin \
-                --serviceaccount=kube-system:admin \
-                --clusterrole=cluster-admin
+        helm upgrade kubernetes-dashboard stable/kubernetes-dashboard \
+                     -f "${SHELL_DIR}/charts/dashboard.yaml"
     fi
 
     waiting 2
 
-    if [ "${ROOT_DOMAIN}" == "" ]; then
-        kubectl get pod -n kube-system | grep -E 'NAME|kubernetes-dashboard'
-        echo
-        kubectl get svc -n kube-system -o wide | grep -E 'NAME|kubernetes-dashboard'
-    else
-        kubectl get pod -n kube-system | grep -E 'NAME|kubernetes-dashboard'
-        echo
-        kubectl get ing -n kube-system -o wide | grep -E 'NAME|kubernetes-dashboard'
-    fi
-
+    helm history kubernetes-dashboard
     echo
-    kubectl describe secret -n kube-system $(kubectl get secret -n kube-system | grep admin-token | awk '{print $1}')
+    kubectl get pod -n ${NAMESPACE} | grep -E 'NAME|kubernetes-dashboard'
+    echo
+    kubectl get svc -n ${NAMESPACE} -o wide | grep -E 'NAME|kubernetes-dashboard'
+    echo
+    kubectl describe secret -n ${NAMESPACE} $(kubectl get secret -n ${NAMESPACE} | grep kubernetes-dashboard-token | awk '{print $1}')
 
     press_enter
     addons_menu
 }
 
 apply_heapster() {
-    # GIT_USER=kubernetes
-    # GIT_NAME=heapster
+    NAMESPACE="kube-system"
 
-    # git_checkout ${GIT_USER} ${GIT_NAME} release-1.5
+    # create_namespace ${NAMESPACE}
 
-    if [ "${ROOT_DOMAIN}" == "" ]; then
-        kubectl apply -f ${SHELL_DIR}/addons/heapster/
+    COUNT=$(helm ls | grep heapster | grep ${NAMESPACE} | wc -l)
+
+    if [ "${COUNT}" == "0" ]; then
+        helm install stable/heapster --name heapster --namespace ${NAMESPACE}
     else
-        ADDON=/tmp/grafana.yml
-
-        get_template addons/grafana.yml ${ADDON}
-
-        DEFAULT="grafana.${BASE_DOMAIN}"
-        question "Enter your grafana domain [${DEFAULT}] : "
-
-        DOMAIN=${ANSWER:-${DEFAULT}}
-
-        sed -i -e "s/grafana.apps.nalbam.com/${DOMAIN}/g" ${ADDON}
-
-        print "${DOMAIN}"
-        echo
-
-        kubectl apply -f ${SHELL_DIR}/addons/heapster/
-        kubectl apply -f ${ADDON}
+        helm upgrade heapster stable/heapster
     fi
 
     waiting 2
 
-    kubectl get pod -n kube-system | grep -E 'NAME|heapster'
+    helm history heapster
+    echo
+    kubectl get pod -n ${NAMESPACE} | grep -E 'NAME|heapster'
+    echo
+    kubectl get svc -n ${NAMESPACE} | grep -E 'NAME|heapster'
 
     press_enter
     addons_menu
 }
 
 apply_metrics_server() {
-    # GIT_USER=kubernetes-incubator
-    # GIT_NAME=metrics-server
+    NAMESPACE="kube-system"
 
-    # git_checkout ${GIT_USER} ${GIT_NAME}
+    # create_namespace ${NAMESPACE}
 
-    kubectl apply -f ${SHELL_DIR}/addons/metrics-server/
+    COUNT=$(helm ls | grep metrics-server | grep ${NAMESPACE} | wc -l)
+
+    if [ "${COUNT}" == "0" ]; then
+        helm install stable/metrics-server --name metrics-server --namespace ${NAMESPACE}
+    else
+        helm upgrade metrics-server stable/metrics-server
+    fi
 
     waiting 2
 
-    kubectl get pod -n kube-system | grep -E 'NAME|metrics-server'
+    helm history metrics-server
+    echo
+    kubectl get pod -n ${NAMESPACE} | grep -E 'NAME|metrics-server'
+    echo
+    kubectl get svc -n ${NAMESPACE} | grep -E 'NAME|metrics-server'
     echo
     kubectl get hpa
 
@@ -1003,28 +964,31 @@ apply_metrics_server() {
 }
 
 apply_cluster_autoscaler() {
-    # GIT_USER=kubernetes
-    # GIT_NAME=autoscaler
+    NAMESPACE="kube-system"
 
-    # git_checkout ${GIT_USER} ${GIT_NAME}
+    # create_namespace ${NAMESPACE}
 
-    ADDON=/tmp/cluster-autoscaler.yml
+    COUNT=$(helm ls | grep cluster-autoscaler | grep ${NAMESPACE} | wc -l)
 
-    get_template addons/cluster-autoscaler/deploy.yml ${ADDON}
-
-    AWS_REGION=${REGION}
-    GROUP_NAME="nodes.${KOPS_CLUSTER_NAME}"
-
-    sed -i -e "s/us-east-1/${AWS_REGION}/g" "${ADDON}"
-    sed -i -e "s/<YOUR CLUSTER NAME>/${KOPS_CLUSTER_NAME}/g" "${ADDON}"
-
-    kubectl apply -f ${ADDON}
+    if [ "${COUNT}" == "0" ]; then
+        helm install stable/cluster-autoscaler --name cluster-autoscaler --namespace ${NAMESPACE} \
+             --values "${SHELL_DIR}/charts/cluster-autoscaler.yaml" \
+             --set "autoDiscovery.clusterName=${KOPS_CLUSTER_NAME}" \
+             --set "awsRegion=${REGION}"
+    else
+        helm upgrade cluster-autoscaler stable/cluster-autoscaler \
+             --values "${SHELL_DIR}/charts/cluster-autoscaler.yaml" \
+             --set "autoDiscovery.clusterName=${KOPS_CLUSTER_NAME}" \
+             --set "awsRegion=${REGION}"
+    fi
 
     waiting 2
 
-    kubectl get pod -n kube-system | grep -E 'NAME|cluster-autoscaler'
+    helm history cluster-autoscaler
     echo
-    kubectl get node
+    kubectl get pod -n ${NAMESPACE} | grep -E 'NAME|cluster-autoscaler'
+    echo
+    kubectl get svc -n ${NAMESPACE} | grep -E 'NAME|cluster-autoscaler'
 
     press_enter
     addons_menu
@@ -1047,8 +1011,12 @@ helm_init() {
 
     helm init --upgrade --service-account=tiller
 
+    waiting 2
+
+    kubectl get pod,svc -n kube-system
+
     press_enter
-    helm_menu
+    addons_menu
 }
 
 helm_uninit() {
@@ -1057,21 +1025,10 @@ helm_uninit() {
     kubectl delete clusterrolebinding tiller
     echo
     kubectl delete serviceaccount tiller -n kube-system
-
-    press_enter
-    helm_menu
 }
 
-helm_devops() {
-
-    press_enter
-    helm_menu
-}
-
-helm_monitor() {
-
-    press_enter
-    helm_menu
+create_namespace() {
+    kubectl get namespace $1 > /dev/null 2>&1 || kubectl create namespace $1
 }
 
 apply_redis_master() {
