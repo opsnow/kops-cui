@@ -529,7 +529,7 @@ read_cluster_list() {
 }
 
 read_cluster_name() {
-    WORD=$(cat ${SHELL_DIR}/sample/words-starwars.json | jq --raw-output '.data[].word' | shuf -n 1)
+    WORD=$(cat ${SHELL_DIR}/sample/words.txt | shuf -n 1)
 
     DEFAULT="${WORD}.k8s.local"
     question "Enter your cluster name [${DEFAULT}] : "
