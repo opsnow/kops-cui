@@ -767,6 +767,9 @@ apply_ingress_controller() {
         BASE_DOMAIN=${ANSWER:-${DEFAULT}}
     fi
 
+    CHART=/tmp/nginx-ingress.yaml
+    get_template charts/nginx-ingress.yaml ${CHART}
+
     if [ "${BASE_DOMAIN}" != "" ]; then
         get_ssl_cert_arn
 
@@ -781,7 +784,7 @@ apply_ingress_controller() {
         print "CertificateArn: ${SSL_CERT_ARN}"
         echo
 
-        sed -i -e "s@aws-load-balancer-ssl-cert:.*@aws-load-balancer-ssl-cert: ${SSL_CERT_ARN}@" ${SHELL_DIR}/charts/nginx-ingress.yaml
+        sed -i -e "s@aws-load-balancer-ssl-cert:.*@aws-load-balancer-ssl-cert: ${SSL_CERT_ARN}@" ${CHART}
     fi
 
     create_namespace ${NAMESPACE}
@@ -789,11 +792,9 @@ apply_ingress_controller() {
     COUNT=$(helm ls | grep nginx-ingress | grep ${NAMESPACE} | wc -l)
 
     if [ "${COUNT}" == "0" ]; then
-        helm install stable/nginx-ingress --name nginx-ingress --namespace ${NAMESPACE} \
-                     -f "${SHELL_DIR}/charts/nginx-ingress.yaml"
+        helm install stable/nginx-ingress --name nginx-ingress --namespace ${NAMESPACE} -f ${CHART}
     else
-        helm upgrade nginx-ingress stable/nginx-ingress \
-                     -f "${SHELL_DIR}/charts/nginx-ingress.yaml"
+        helm upgrade nginx-ingress stable/nginx-ingress -f ${CHART}
     fi
 
     waiting 2
@@ -885,16 +886,17 @@ set_record_alias() {
 apply_dashboard() {
     NAMESPACE="kube-system"
 
+    CHART=/tmp/dashboard.yaml
+    get_template charts/dashboard.yaml ${CHART}
+
     # create_namespace ${NAMESPACE}
 
     COUNT=$(helm ls | grep kubernetes-dashboard | grep ${NAMESPACE} | wc -l)
 
     if [ "${COUNT}" == "0" ]; then
-        helm install stable/kubernetes-dashboard --name kubernetes-dashboard --namespace ${NAMESPACE} \
-                     -f "${SHELL_DIR}/charts/dashboard.yaml"
+        helm install stable/kubernetes-dashboard --name kubernetes-dashboard --namespace ${NAMESPACE} -f ${CHART}
     else
-        helm upgrade kubernetes-dashboard stable/kubernetes-dashboard \
-                     -f "${SHELL_DIR}/charts/dashboard.yaml"
+        helm upgrade kubernetes-dashboard stable/kubernetes-dashboard -f ${CHART}
     fi
 
     waiting 2
@@ -966,18 +968,19 @@ apply_metrics_server() {
 apply_cluster_autoscaler() {
     NAMESPACE="kube-system"
 
+    CHART=/tmp/cluster-autoscaler.yaml
+    get_template charts/cluster-autoscaler.yaml ${CHART}
+
     # create_namespace ${NAMESPACE}
 
     COUNT=$(helm ls | grep cluster-autoscaler | grep ${NAMESPACE} | wc -l)
 
     if [ "${COUNT}" == "0" ]; then
-        helm install stable/cluster-autoscaler --name cluster-autoscaler --namespace ${NAMESPACE} \
-             --values "${SHELL_DIR}/charts/cluster-autoscaler.yaml" \
+        helm install stable/cluster-autoscaler --name cluster-autoscaler --namespace ${NAMESPACE} -f ${CHART} \
              --set "autoDiscovery.clusterName=${KOPS_CLUSTER_NAME}" \
              --set "awsRegion=${REGION}"
     else
-        helm upgrade cluster-autoscaler stable/cluster-autoscaler \
-             --values "${SHELL_DIR}/charts/cluster-autoscaler.yaml" \
+        helm upgrade cluster-autoscaler stable/cluster-autoscaler -f ${CHART} \
              --set "autoDiscovery.clusterName=${KOPS_CLUSTER_NAME}" \
              --set "awsRegion=${REGION}"
     fi
@@ -995,17 +998,21 @@ apply_cluster_autoscaler() {
 }
 
 helm_init() {
-    TILLER=$(kubectl get serviceaccount -n kube-system | grep 'tiller' | wc -l)
+    NAMESPACE="kube-system"
+
+    # create_namespace ${NAMESPACE}
+
+    TILLER=$(kubectl get serviceaccount -n ${NAMESPACE} | grep 'tiller' | wc -l)
 
     if [ "${TILLER}" == "0" ]; then
-        kubectl create serviceaccount tiller -n kube-system
+        kubectl create serviceaccount tiller -n ${NAMESPACE}
         echo
     fi
 
-    ROLL=$(kubectl get clusterrolebinding | grep 'cluster-admin:kube-system:tiller' | wc -l)
+    ROLL=$(kubectl get clusterrolebinding | grep 'cluster-admin:${NAMESPACE}:tiller' | wc -l)
 
     if [ "${ROLL}" == "0" ]; then
-        kubectl create clusterrolebinding cluster-admin:kube-system:tiller --clusterrole=cluster-admin --serviceaccount=kube-system:tiller
+        kubectl create clusterrolebinding cluster-admin:${NAMESPACE}:tiller --clusterrole=cluster-admin --serviceaccount=${NAMESPACE}:tiller
         echo
     fi
 
@@ -1013,18 +1020,20 @@ helm_init() {
 
     waiting 2
 
-    kubectl get pod,svc -n kube-system
+    kubectl get pod,svc -n ${NAMESPACE}
 
     press_enter
     addons_menu
 }
 
 helm_uninit() {
-    kubectl delete deployment tiller-deploy -n kube-system
+    NAMESPACE="kube-system"
+
+    kubectl delete deployment tiller-deploy -n ${NAMESPACE}
     echo
     kubectl delete clusterrolebinding tiller
     echo
-    kubectl delete serviceaccount tiller -n kube-system
+    kubectl delete serviceaccount tiller -n ${NAMESPACE}
 }
 
 create_namespace() {
