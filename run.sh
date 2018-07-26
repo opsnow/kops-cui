@@ -17,7 +17,7 @@ ROOT_DOMAIN=
 BASE_DOMAIN=
 
 cloud=aws
-master_size=t2.medium
+master_size=m4.large
 master_count=1
 master_zones=
 node_size=m4.large
@@ -529,7 +529,8 @@ read_cluster_list() {
 }
 
 read_cluster_name() {
-    WORD=$(cat ${SHELL_DIR}/addons/words.txt | shuf -n 1)
+    # WORD=$(cat ${SHELL_DIR}/addons/words.txt | shuf -n 1)
+    WORD="demo"
 
     DEFAULT="${WORD}.k8s.local"
     question "Enter your cluster name [${DEFAULT}] : "
@@ -627,32 +628,19 @@ kops_delete() {
     state_store
 }
 
-get_ingress_elb_name() {
-    ELB_NAME=
-
-    get_ingress_elb_domain
-    echo
-
-    ELB_NAME=$(echo ${ELB_DOMAIN} | cut -d'-' -f1)
-
-    print ${ELB_NAME}
-}
-
-get_ingress_elb_domain() {
+get_elb_domain() {
     ELB_DOMAIN=
-
-    INGRESS=$(kubectl get ns | grep kube-system | wc -l | xargs)
-
-    if [ "${INGRESS}" == "0" ]; then
-        return
-    fi
 
     progress start
 
     IDX=0
     while [ 1 ]; do
-        # ingress-nginx 의 ELB Domain 을 획득
-        ELB_DOMAIN=$(kubectl get svc --all-namespaces -o wide | grep nginx | grep ingress | grep LoadBalancer | awk '{print $5}' | head -1)
+        # ELB Domain 을 획득
+        if [ "$2" == "" ]; then
+            ELB_DOMAIN=$(kubectl get svc --all-namespaces -o wide | grep LoadBalancer | grep $1 | awk '{print $5}' | head -1)
+        else
+            ELB_DOMAIN=$(kubectl get svc -n $2 -o wide | grep LoadBalancer | grep $1 | awk '{print $4}' | head -1)
+        fi
 
         if [ "${ELB_DOMAIN}" != "" ] && [ "${ELB_DOMAIN}" != "<pending>" ]; then
             break
@@ -660,7 +648,7 @@ get_ingress_elb_domain() {
 
         IDX=$(( ${IDX} + 1 ))
 
-        if [ "${IDX}" == "50" ]; then
+        if [ "${IDX}" == "100" ]; then
             ELB_DOMAIN=
             break
         fi
@@ -673,10 +661,21 @@ get_ingress_elb_domain() {
     print ${ELB_DOMAIN}
 }
 
-get_ingress_domain() {
+get_ingress_elb_name() {
+    ELB_NAME=
+
+    get_elb_domain "nginx-ingress"
+    echo
+
+    ELB_NAME=$(echo ${ELB_DOMAIN} | cut -d'-' -f1)
+
+    print ${ELB_NAME}
+}
+
+get_ingress_nip_io() {
     ELB_IP=
 
-    get_ingress_elb_domain
+    get_elb_domain "nginx-ingress"
 
     if [ "${ELB_DOMAIN}" == "" ]; then
         return
@@ -695,7 +694,7 @@ get_ingress_domain() {
 
         IDX=$(( ${IDX} + 1 ))
 
-        if [ "${IDX}" == "50" ]; then
+        if [ "${IDX}" == "100" ]; then
             BASE_DOMAIN=
             break
         fi
@@ -789,7 +788,7 @@ apply_ingress_controller() {
 
     create_namespace ${NAMESPACE}
 
-    COUNT=$(helm ls | grep nginx-ingress | grep ${NAMESPACE} | wc -l)
+    COUNT=$(helm ls | grep nginx-ingress | grep ${NAMESPACE} | wc -l | xargs)
 
     if [ "${COUNT}" == "0" ]; then
         helm install stable/nginx-ingress --name nginx-ingress --namespace ${NAMESPACE} -f ${CHART}
@@ -807,7 +806,7 @@ apply_ingress_controller() {
     print "Pending ELB..."
 
     if [ "${BASE_DOMAIN}" == "" ]; then
-        get_ingress_domain
+        get_ingress_nip_io
     else
         get_ingress_elb_name
         echo
@@ -891,7 +890,7 @@ apply_dashboard() {
 
     # create_namespace ${NAMESPACE}
 
-    COUNT=$(helm ls | grep kubernetes-dashboard | grep ${NAMESPACE} | wc -l)
+    COUNT=$(helm ls | grep kubernetes-dashboard | grep ${NAMESPACE} | wc -l | xargs)
 
     if [ "${COUNT}" == "0" ]; then
         helm install stable/kubernetes-dashboard --name kubernetes-dashboard --namespace ${NAMESPACE} -f ${CHART}
@@ -909,6 +908,11 @@ apply_dashboard() {
     echo
     kubectl describe secret -n ${NAMESPACE} $(kubectl get secret -n ${NAMESPACE} | grep kubernetes-dashboard-token | awk '{print $1}')
 
+    get_elb_domain "kubernetes-dashboard" ${NAMESPACE}
+
+    echo
+    print "URL: https://${ELB_DOMAIN}"
+
     press_enter
     addons_menu
 }
@@ -918,7 +922,7 @@ apply_heapster() {
 
     # create_namespace ${NAMESPACE}
 
-    COUNT=$(helm ls | grep heapster | grep ${NAMESPACE} | wc -l)
+    COUNT=$(helm ls | grep heapster | grep ${NAMESPACE} | wc -l | xargs)
 
     if [ "${COUNT}" == "0" ]; then
         helm install stable/heapster --name heapster --namespace ${NAMESPACE}
@@ -943,7 +947,7 @@ apply_metrics_server() {
 
     # create_namespace ${NAMESPACE}
 
-    COUNT=$(helm ls | grep metrics-server | grep ${NAMESPACE} | wc -l)
+    COUNT=$(helm ls | grep metrics-server | grep ${NAMESPACE} | wc -l | xargs)
 
     if [ "${COUNT}" == "0" ]; then
         helm install stable/metrics-server --name metrics-server --namespace ${NAMESPACE}
@@ -973,7 +977,7 @@ apply_cluster_autoscaler() {
 
     # create_namespace ${NAMESPACE}
 
-    COUNT=$(helm ls | grep cluster-autoscaler | grep ${NAMESPACE} | wc -l)
+    COUNT=$(helm ls | grep cluster-autoscaler | grep ${NAMESPACE} | wc -l | xargs)
 
     if [ "${COUNT}" == "0" ]; then
         helm install stable/cluster-autoscaler --name cluster-autoscaler --namespace ${NAMESPACE} -f ${CHART} \
@@ -1002,14 +1006,14 @@ helm_init() {
 
     # create_namespace ${NAMESPACE}
 
-    TILLER=$(kubectl get serviceaccount -n ${NAMESPACE} | grep 'tiller' | wc -l)
+    TILLER=$(kubectl get serviceaccount -n ${NAMESPACE} | grep 'tiller' | wc -l | xargs)
 
     if [ "${TILLER}" == "0" ]; then
         kubectl create serviceaccount tiller -n ${NAMESPACE}
         echo
     fi
 
-    ROLL=$(kubectl get clusterrolebinding | grep 'cluster-admin:${NAMESPACE}:tiller' | wc -l)
+    ROLL=$(kubectl get clusterrolebinding | grep 'cluster-admin' | grep 'tiller' | wc -l | xargs)
 
     if [ "${ROLL}" == "0" ]; then
         kubectl create clusterrolebinding cluster-admin:${NAMESPACE}:tiller --clusterrole=cluster-admin --serviceaccount=${NAMESPACE}:tiller
@@ -1057,7 +1061,7 @@ apply_redis_master() {
 
 apply_sample_app() {
     if [ "${BASE_DOMAIN}" == "" ]; then
-        get_ingress_domain
+        get_ingress_nip_io
     fi
 
     APP_NAME=$1
@@ -1085,6 +1089,14 @@ apply_sample_app() {
     waiting 2
 
     kubectl get pod,svc,ing -n default
+
+    if [ "${BASE_DOMAIN}" == "" ]; then
+        echo
+        print "URL: http://${DOMAIN}"
+    else
+        echo
+        print "URL: https://${DOMAIN}"
+    fi
 
     press_enter
     sample_menu
