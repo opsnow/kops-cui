@@ -1,0 +1,13 @@
+env:
+  open:
+    DISABLE_API: false
+
+ingress:
+  enabled: true
+  hosts:
+    ingress.domain.com:
+      - /
+  annotations:
+    kubernetes.io/ingress.class: nginx
+    nginx.ingress.kubernetes.io/proxy-body-size: 500m
+    ingress.kubernetes.io/proxy-body-size: 500m

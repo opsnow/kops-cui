@@ -79,7 +79,7 @@ metadata:
     app: sample-spring
     dns: route53
   annotations:
-    domainName: "sample-spring.domain.com"
+    domainName: "ingress.domain.com"
     #service.beta.kubernetes.io/aws-load-balancer-ssl-ports: "443"
     #service.beta.kubernetes.io/aws-load-balancer-ssl-cert: "{{SSL_CERT_ARN}}"
     #service.beta.kubernetes.io/aws-load-balancer-backend-protocol: http

@@ -892,8 +892,8 @@ apply_dashboard() {
 
     # create_namespace ${NAMESPACE}
 
-    CHART=/tmp/dashboard.yaml
-    get_template charts/dashboard.yaml ${CHART}
+    CHART=/tmp/kubernetes-dashboard.yaml
+    get_template charts/kubernetes-dashboard.yaml ${CHART}
 
     # kubernetes-dashboard
     COUNT=$(helm ls | grep kubernetes-dashboard | grep ${NAMESPACE} | wc -l | xargs)
@@ -1015,23 +1015,37 @@ apply_monitor() {
 
     create_namespace ${NAMESPACE}
 
+    CHART=/tmp/prometheus.yaml
+    get_template charts/prometheus.yaml ${CHART}
+
+    if [ "${BASE_DOMAIN}" == "" ]; then
+        sed -i -e "s/ClusterIP/LoadBalancer/" ${CHART}
+    else
+        PROMETHEUS="prometheus-${NAMESPACE}.${BASE_DOMAIN}"
+
+        sed -i -e "s/enabled:.*/enabled: true/" ${CHART}
+        sed -i -e "s/ingress.domain.com/${PROMETHEUS}/" ${CHART}
+    fi
+
+    # prometheus
+    COUNT=$(helm ls | grep prometheus | grep ${NAMESPACE} | wc -l | xargs)
+
+    if [ "${COUNT}" == "0" ]; then
+        helm install stable/prometheus --name prometheus --namespace ${NAMESPACE} -f ${CHART}
+    else
+        helm upgrade prometheus stable/prometheus -f ${CHART}
+    fi
+
     CHART=/tmp/grafana.yaml
     get_template charts/grafana.yaml ${CHART}
 
     if [ "${BASE_DOMAIN}" == "" ]; then
-        sed -i -e "s/enabled:.*/enabled: false/" ${CHART}
         sed -i -e "s/ClusterIP/LoadBalancer/" ${CHART}
     else
-        DEFAULT="grafana-${NAMESPACE}.${BASE_DOMAIN}"
-        question "Enter your grafana domain [${DEFAULT}] : "
-
-        DOMAIN=${ANSWER:-${DEFAULT}}
+        GRAFANA="grafana-${NAMESPACE}.${BASE_DOMAIN}"
 
         sed -i -e "s/enabled:.*/enabled: true/" ${CHART}
-        sed -i -e "s/grafana.domain.com/${DOMAIN}/" ${CHART}
-
-        print "${DOMAIN}"
-        echo
+        sed -i -e "s/ingress.domain.com/${GRAFANA}/" ${CHART}
     fi
 
     # grafana
@@ -1043,15 +1057,6 @@ apply_monitor() {
         helm upgrade grafana stable/grafana -f ${CHART}
     fi
 
-    # prometheus
-    COUNT=$(helm ls | grep prometheus | grep ${NAMESPACE} | wc -l | xargs)
-
-    if [ "${COUNT}" == "0" ]; then
-        helm install stable/prometheus --name prometheus --namespace ${NAMESPACE}
-    else
-        helm upgrade prometheus stable/prometheus
-    fi
-
     waiting 2
 
     helm history prometheus
@@ -1061,13 +1066,17 @@ apply_monitor() {
     kubectl get pod,svc,ing -n ${NAMESPACE}
 
     if [ "${BASE_DOMAIN}" == "" ]; then
-        get_elb_domain "grafana" ${NAMESPACE}
-
         echo
+
+        get_elb_domain "prometheus" ${NAMESPACE}
+        print "URL: https://${ELB_DOMAIN}"
+
+        get_elb_domain "grafana" ${NAMESPACE}
         print "URL: https://${ELB_DOMAIN}"
     else
         echo
-        print "URL: https://${DOMAIN}"
+        print "URL: https://${PROMETHEUS}"
+        print "URL: https://${GRAFANA}"
     fi
 
     press_enter
@@ -1158,7 +1167,7 @@ apply_sample_app() {
 
         DOMAIN=${ANSWER:-${DEFAULT}}
 
-        sed -i -e "s/${APP_NAME}.domain.com/${DOMAIN}/g" ${ADDON}
+        sed -i -e "s/ingress.domain.com/${DOMAIN}/g" ${ADDON}
 
         print "${DOMAIN}"
         echo

@@ -11,9 +11,11 @@ service:
 
 # ingress:
 #   enabled: true
+#   annotations:
+#     kubernetes.io/ingress.class: nginx
 #   path: /
 #   hosts:
-#     - dashboard.domain.com
+#     - ingress.domain.com
 
 rbac:
   create: true
