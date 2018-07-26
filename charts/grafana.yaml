@@ -1,6 +1,9 @@
 adminUser: admin
 adminPassword: password
 
+service:
+  type: ClusterIP
+
 ingress:
   enabled: false
   hosts:

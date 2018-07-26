@@ -1020,6 +1020,7 @@ apply_monitor() {
 
     if [ "${BASE_DOMAIN}" == "" ]; then
         sed -i -e "s/enabled:.*/enabled: false/" ${CHART}
+        sed -i -e "s/ClusterIP/LoadBalancer/" ${CHART}
     else
         DEFAULT="grafana-${NAMESPACE}.${BASE_DOMAIN}"
         question "Enter your grafana domain [${DEFAULT}] : "
@@ -1027,7 +1028,7 @@ apply_monitor() {
         DOMAIN=${ANSWER:-${DEFAULT}}
 
         sed -i -e "s/enabled:.*/enabled: true/" ${CHART}
-        sed -i -e "s/grafana.domain.com/${DOMAIN}/g" ${CHART}
+        sed -i -e "s/grafana.domain.com/${DOMAIN}/" ${CHART}
 
         print "${DOMAIN}"
         echo
@@ -1057,9 +1058,17 @@ apply_monitor() {
     echo
     helm history grafana
     echo
-    kubectl get pod -n ${NAMESPACE}
-    echo
-    kubectl get svc -n ${NAMESPACE}
+    kubectl get pod,svc,ing -n ${NAMESPACE}
+
+    if [ "${BASE_DOMAIN}" == "" ]; then
+        get_elb_domain "grafana" ${NAMESPACE}
+
+        echo
+        print "URL: https://${ELB_DOMAIN}"
+    else
+        echo
+        print "URL: https://${DOMAIN}"
+    fi
 
     press_enter
     addons_menu
@@ -1109,21 +1118,28 @@ create_namespace() {
 }
 
 apply_redis_master() {
-    ADDON=/tmp/sample-redis.yml
+    NAMESPACE="default"
 
+    # create_namespace ${NAMESPACE}
+
+    ADDON=/tmp/sample-redis.yml
     get_template sample/sample-redis.yml ${ADDON}
 
     kubectl apply -f ${ADDON}
 
     waiting 2
 
-    kubectl get pod,svc -n default
+    kubectl get pod,svc -n ${NAMESPACE}
 
     press_enter
     sample_menu
 }
 
 apply_sample_app() {
+    NAMESPACE="default"
+
+    # create_namespace ${NAMESPACE}
+
     if [ "${BASE_DOMAIN}" == "" ]; then
         get_ingress_nip_io
     fi
@@ -1152,11 +1168,13 @@ apply_sample_app() {
 
     waiting 2
 
-    kubectl get pod,svc,ing -n default
+    kubectl get pod,svc,ing -n ${NAMESPACE}
 
     if [ "${BASE_DOMAIN}" == "" ]; then
+        get_elb_domain "${APP_NAME}" ${NAMESPACE}
+
         echo
-        print "URL: http://${DOMAIN}"
+        print "URL: https://${ELB_DOMAIN}"
     else
         echo
         print "URL: https://${DOMAIN}"
