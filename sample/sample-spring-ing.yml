@@ -78,7 +78,7 @@ metadata:
   labels:
     app: sample-spring
 spec:
-  type: NodePort
+  type: ClusterIP
   ports:
     - name: http
       port: 80

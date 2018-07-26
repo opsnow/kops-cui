@@ -58,7 +58,7 @@ metadata:
   labels:
     app: sample-node
 spec:
-  type: NodePort
+  type: ClusterIP
   ports:
     - name: http
       port: 80
