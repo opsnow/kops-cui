@@ -1,0 +1,7 @@
+adminUser: admin
+adminPassword: password
+
+ingress:
+  enabled: false
+  hosts:
+    - grafana.domain.com

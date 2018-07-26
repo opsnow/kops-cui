@@ -258,8 +258,9 @@ addons_menu() {
     print "4. Heapster (deprecated)"
     print "5. Metrics Server"
     print "6. Cluster Autoscaler"
+    print "7. Prometheus + Grafana"
     echo
-    print "7. Sample.."
+    print "9. Sample.."
 
     question
 
@@ -283,6 +284,9 @@ addons_menu() {
             apply_cluster_autoscaler
             ;;
         7)
+            apply_monitor
+            ;;
+        9)
             sample_menu
             ;;
         *)
@@ -753,6 +757,8 @@ git_checkout() {
 apply_ingress_controller() {
     NAMESPACE="kube-ingress"
 
+    create_namespace ${NAMESPACE}
+
     read_root_domain
 
     BASE_DOMAIN=
@@ -786,8 +792,7 @@ apply_ingress_controller() {
         sed -i -e "s@aws-load-balancer-ssl-cert:.*@aws-load-balancer-ssl-cert: ${SSL_CERT_ARN}@" ${CHART}
     fi
 
-    create_namespace ${NAMESPACE}
-
+    # nginx-ingress
     COUNT=$(helm ls | grep nginx-ingress | grep ${NAMESPACE} | wc -l | xargs)
 
     if [ "${COUNT}" == "0" ]; then
@@ -885,11 +890,12 @@ set_record_alias() {
 apply_dashboard() {
     NAMESPACE="kube-system"
 
+    # create_namespace ${NAMESPACE}
+
     CHART=/tmp/dashboard.yaml
     get_template charts/dashboard.yaml ${CHART}
 
-    # create_namespace ${NAMESPACE}
-
+    # kubernetes-dashboard
     COUNT=$(helm ls | grep kubernetes-dashboard | grep ${NAMESPACE} | wc -l | xargs)
 
     if [ "${COUNT}" == "0" ]; then
@@ -922,6 +928,7 @@ apply_heapster() {
 
     # create_namespace ${NAMESPACE}
 
+    # heapster
     COUNT=$(helm ls | grep heapster | grep ${NAMESPACE} | wc -l | xargs)
 
     if [ "${COUNT}" == "0" ]; then
@@ -947,6 +954,7 @@ apply_metrics_server() {
 
     # create_namespace ${NAMESPACE}
 
+    # metrics-server
     COUNT=$(helm ls | grep metrics-server | grep ${NAMESPACE} | wc -l | xargs)
 
     if [ "${COUNT}" == "0" ]; then
@@ -972,11 +980,12 @@ apply_metrics_server() {
 apply_cluster_autoscaler() {
     NAMESPACE="kube-system"
 
+    # create_namespace ${NAMESPACE}
+
     CHART=/tmp/cluster-autoscaler.yaml
     get_template charts/cluster-autoscaler.yaml ${CHART}
 
-    # create_namespace ${NAMESPACE}
-
+    # cluster-autoscaler
     COUNT=$(helm ls | grep cluster-autoscaler | grep ${NAMESPACE} | wc -l | xargs)
 
     if [ "${COUNT}" == "0" ]; then
@@ -996,6 +1005,61 @@ apply_cluster_autoscaler() {
     kubectl get pod -n ${NAMESPACE} | grep -E 'NAME|cluster-autoscaler'
     echo
     kubectl get svc -n ${NAMESPACE} | grep -E 'NAME|cluster-autoscaler'
+
+    press_enter
+    addons_menu
+}
+
+apply_monitor() {
+    NAMESPACE="monitor"
+
+    create_namespace ${NAMESPACE}
+
+    CHART=/tmp/grafana.yaml
+    get_template charts/grafana.yaml ${CHART}
+
+    if [ "${BASE_DOMAIN}" == "" ]; then
+        sed -i -e "s/enabled:.*/enabled: false/" ${CHART}
+    else
+        DEFAULT="grafana-${NAMESPACE}.${BASE_DOMAIN}"
+        question "Enter your grafana domain [${DEFAULT}] : "
+
+        DOMAIN=${ANSWER:-${DEFAULT}}
+
+        sed -i -e "s/enabled:.*/enabled: true/" ${CHART}
+        sed -i -e "s/grafana.domain.com/${DOMAIN}/g" ${CHART}
+
+        print "${DOMAIN}"
+        echo
+    fi
+
+    # grafana
+    COUNT=$(helm ls | grep grafana | grep ${NAMESPACE} | wc -l | xargs)
+
+    if [ "${COUNT}" == "0" ]; then
+        helm install stable/grafana --name grafana --namespace ${NAMESPACE} -f ${CHART}
+    else
+        helm upgrade grafana stable/grafana -f ${CHART}
+    fi
+
+    # prometheus
+    COUNT=$(helm ls | grep prometheus | grep ${NAMESPACE} | wc -l | xargs)
+
+    if [ "${COUNT}" == "0" ]; then
+        helm install stable/prometheus --name prometheus --namespace ${NAMESPACE}
+    else
+        helm upgrade prometheus stable/prometheus
+    fi
+
+    waiting 2
+
+    helm history prometheus
+    echo
+    helm history grafana
+    echo
+    kubectl get pod -n ${NAMESPACE}
+    echo
+    kubectl get svc -n ${NAMESPACE}
 
     press_enter
     addons_menu
@@ -1078,7 +1142,7 @@ apply_sample_app() {
 
         DOMAIN=${ANSWER:-${DEFAULT}}
 
-        sed -i -e "s/${APP_NAME}.apps.nalbam.com/${DOMAIN}/g" ${ADDON}
+        sed -i -e "s/${APP_NAME}.domain.com/${DOMAIN}/g" ${ADDON}
 
         print "${DOMAIN}"
         echo

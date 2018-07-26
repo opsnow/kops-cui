@@ -100,7 +100,7 @@ metadata:
     kubernetes.io/ingress.class: nginx
 spec:
   rules:
-  - host: sample-spring.apps.nalbam.com
+  - host: sample-spring.domain.com
     http:
       paths:
       - path: /

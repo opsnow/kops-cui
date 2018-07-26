@@ -80,7 +80,7 @@ metadata:
     kubernetes.io/ingress.class: nginx
 spec:
   rules:
-  - host: sample-node.apps.nalbam.com
+  - host: sample-node.domain.com
     http:
       paths:
       - path: /

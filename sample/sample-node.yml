@@ -59,7 +59,7 @@ metadata:
     app: sample-node
     dns: route53
   annotations:
-    domainName: "sample-node.apps.nalbam.com"
+    domainName: "sample-node.domain.com"
     #service.beta.kubernetes.io/aws-load-balancer-ssl-ports: "443"
     #service.beta.kubernetes.io/aws-load-balancer-ssl-cert: "{{SSL_CERT_ARN}}"
     #service.beta.kubernetes.io/aws-load-balancer-backend-protocol: http
