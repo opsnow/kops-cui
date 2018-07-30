@@ -1,9 +1,13 @@
+nexus:
+  serviceType: SERVICE_TYPE
+
 nexusProxy:
   env:
-    nexusHttpHost: ingress.domain.com
-    nexusDockerHost: docker-ingress.domain.com
+    nexusHttpHost: INGRESS_DOMAIN
+    nexusDockerHost: docker-INGRESS_DOMAIN
+
 ingress:
-  enabled: true
+  enabled: INGRESS_ENABLED
   tls:
     enabled: false
   annotations:

@@ -10,7 +10,7 @@ service:
   externalPort: 443
 
 # ingress:
-#   enabled: true
+#   enabled: INGRESS_ENABLED
 #   annotations:
 #     kubernetes.io/ingress.class: nginx
 #   path: /

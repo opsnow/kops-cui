@@ -5,7 +5,8 @@ Master:
   AdminUser: admin
   AdminPassword: password
   JavaOpts: "-Dorg.apache.commons.jelly.tags.fmt.timeZone=Asia/Seoul"
-  HostName: ingress.domain.com
+  ServiceType: SERVICE_TYPE
+  HostName: INGRESS_DOMAIN
   InstallPlugins:
     - blueocean:latest
     - git:latest
