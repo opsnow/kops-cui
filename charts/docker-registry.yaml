@@ -1,3 +1,5 @@
+nameOverride: docker-registry
+
 service:
   type: SERVICE_TYPE
 

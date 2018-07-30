@@ -1,3 +1,5 @@
+nameOverride: prometheus
+
 server:
   service:
     type: SERVICE_TYPE

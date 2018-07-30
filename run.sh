@@ -677,7 +677,7 @@ kops_edit() {
         SELECTED="ig ${ARR[0]}"
     fi
 
-    if [ ! -z ${SELECTED} ]; then
+    if [ "${SELECTED}" != "" ]; then
         kops edit ${SELECTED} --name=${KOPS_CLUSTER_NAME} --state=s3://${KOPS_STATE_STORE}
     fi
 }

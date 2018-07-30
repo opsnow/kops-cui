@@ -1,3 +1,5 @@
+nameOverride: jenkins
+
 rbac:
   install: true
 
@@ -60,6 +62,7 @@ Master:
       ],
       volumes: [
         hostPathVolume(mountPath: &quot;/var/run/docker.sock&quot;, hostPath: &quot;/var/run/docker.sock&quot;),
+        hostPathVolume(mountPath: &quot;/home/jenkins/.version&quot;, hostPath: &quot;/home/jenkins/.version&quot;),
         hostPathVolume(mountPath: &quot;/home/jenkins/.draft&quot;, hostPath: &quot;/home/jenkins/.draft&quot;),
         hostPathVolume(mountPath: &quot;/home/jenkins/.helm&quot;, hostPath: &quot;/home/jenkins/.helm&quot;)
       ]) {
@@ -108,11 +111,6 @@ Master:
                 <defaultValue>master</defaultValue>
               </hudson.model.StringParameterDefinition>
               <hudson.model.StringParameterDefinition>
-                <name>IMAGE_REPO</name>
-                <description></description>
-                <defaultValue>docker-registry-devops.demo.opspresso.com/sample</defaultValue>
-              </hudson.model.StringParameterDefinition>
-              <hudson.model.StringParameterDefinition>
                 <name>IMAGE_NAME</name>
                 <description></description>
                 <defaultValue>sample-node</defaultValue>
@@ -139,6 +137,7 @@ Master:
       ],
       volumes: [
         hostPathVolume(mountPath: &quot;/var/run/docker.sock&quot;, hostPath: &quot;/var/run/docker.sock&quot;),
+        hostPathVolume(mountPath: &quot;/home/jenkins/.version&quot;, hostPath: &quot;/home/jenkins/.version&quot;),
         hostPathVolume(mountPath: &quot;/home/jenkins/.draft&quot;, hostPath: &quot;/home/jenkins/.draft&quot;),
         hostPathVolume(mountPath: &quot;/home/jenkins/.helm&quot;, hostPath: &quot;/home/jenkins/.helm&quot;)
       ]) {
@@ -155,14 +154,9 @@ Master:
           stage(&quot;Build Image&quot;) {
             container(&quot;docker&quot;) {
               sh &quot;&quot;&quot;
-                docker build -t $IMAGE_REPO/$IMAGE_NAME:$IMAGE_TAG .
-              &quot;&quot;&quot;
-            }
-          }
-          stage(&quot;Push Image&quot;) {
-            container(&quot;docker&quot;) {
-              sh &quot;&quot;&quot;
-                docker push $IMAGE_REPO/$IMAGE_NAME:$IMAGE_TAG
+                . /root/extra/jenkins-domain.sh
+                docker build -t $REGISTRY/$IMAGE_NAME:$IMAGE_TAG .
+                docker push $REGISTRY/$IMAGE_NAME:$IMAGE_TAG
               &quot;&quot;&quot;
             }
           }
@@ -241,6 +235,7 @@ Master:
       ],
       volumes: [
         hostPathVolume(mountPath: &quot;/var/run/docker.sock&quot;, hostPath: &quot;/var/run/docker.sock&quot;),
+        hostPathVolume(mountPath: &quot;/home/jenkins/.version&quot;, hostPath: &quot;/home/jenkins/.version&quot;),
         hostPathVolume(mountPath: &quot;/home/jenkins/.draft&quot;, hostPath: &quot;/home/jenkins/.draft&quot;),
         hostPathVolume(mountPath: &quot;/home/jenkins/.helm&quot;, hostPath: &quot;/home/jenkins/.helm&quot;)
       ]) {
@@ -315,11 +310,6 @@ Master:
                 <defaultValue>master</defaultValue>
               </hudson.model.StringParameterDefinition>
               <hudson.model.StringParameterDefinition>
-                <name>IMAGE_REPO</name>
-                <description></description>
-                <defaultValue>docker-registry-devops.demo.opspresso.com/sample</defaultValue>
-              </hudson.model.StringParameterDefinition>
-              <hudson.model.StringParameterDefinition>
                 <name>IMAGE_NAME</name>
                 <description></description>
                 <defaultValue>sample-node</defaultValue>
@@ -341,10 +331,10 @@ Master:
       ],
       volumes: [
         hostPathVolume(mountPath: &quot;/var/run/docker.sock&quot;, hostPath: &quot;/var/run/docker.sock&quot;),
+        hostPathVolume(mountPath: &quot;/home/jenkins/.version&quot;, hostPath: &quot;/home/jenkins/.version&quot;),
         hostPathVolume(mountPath: &quot;/home/jenkins/.draft&quot;, hostPath: &quot;/home/jenkins/.draft&quot;),
         hostPathVolume(mountPath: &quot;/home/jenkins/.helm&quot;, hostPath: &quot;/home/jenkins/.helm&quot;)
       ]) {
-        def VERSION = &quot;v0.0.1&quot;
         node(label) {
           stage(&quot;Checkout&quot;) {
             checkout([$class: &quot;GitSCM&quot;,
@@ -357,24 +347,20 @@ Master:
           }
           stage(&quot;Version&quot;) {
             container(&quot;builder&quot;) {
-              def REGISTRY = sh(script: &quot;kubectl get ing -n devops -o wide | grep registry | awk '{print $2}'&quot;, returnStdout: true)
-              def COUNT = sh(script: &quot;curl -sL -X POST https://sample-node.apps.opspresso.com/counter/$IMAGE_NAME&quot;, returnStdout: true)
-              VERSION = &quot;v0.1.$COUNT&quot;
               sh &quot;&quot;&quot;
-                echo &quot;Version: $VERSION&quot;
-                sed -i -e &quot;s/repository:.*/repository: $REGISTRY/$IMAGE_NAME/&quot; charts/$IMAGE_NAME/values.yaml
-                sed -i -e &quot;s/tag:.*/tag: $VERSION/&quot; charts/$IMAGE_NAME/values.yaml
-                sed -i -e &quot;s/name:.*/name: $IMAGE_NAME/&quot; charts/$IMAGE_NAME/Chart.yaml
-                sed -i -e &quot;s/version:.*/version: $VERSION/&quot; charts/$IMAGE_NAME/Chart.yaml
+                bash /root/extra/jenkins-domain.sh
+                bash /root/extra/jenkins-version.sh $IMAGE_NAME
+                bash /root/extra/helm-chartmuseum.sh
+                bash /root/extra/draft-docker-registry.sh
               &quot;&quot;&quot;
             }
           }
           stage(&quot;Push Chartmuseum&quot;) {
             container(&quot;builder&quot;) {
               sh &quot;&quot;&quot;
-                helm push charts/$IMAGE_NAME/ chartmuseum
-                helm repo update
-                helm search $IMAGE_NAME
+                cd charts/$IMAGE_NAME
+                make out
+                make release
               &quot;&quot;&quot;
             }
           }
@@ -476,6 +462,7 @@ Master:
       ],
       volumes: [
         hostPathVolume(mountPath: &quot;/var/run/docker.sock&quot;, hostPath: &quot;/var/run/docker.sock&quot;),
+        hostPathVolume(mountPath: &quot;/home/jenkins/.version&quot;, hostPath: &quot;/home/jenkins/.version&quot;),
         hostPathVolume(mountPath: &quot;/home/jenkins/.draft&quot;, hostPath: &quot;/home/jenkins/.draft&quot;),
         hostPathVolume(mountPath: &quot;/home/jenkins/.helm&quot;, hostPath: &quot;/home/jenkins/.helm&quot;)
       ]) {
@@ -530,6 +517,7 @@ Master:
       ],
       volumes: [
         hostPathVolume(mountPath: &quot;/var/run/docker.sock&quot;, hostPath: &quot;/var/run/docker.sock&quot;),
+        hostPathVolume(mountPath: &quot;/home/jenkins/.version&quot;, hostPath: &quot;/home/jenkins/.version&quot;),
         hostPathVolume(mountPath: &quot;/home/jenkins/.draft&quot;, hostPath: &quot;/home/jenkins/.draft&quot;),
         hostPathVolume(mountPath: &quot;/home/jenkins/.helm&quot;, hostPath: &quot;/home/jenkins/.helm&quot;)
       ]) {
@@ -566,6 +554,7 @@ Master:
       ],
       volumes: [
         hostPathVolume(mountPath: &quot;/var/run/docker.sock&quot;, hostPath: &quot;/var/run/docker.sock&quot;),
+        hostPathVolume(mountPath: &quot;/home/jenkins/.version&quot;, hostPath: &quot;/home/jenkins/.version&quot;),
         hostPathVolume(mountPath: &quot;/home/jenkins/.draft&quot;, hostPath: &quot;/home/jenkins/.draft&quot;),
         hostPathVolume(mountPath: &quot;/home/jenkins/.helm&quot;, hostPath: &quot;/home/jenkins/.helm&quot;)
       ]) {
@@ -574,7 +563,21 @@ Master:
             sh &quot;&quot;&quot;
               uname -a
               date
+              pwd
+              ls -al
             &quot;&quot;&quot;
+          }
+          stage(&quot;Run builder&quot;) {
+            container(&quot;builder&quot;) {
+              sh &quot;&quot;&quot;
+                uname -a
+                date
+                pwd
+                ls -al
+                bash /root/extra/jenkins-domain.sh
+                ls -al /home/jenkins
+              &quot;&quot;&quot;
+            }
           }
           stage(&quot;Run docker&quot;) {
             container(&quot;docker&quot;) {
@@ -603,7 +606,6 @@ Master:
                 bash /root/extra/helm-chartmuseum.sh
                 helm repo update
                 helm repo list
-                # helm plugin install https://github.com/chartmuseum/helm-push
                 helm plugin list
               &quot;&quot;&quot;
             }
