@@ -57,23 +57,36 @@ metadata:
   namespace: default
   labels:
     app: sample-node
-    dns: route53
-  annotations:
-    domainName: "ingress.domain.com"
-    #service.beta.kubernetes.io/aws-load-balancer-ssl-ports: "443"
-    #service.beta.kubernetes.io/aws-load-balancer-ssl-cert: "{{SSL_CERT_ARN}}"
-    #service.beta.kubernetes.io/aws-load-balancer-backend-protocol: http
 spec:
-  type: LoadBalancer
+  type: SERVICE_TYPE
   ports:
     - name: http
       port: 80
       targetPort: 3000
-    - name: https
-      port: 443
-      targetPort: 3000
   selector:
     k8s-app: sample-node
+
+---
+# ------------------- Ingress ------------------- #
+
+apiVersion: extensions/v1beta1
+kind: Ingress
+metadata:
+  name: sample-node
+  namespace: default
+  labels:
+    app: sample-node
+  annotations:
+    kubernetes.io/ingress.class: nginx
+spec:
+  rules:
+  - host: INGRESS_DOMAIN
+    http:
+      paths:
+      - path: /
+        backend:
+          serviceName: sample-node
+          servicePort: 80
 
 ---
 # ------------------- HorizontalPodAutoscaler ------------------- #
@@ -103,7 +116,7 @@ spec:
 #     kind: Deployment
 #     name: sample-node
 #   minReplicas: 1
-#   maxReplicas: 100
+#   maxReplicas: 50
 #   metrics:
 #   - type: Resource
 #     resource:

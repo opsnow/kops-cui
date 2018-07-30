@@ -1090,48 +1090,41 @@ apply_redis_master() {
 }
 
 apply_sample_app() {
+    APP_NAME=${1}
     NAMESPACE="default"
 
-    # create_namespace ${NAMESPACE}
+    create_namespace ${NAMESPACE}
 
     if [ -z ${BASE_DOMAIN} ]; then
         get_ingress_nip_io
     fi
 
-    APP_NAME=$1
-
-    ADDON=/tmp/${APP_NAME}.yml
+    SAMPLE=/tmp/${APP_NAME}.yml
+    get_template sample/${APP_NAME}.yml ${SAMPLE}
 
     if [ -z ${BASE_DOMAIN} ]; then
-        get_template sample/${APP_NAME}.yml ${ADDON}
+        sed -i -e "s/SERVICE_TYPE/LoadBalancer/" ${SAMPLE}
     else
-        get_template sample/${APP_NAME}-ing.yml ${ADDON}
+        DOMAIN="${APP_NAME}-${NAMESPACE}.${BASE_DOMAIN}"
 
-        DEFAULT="${APP_NAME}.${BASE_DOMAIN}"
-        question "Enter your ${APP_NAME} domain [${DEFAULT}] : "
-
-        DOMAIN=${ANSWER:-${DEFAULT}}
-
-        sed -i -e "s/ingress.domain.com/${DOMAIN}/g" ${ADDON}
-
-        print "${DOMAIN}"
-        echo
+        sed -i -e "s/SERVICE_TYPE/ClusterIP/" ${SAMPLE}
+        sed -i -e "s/INGRESS_DOMAIN/${DOMAIN}/" ${SAMPLE}
     fi
 
-    kubectl apply -f ${ADDON}
+    kubectl apply -f ${SAMPLE}
 
     waiting 2
 
     kubectl get pod,svc,ing -n ${NAMESPACE}
 
     if [ -z ${BASE_DOMAIN} ]; then
-        get_elb_domain "${APP_NAME}" ${NAMESPACE}
+        get_elb_domain ${APP_NAME} ${NAMESPACE}
 
         echo
-        print "URL: https://${ELB_DOMAIN}"
+        success "URL: https://${ELB_DOMAIN}"
     else
         echo
-        print "URL: https://${DOMAIN}"
+        success "URL: https://${DOMAIN}"
     fi
 }
 
