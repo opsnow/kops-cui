@@ -1,2 +1,4 @@
+nameOverride: metrics-server
+
 # image:
 #   tag: v0.2.1

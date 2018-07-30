@@ -1,3 +1,5 @@
+fullnameOverride: chartmuseum
+
 env:
   open:
     DISABLE_API: false
