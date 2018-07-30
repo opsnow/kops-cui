@@ -5,7 +5,8 @@ Master:
   AdminUser: admin
   AdminPassword: password
   JavaOpts: "-Dorg.apache.commons.jelly.tags.fmt.timeZone=Asia/Seoul"
-  HostName: ingress.domain.com
+  ServiceType: SERVICE_TYPE
+  HostName: INGRESS_DOMAIN
   InstallPlugins:
     - blueocean:latest
     - git:latest
@@ -595,12 +596,11 @@ Master:
           }
           stage(&quot;Run helm&quot;) {
             container(&quot;builder&quot;) {
-              def CHARTMUSEUM = sh(script: &quot;kubectl get ing -n devops -o wide | grep chartmuseum | awk '{print $2}'&quot;, returnStdout: true)
               sh &quot;&quot;&quot;
                 helm version --client --short
                 helm init
                 helm list
-                helm repo add chartmuseum https://$CHARTMUSEUM
+                bash /root/extra/helm-chartmuseum.sh
                 helm repo update
                 helm repo list
                 # helm plugin install https://github.com/chartmuseum/helm-push
@@ -613,16 +613,8 @@ Master:
               sh &quot;&quot;&quot;
                 draft version --short
                 draft init
-                draft config set basedomain apps.opspresso.com
-                draft config set registry registry-devops.apps.opspresso.com
+                bash /root/extra/draft-docker-registry.sh
                 draft config list
-              &quot;&quot;&quot;
-            }
-          }
-          stage(&quot;Run skaffold&quot;) {
-            container(&quot;builder&quot;) {
-              sh &quot;&quot;&quot;
-                skaffold version
               &quot;&quot;&quot;
             }
           }

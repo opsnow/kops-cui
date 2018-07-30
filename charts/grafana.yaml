@@ -2,14 +2,14 @@ adminUser: admin
 adminPassword: password
 
 service:
-  type: ClusterIP
+  type: SERVICE_TYPE
 
 ingress:
-  enabled: false
+  enabled: INGRESS_ENABLED
   annotations:
     kubernetes.io/ingress.class: nginx
   hosts:
-    - ingress.domain.com
+    - INGRESS_DOMAIN
 
 persistence:
   enabled: true

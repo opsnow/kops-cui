@@ -1,6 +1,9 @@
 nameOverride: cluster-autoscaler
 
-awsRegion: ap-northeast-2
+autoDiscovery:
+  clusterName: CLUSTER_NAME
+
+awsRegion: AWS_REGION
 
 extraArgs:
   v: 4
