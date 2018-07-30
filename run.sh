@@ -307,7 +307,8 @@ addons_menu() {
             press_enter addons
             ;;
         2)
-            helm_nginx_ingress
+            create_namespace kube-ingress
+            helm_nginx_ingress kube-ingress
             press_enter addons
             ;;
         3)
@@ -396,10 +397,12 @@ monitor_menu() {
 
     case ${ANSWER} in
         1)
+            create_namespace monitor
             helm_apply prometheus monitor true
             press_enter monitor
             ;;
         2)
+            create_namespace monitor
             helm_apply grafana monitor true
             press_enter monitor
             ;;
@@ -421,18 +424,22 @@ devops_menu() {
 
     case ${ANSWER} in
         1)
+            create_cluster_role_binding cluster-admin devops
             helm_apply jenkins devops true
             press_enter devops
             ;;
         2)
+            create_namespace devops
             helm_apply sonatype-nexus devops true
             press_enter devops
             ;;
         3)
+            create_namespace devops
             helm_apply docker-registry devops true
             press_enter devops
             ;;
         4)
+            create_namespace devops
             helm_apply chartmuseum devops true
             # echo
             # helm repo add chartmuseum https://$DOMAIN
@@ -895,9 +902,7 @@ set_record_alias() {
 
 helm_nginx_ingress() {
     APP_NAME="nginx-ingress"
-    NAMESPACE="kube-ingress"
-
-    create_namespace ${NAMESPACE}
+    NAMESPACE=${1:-kube-ingress}
 
     read_root_domain
 
@@ -968,8 +973,6 @@ helm_apply() {
     INGRESS=${3}
     DOMAIN=
 
-    create_namespace ${NAMESPACE}
-
     CHART=/tmp/${APP_NAME}.yaml
     get_template charts/${APP_NAME}.yaml ${CHART}
 
@@ -1029,24 +1032,11 @@ helm_remove() {
 
 helm_init() {
     NAMESPACE="kube-system"
+    ACCOUNT="tiller"
 
-    # create_namespace ${NAMESPACE}
+    create_cluster_role_binding cluster-admin ${NAMESPACE} ${ACCOUNT}
 
-    TILLER=$(kubectl get serviceaccount -n ${NAMESPACE} | grep 'tiller' | wc -l | xargs)
-
-    if [ "${TILLER}" == "0" ]; then
-        kubectl create serviceaccount tiller -n ${NAMESPACE}
-        echo
-    fi
-
-    ROLL=$(kubectl get clusterrolebinding | grep 'cluster-admin' | grep 'tiller' | wc -l | xargs)
-
-    if [ "${ROLL}" == "0" ]; then
-        kubectl create clusterrolebinding cluster-admin:${NAMESPACE}:tiller --clusterrole=cluster-admin --serviceaccount=${NAMESPACE}:tiller
-        echo
-    fi
-
-    helm init --upgrade --service-account=tiller
+    helm init --upgrade --service-account=${ACCOUNT}
 
     waiting 2
 
@@ -1055,29 +1045,77 @@ helm_init() {
 
 helm_uninit() {
     NAMESPACE="kube-system"
+    ACCOUNT="tiller"
 
     kubectl delete deployment tiller-deploy -n ${NAMESPACE}
     echo
-    kubectl delete clusterrolebinding tiller
+    kubectl delete clusterrolebinding cluster-admin:${NAMESPACE}:${ACCOUNT}
     echo
-    kubectl delete serviceaccount tiller -n ${NAMESPACE}
+    kubectl delete serviceaccount ${ACCOUNT} -n ${NAMESPACE}
 }
 
 create_namespace() {
-    print "namespace: $1"
-    kubectl get namespace $1 > /dev/null 2>&1 || kubectl create namespace $1
+    NAMESPACE=$1
+
+    print "${NAMESPACE}"
     echo
+
+    CHECK=
+    kubectl get ns ${NAMESPACE} > /dev/null 2>&1 || CHECK=CREATE
+
+    if [ "${CHECK}" == "CREATE" ]; then
+        kubectl create ns ${NAMESPACE}
+        echo
+    fi
+}
+
+create_service_account() {
+    NAMESPACE=$1
+    ACCOUNT=$2
+
+    create_namespace ${NAMESPACE}
+
+    print "${NAMESPACE}:${ACCOUNT}"
+    echo
+
+    CHECK=
+    kubectl get sa ${ACCOUNT} -n ${NAMESPACE} > /dev/null 2>&1 || CHECK=CREATE
+
+    if [ "${CHECK}" == "CREATE" ]; then
+        kubectl create sa ${ACCOUNT} -n ${NAMESPACE}
+        echo
+    fi
+}
+
+create_cluster_role_binding() {
+    ROLL=$1
+    NAMESPACE=$2
+    ACCOUNT=${3:-"default"}
+
+    create_service_account ${NAMESPACE} ${ACCOUNT}
+
+    print "${ROLL}:${NAMESPACE}:${ACCOUNT}"
+    echo
+
+    CHECK=
+    kubectl get clusterrolebinding ${ROLL}:${NAMESPACE}:${ACCOUNT} > /dev/null 2>&1 || CHECK=CREATE
+
+    if [ "${CHECK}" == "CREATE" ]; then
+        kubectl create clusterrolebinding ${ROLL}:${NAMESPACE}:${ACCOUNT} --clusterrole=${ROLL} --serviceaccount=${NAMESPACE}:${ACCOUNT}
+        echo
+    fi
 }
 
 apply_redis_master() {
+    APP_NAME="sample-redis"
     NAMESPACE="default"
 
-    # create_namespace ${NAMESPACE}
+    create_namespace ${NAMESPACE}
 
-    ADDON=/tmp/sample-redis.yml
-    get_template sample/sample-redis.yml ${ADDON}
+    SAMPLE=/tmp/${APP_NAME}.yml
+    get_template sample/${APP_NAME}.yml ${SAMPLE}
 
-    kubectl apply -f ${ADDON}
+    kubectl apply -f ${SAMPLE}
 
     waiting 2
 
