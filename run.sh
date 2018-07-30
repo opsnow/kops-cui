@@ -323,6 +323,9 @@ addons_menu() {
             ;;
         5)
             helm_apply metrics-server kube-system
+            echo
+            kubectl get hpa
+            echo
             press_enter addons
             ;;
         6)
@@ -430,9 +433,9 @@ devops_menu() {
             ;;
         4)
             helm_apply chartmuseum devops true
-            echo
-            helm repo add chartmuseum https://$DOMAIN
-            echo
+            # echo
+            # helm repo add chartmuseum https://$DOMAIN
+            # echo
             press_enter devops
             ;;
         *)

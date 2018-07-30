@@ -98,7 +98,7 @@ spec:
 ---
 # ------------------- HorizontalPodAutoscaler ------------------- #
 
-apiVersion: autoscaling/v2beta1
+apiVersion: autoscaling/v1
 kind: HorizontalPodAutoscaler
 metadata:
   name: sample-spring
@@ -109,16 +109,30 @@ spec:
     kind: Deployment
     name: sample-spring
   minReplicas: 1
-  maxReplicas: 100
-  metrics:
-  - type: Resource
-    resource:
-      name: cpu
-      targetAverageUtilization: 50
-  - type: Resource
-    resource:
-      name: memory
-      targetAverageUtilization: 50
+  maxReplicas: 50
+  targetCPUUtilizationPercentage: 50
+
+# apiVersion: autoscaling/v2beta1
+# kind: HorizontalPodAutoscaler
+# metadata:
+#   name: sample-spring
+#   namespace: default
+# spec:
+#   scaleTargetRef:
+#     apiVersion: apps/v1
+#     kind: Deployment
+#     name: sample-spring
+#   minReplicas: 1
+#   maxReplicas: 100
+#   metrics:
+#   - type: Resource
+#     resource:
+#       name: cpu
+#       targetAverageUtilization: 50
+#   - type: Resource
+#     resource:
+#       name: memory
+#       targetAverageUtilization: 50
   # - type: Pods
   #   pods:
   #     metricName: packets-per-second

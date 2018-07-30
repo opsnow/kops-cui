@@ -27,25 +27,22 @@ spec:
         image: nalbam/sample-web:alpine
         imagePullPolicy: Always
         ports:
-        - containerPort: 3000
+        - containerPort: 80
           protocol: TCP
         livenessProbe:
           httpGet:
             path: /
-            port: 3000
+            port: 80
           initialDelaySeconds: 30
           timeoutSeconds: 3
           periodSeconds: 15
         resources:
           requests:
-            memory: "256Mi"
-            cpu: "250m"
+            memory: "100Mi"
+            cpu: "100m"
           limits:
-            memory: "512Mi"
-            cpu: "500m"
-        env:
-        - name: REDIS_URL
-          value: "redis://redis-master:6379"
+            memory: "200Mi"
+            cpu: "200m"
 
 ---
 # ------------------- Service ------------------- #
@@ -62,7 +59,7 @@ spec:
   ports:
     - name: http
       port: 80
-      targetPort: 3000
+      targetPort: 80
   selector:
     k8s-app: sample-web
 
@@ -91,7 +88,7 @@ spec:
 ---
 # ------------------- HorizontalPodAutoscaler ------------------- #
 
-apiVersion: autoscaling/v2beta1
+apiVersion: autoscaling/v1
 kind: HorizontalPodAutoscaler
 metadata:
   name: sample-web
@@ -103,15 +100,29 @@ spec:
     name: sample-web
   minReplicas: 1
   maxReplicas: 50
-  metrics:
-  - type: Resource
-    resource:
-      name: cpu
-      targetAverageUtilization: 50
-  - type: Resource
-    resource:
-      name: memory
-      targetAverageUtilization: 50
+  targetCPUUtilizationPercentage: 50
+
+# apiVersion: autoscaling/v2beta1
+# kind: HorizontalPodAutoscaler
+# metadata:
+#   name: sample-web
+#   namespace: default
+# spec:
+#   scaleTargetRef:
+#     apiVersion: apps/v1
+#     kind: Deployment
+#     name: sample-web
+#   minReplicas: 1
+#   maxReplicas: 50
+#   metrics:
+#   - type: Resource
+#     resource:
+#       name: cpu
+#       targetAverageUtilization: 50
+#   - type: Resource
+#     resource:
+#       name: memory
+#       targetAverageUtilization: 50
   # - type: Pods
   #   pods:
   #     metricName: packets-per-second
