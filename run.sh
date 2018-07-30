@@ -22,6 +22,7 @@ master_count=1
 master_zones=
 node_size=m4.large
 node_count=2
+topology=private
 zones=
 network_cidr=10.10.0.0/16
 networking=calico
@@ -162,7 +163,7 @@ run() {
     command -v kubectl > /dev/null || export NEED_TOOL=kubectl
     command -v kops > /dev/null    || export NEED_TOOL=kops
 
-    if [ "${NEED_TOOL}" != "" ]; then
+    if [ ! -z ${NEED_TOOL} ]; then
         question "Do you want to install the required tools? (awscli,kubectl,kops...) [Y/n] : "
 
         ANSWER=${ANSWER:-Y}
@@ -458,11 +459,11 @@ create_menu() {
     print "1. master-size=${master_size}"
     print "2. master-count=${master_count}"
     print "   master-zones=${master_zones}"
-    print "4. node-size=${node_size}"
-    print "5. node-count=${node_count}"
+    print "3. node-size=${node_size}"
+    print "4. node-count=${node_count}"
     print "   zones=${zones}"
-    print "7. network-cidr=${network_cidr}"
-    print "8. networking=${networking}"
+    print "5. network-cidr=${network_cidr}"
+    print "6. networking=${networking}"
     echo
     print "0. create"
 
@@ -481,28 +482,22 @@ create_menu() {
             create_menu
             ;;
         3)
-            create_menu
-            ;;
-        4)
             question "Enter node size [${node_size}] : "
             node_size=${ANSWER:-${node_size}}
             create_menu
             ;;
-        5)
+        4)
             question "Enter node count [${node_count}] : "
             node_count=${ANSWER:-${node_count}}
             get_node_zones
             create_menu
             ;;
-        6)
-            create_menu
-            ;;
-        7)
+        5)
             question "Enter network cidr [${network_cidr}] : "
             network_cidr=${ANSWER:-${network_cidr}}
             create_menu
             ;;
-        8)
+        6)
             question "Enter networking [${networking}] : "
             networking=${ANSWER:-${networking}}
             create_menu
@@ -670,12 +665,12 @@ kops_edit() {
 
     if [ "${ANSWER}" == "0" ]; then
         SELECTED="cluster"
-    elif [ "${ANSWER}" != "" ]; then
+    elif [ ! -z ${ANSWER} ]; then
         ARR=($(sed -n $(( ${ANSWER} + 1 ))p ${IG_LIST}))
         SELECTED="ig ${ARR[0]}"
     fi
 
-    if [ "${SELECTED}" != "" ]; then
+    if [ ! -z ${SELECTED} ]; then
         kops edit ${SELECTED} --name=${KOPS_CLUSTER_NAME} --state=s3://${KOPS_STATE_STORE}
     fi
 }
@@ -729,7 +724,7 @@ get_elb_domain() {
             ELB_DOMAIN=$(kubectl get svc -n $2 -o wide | grep LoadBalancer | grep $1 | awk '{print $4}' | head -1)
         fi
 
-        if [ "${ELB_DOMAIN}" != "" ] && [ "${ELB_DOMAIN}" != "<pending>" ]; then
+        if [ ! -z ${ELB_DOMAIN} ] && [ "${ELB_DOMAIN}" != "<pending>" ]; then
             break
         fi
 
@@ -774,7 +769,7 @@ get_ingress_nip_io() {
     while [ 1 ]; do
         ELB_IP=$(dig +short ${ELB_DOMAIN} | head -n 1)
 
-        if [ "${ELB_IP}" != "" ]; then
+        if [ ! -z ${ELB_IP} ]; then
             BASE_DOMAIN="apps.${ELB_IP}.nip.io"
             break
         fi
@@ -814,7 +809,7 @@ read_root_domain() {
 
         question "Enter root domain (0-${IDX})[0] : "
 
-        if [ "${ANSWER}" != "" ]; then
+        if [ ! -z ${ANSWER} ]; then
             ROOT_DOMAIN=$(sed -n ${ANSWER}p ${HOST_LIST} | sed 's/.$//')
         fi
     fi
@@ -830,7 +825,7 @@ git_checkout() {
     fi
 
     pushd /tmp/${GIT_USER}/${GIT_NAME}
-    if [ "$3" != "" ]; then
+    if [ ! -z $3 ]; then
         git checkout $3
     fi
     git pull

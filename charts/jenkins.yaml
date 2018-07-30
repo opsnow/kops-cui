@@ -611,11 +611,11 @@ Master:
           }
           stage(&quot;Run draft&quot;) {
             container(&quot;builder&quot;) {
+              def REGISTRY = sh(script: &quot;kubectl get ing -n devops -o wide | grep docker-registry | awk '{print $2}'&quot;, returnStdout: true)
               sh &quot;&quot;&quot;
                 draft version --short
                 draft init
-                draft config set basedomain apps.opspresso.com
-                draft config set registry registry-devops.apps.opspresso.com
+                draft config set registry $REGISTRY
                 draft config list
               &quot;&quot;&quot;
             }
