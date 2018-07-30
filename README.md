@@ -21,7 +21,7 @@ KOPS Console User Interface
 ## Run
 
 ```bash
-git clone https://github.com/nalbam/kops-cui
+git clone https://github.com/opsnow/kops-cui
 ./kops-cui/run.sh
 ```
 
