@@ -558,7 +558,7 @@ read_state_store() {
     # username
     USER=${USER:=$(whoami)}
 
-    if [ "${KOPS_STATE_STORE}" == "" ]; then
+    if [ -z ${KOPS_STATE_STORE} ]; then
         DEFAULT="kops-state-${USER}"
     else
         DEFAULT="${KOPS_STATE_STORE}"
@@ -570,13 +570,13 @@ read_state_store() {
 
     # S3 Bucket
     BUCKET=$(aws s3api get-bucket-acl --bucket ${KOPS_STATE_STORE} | jq '.Owner.ID')
-    if [ "${BUCKET}" == "" ]; then
+    if [ -z ${BUCKET} ]; then
         aws s3 mb s3://${KOPS_STATE_STORE} --region ${REGION}
 
         waiting 2
 
         BUCKET=$(aws s3api get-bucket-acl --bucket ${KOPS_STATE_STORE} | jq '.Owner.ID')
-        if [ "${BUCKET}" == "" ]; then
+        if [ -z ${BUCKET} ]; then
             KOPS_STATE_STORE=
             clear_kops_config
             error
@@ -620,7 +620,7 @@ read_cluster_list() {
         fi
     fi
 
-    if [ "${KOPS_CLUSTER_NAME}" == "" ]; then
+    if [ -z ${KOPS_CLUSTER_NAME} ]; then
         clear_kops_config
         error
     fi
@@ -705,7 +705,7 @@ kops_delete() {
 }
 
 get_ingres_domain() {
-    if [ "$2" == "" ]; then
+    if [ -z $2 ]; then
         DOMAIN=$(kubectl get ing --all-namespaces -o wide | grep $1 | awk '{print $3}' | head -1)
     else
         DOMAIN=$(kubectl get ing $1 -n $2 -o wide | grep $1 | awk '{print $2}' | head -1)
@@ -720,7 +720,7 @@ get_elb_domain() {
     IDX=0
     while [ 1 ]; do
         # ELB Domain 을 획득
-        if [ "$2" == "" ]; then
+        if [ -z $2 ]; then
             ELB_DOMAIN=$(kubectl get svc --all-namespaces -o wide | grep LoadBalancer | grep $1 | awk '{print $5}' | head -1)
         else
             ELB_DOMAIN=$(kubectl get svc -n $2 -o wide | grep LoadBalancer | grep $1 | awk '{print $4}' | head -1)
@@ -761,7 +761,7 @@ get_ingress_nip_io() {
 
     get_elb_domain "nginx-ingress"
 
-    if [ "${ELB_DOMAIN}" == "" ]; then
+    if [ -z ${ELB_DOMAIN} ]; then
         return
     fi
 
@@ -876,7 +876,7 @@ set_record_alias() {
     # Route53 에서 해당 도메인의 Hosted Zone ID 를 획득
     ZONE_ID=$(aws route53 list-hosted-zones | ROOT_DOMAIN="${ROOT_DOMAIN}." jq '.HostedZones[] | select(.Name==env.ROOT_DOMAIN)' | grep '"Id"' | cut -d'"' -f4 | cut -d'/' -f3)
 
-    if [ "${ZONE_ID}" == "" ]; then
+    if [ -z ${ZONE_ID} ]; then
         return
     fi
 
@@ -905,7 +905,7 @@ helm_nginx_ingress() {
 
     BASE_DOMAIN=
 
-    if [ "${ROOT_DOMAIN}" != "" ]; then
+    if [ ! -z ${ROOT_DOMAIN} ]; then
         WORD=$(echo ${KOPS_CLUSTER_NAME} | cut -d'.' -f1)
 
         DEFAULT="${WORD}.${ROOT_DOMAIN}"
@@ -917,14 +917,14 @@ helm_nginx_ingress() {
     CHART=/tmp/${APP_NAME}.yaml
     get_template charts/${APP_NAME}.yaml ${CHART}
 
-    if [ "${BASE_DOMAIN}" != "" ]; then
+    if [ ! -z ${BASE_DOMAIN} ]; then
         get_ssl_cert_arn
 
-        if [ "${SSL_CERT_ARN}" == "" ]; then
+        if [ -z ${SSL_CERT_ARN} ]; then
             set_record_cname
             echo
         fi
-        if [ "${SSL_CERT_ARN}" == "" ]; then
+        if [ -z ${SSL_CERT_ARN} ]; then
             error "Certificate ARN does not exists. [*.${BASE_DOMAIN}][${REGION}]"
         fi
 
@@ -951,7 +951,7 @@ helm_nginx_ingress() {
 
     print "Pending ELB..."
 
-    if [ "${BASE_DOMAIN}" == "" ]; then
+    if [ -z ${BASE_DOMAIN} ]; then
         get_ingress_nip_io
     else
         get_ingress_elb_name
@@ -968,7 +968,6 @@ helm_apply() {
     APP_NAME=${1}
     NAMESPACE=${2:-default}
     INGRESS=${3}
-    PARAMS=${4}
     DOMAIN=
 
     create_namespace ${NAMESPACE}
@@ -976,20 +975,19 @@ helm_apply() {
     CHART=/tmp/${APP_NAME}.yaml
     get_template charts/${APP_NAME}.yaml ${CHART}
 
-    if [ ! -z "${INGRESS}" ]; then
-        if [ "${BASE_DOMAIN}" == "" ] || [ "${INGRESS}" == "false" ]; then
-            sed -i -e "s/CLUSTER_NAME/${KOPS_CLUSTER_NAME}/" ${CHART}
+    sed -i -e "s/CLUSTER_NAME/${KOPS_CLUSTER_NAME}/" ${CHART}
+    sed -i -e "s/AWS_REGION/${REGION}/" ${CHART}
+
+    if [ ! -z ${INGRESS} ]; then
+        if [ -z ${BASE_DOMAIN} ] || [ "${INGRESS}" == "false" ]; then
             sed -i -e "s/SERVICE_TYPE/LoadBalancer/" ${CHART}
             sed -i -e "s/INGRESS_ENABLED/false/" ${CHART}
-            sed -i -e "s/AWS_REGION/${REGION}/" ${CHART}
         else
             DOMAIN="${APP_NAME}-${NAMESPACE}.${BASE_DOMAIN}"
 
-            sed -i -e "s/CLUSTER_NAME/${KOPS_CLUSTER_NAME}/" ${CHART}
             sed -i -e "s/SERVICE_TYPE/ClusterIP/" ${CHART}
             sed -i -e "s/INGRESS_ENABLED/true/" ${CHART}
             sed -i -e "s/INGRESS_DOMAIN/${DOMAIN}/" ${CHART}
-            sed -i -e "s/AWS_REGION/${REGION}/" ${CHART}
         fi
     fi
 
@@ -1007,8 +1005,8 @@ helm_apply() {
     echo
     kubectl get pod,svc,ing -n ${NAMESPACE}
 
-    if [ ! -z "${INGRESS}" ]; then
-        if [ "${BASE_DOMAIN}" == "" ] || [ "${INGRESS}" == "false" ]; then
+    if [ ! -z ${INGRESS} ]; then
+        if [ -z ${BASE_DOMAIN} ] || [ "${INGRESS}" == "false" ]; then
             echo
             get_elb_domain ${APP_NAME} ${NAMESPACE}
             echo
@@ -1026,7 +1024,7 @@ helm_remove() {
 
     question "Enter chart name : "
 
-    if [ "${ANSWER}" != "" ]; then
+    if [ ! -z ${ANSWER} ]; then
         helm delete --purge ${ANSWER}
     fi
 }
@@ -1093,7 +1091,7 @@ apply_sample_app() {
 
     # create_namespace ${NAMESPACE}
 
-    if [ "${BASE_DOMAIN}" == "" ]; then
+    if [ -z ${BASE_DOMAIN} ]; then
         get_ingress_nip_io
     fi
 
@@ -1101,7 +1099,7 @@ apply_sample_app() {
 
     ADDON=/tmp/${APP_NAME}.yml
 
-    if [ "${BASE_DOMAIN}" == "" ]; then
+    if [ -z ${BASE_DOMAIN} ]; then
         get_template sample/${APP_NAME}.yml ${ADDON}
     else
         get_template sample/${APP_NAME}-ing.yml ${ADDON}
@@ -1123,7 +1121,7 @@ apply_sample_app() {
 
     kubectl get pod,svc,ing -n ${NAMESPACE}
 
-    if [ "${BASE_DOMAIN}" == "" ]; then
+    if [ -z ${BASE_DOMAIN} ]; then
         get_elb_domain "${APP_NAME}" ${NAMESPACE}
 
         echo
@@ -1136,8 +1134,8 @@ apply_sample_app() {
 
 get_template() {
     rm -rf ${2}
-    if [ -f "${SHELL_DIR}/${1}" ]; then
-        cp -rf "${SHELL_DIR}/${1}" ${2}
+    if [ -f ${SHELL_DIR}/${1} ]; then
+        cp -rf ${SHELL_DIR}/${1} ${2}
     else
         curl -s https://raw.githubusercontent.com/opsnow/kops-cui/master/${1} > ${2}
     fi
@@ -1147,7 +1145,7 @@ get_template() {
 }
 
 get_az_list() {
-    if [ "${AZ_LIST}" == "" ]; then
+    if [ -z ${AZ_LIST} ]; then
         AZ_LIST="$(aws ec2 describe-availability-zones | grep ZoneName | cut -d'"' -f4 | head -3 | tr -s '\r\n' ',' | sed 's/.$//')"
     fi
 }
