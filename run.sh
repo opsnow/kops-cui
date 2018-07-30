@@ -100,7 +100,7 @@ logo() {
     print " | |/ / _ \|  _ \/ ___|   / ___| | | |_ _| "
     print " | ' / | | | |_) \___ \  | |   | | | || |  "
     print " | . \ |_| |  __/ ___) | | |___| |_| || |  "
-    print " |_|\_\___/|_|   |____/   \____|\___/|___|  by nalbam "
+    print " |_|\_\___/|_|   |____/   \____|\___/|___|  by OpsNow "
     tput sgr0
     echo
 }
@@ -1198,7 +1198,7 @@ get_template() {
     if [ -f "${SHELL_DIR}/${1}" ]; then
         cp -rf "${SHELL_DIR}/${1}" ${2}
     else
-        curl -s https://raw.githubusercontent.com/nalbam/kops-cui/master/${1} > ${2}
+        curl -s https://raw.githubusercontent.com/opsnow/kops-cui/master/${1} > ${2}
     fi
     if [ ! -f ${2} ]; then
         error "Template does not exists. [${1}]"
