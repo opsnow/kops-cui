@@ -197,12 +197,12 @@ Master:
               <hudson.model.StringParameterDefinition>
                 <name>BUILD</name>
                 <description></description>
-                <defaultValue>mvn package -DskipTests</defaultValue>
+                <defaultValue>mvn package -DskipTests -s .m2/settings.xml</defaultValue>
               </hudson.model.StringParameterDefinition>
               <hudson.model.StringParameterDefinition>
                 <name>TEST</name>
                 <description></description>
-                <defaultValue>mvn test</defaultValue>
+                <defaultValue>mvn test -s .m2/settings.xml</defaultValue>
               </hudson.model.StringParameterDefinition>
               <hudson.model.StringParameterDefinition>
                 <name>IMAGE_NAME</name>
@@ -256,8 +256,7 @@ Master:
           }
           stage(&quot;Result&quot;) {
             junit &quot;**/target/surefire-reports/TEST-*.xml&quot;
-            archive &quot;target/*.jar&quot;
-            sh &quot;cp -rf target/*.jar ROOT.jar&quot;
+            archive &quot;target/*.jar,target/*.war&quot;
           }
           stage(&quot;Make Version&quot;) {
             container(&quot;builder&quot;) {
