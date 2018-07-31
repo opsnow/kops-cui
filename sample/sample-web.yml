@@ -99,7 +99,7 @@ spec:
     kind: Deployment
     name: sample-web
   minReplicas: 2
-  maxReplicas: 50
+  maxReplicas: 22
   targetCPUUtilizationPercentage: 50
 
 # apiVersion: autoscaling/v2beta1
@@ -113,7 +113,7 @@ spec:
 #     kind: Deployment
 #     name: sample-web
 #   minReplicas: 2
-#   maxReplicas: 50
+#   maxReplicas: 22
 #   metrics:
 #   - type: Resource
 #     resource:
