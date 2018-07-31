@@ -8,7 +8,7 @@ metadata:
   labels:
     app: sample-spring
 spec:
-  replicas: 2
+  replicas: 3
   revisionHistoryLimit: 10
   strategy:
     type: RollingUpdate
@@ -121,7 +121,7 @@ spec:
     apiVersion: apps/v1
     kind: Deployment
     name: sample-spring
-  minReplicas: 1
+  minReplicas: 2
   maxReplicas: 50
   targetCPUUtilizationPercentage: 50
 
@@ -135,7 +135,7 @@ spec:
 #     apiVersion: apps/v1
 #     kind: Deployment
 #     name: sample-spring
-#   minReplicas: 1
+#   minReplicas: 2
 #   maxReplicas: 50
 #   metrics:
 #   - type: Resource

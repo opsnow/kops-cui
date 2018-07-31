@@ -1,10 +1,11 @@
 controller:
-  autoscaling:
-    enabled: true
-    minReplicas: 2
-    maxReplicas: 9
-    targetCPUUtilizationPercentage: 50
-    targetMemoryUtilizationPercentage: 50
+  replicaCount: 3
+  # autoscaling:
+  #   enabled: true
+  #   minReplicas: 2
+  #   maxReplicas: 9
+  #   targetCPUUtilizationPercentage: 50
+  #   targetMemoryUtilizationPercentage: 50
   service:
     annotations:
       # replace with the correct value of the generated certificate in the AWS console
