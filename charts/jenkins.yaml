@@ -354,8 +354,6 @@ Master:
               sh &quot;&quot;&quot;
                 docker build -t $REGISTRY/$IMAGE_NAME:$VERSION .
                 docker push $REGISTRY/$IMAGE_NAME:$VERSION
-                docker tag $REGISTRY/$IMAGE_NAME $REGISTRY/$IMAGE_NAME:latest
-                docker push $REGISTRY/$IMAGE_NAME:latest
               &quot;&quot;&quot;
             }
           }
