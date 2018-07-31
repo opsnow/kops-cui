@@ -632,7 +632,8 @@ read_cluster_list() {
 }
 
 read_cluster_name() {
-    WORD=$(cat ${SHELL_DIR}/addons/words.txt | shuf -n 1 | xargs)
+    RND=$(ruby -e 'p rand(1...10)')
+    WORD=$(sed -n ${RND}p ${SHELL_DIR}/addons/words.txt)
 
     if [ -z ${WORD} ]; then
         WORD="demo"
