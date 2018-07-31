@@ -1,0 +1,69 @@
+<?xml version='1.0' encoding='UTF-8'?>
+<flow-definition plugin="workflow-job@2.23">
+<actions/>
+<description></description>
+<keepDependencies>false</keepDependencies>
+<definition class="org.jenkinsci.plugins.workflow.cps.CpsFlowDefinition" plugin="workflow-cps@2.54">
+<script>def label = &quot;worker-${UUID.randomUUID().toString()}&quot;
+properties([
+    buildDiscarder(logRotator(daysToKeepStr: &quot;60&quot;, numToKeepStr: &quot;10&quot;))
+])
+podTemplate(label: label, containers: [
+    containerTemplate(name: &quot;builder&quot;, image: &quot;nalbam/builder:latest&quot;, command: &quot;cat&quot;, ttyEnabled: true),
+    containerTemplate(name: &quot;docker&quot;, image: &quot;docker&quot;, command: &quot;cat&quot;, ttyEnabled: true)
+],
+volumes: [
+    hostPathVolume(mountPath: &quot;/var/run/docker.sock&quot;, hostPath: &quot;/var/run/docker.sock&quot;),
+    hostPathVolume(mountPath: &quot;/home/jenkins/.version&quot;, hostPath: &quot;/home/jenkins/.version&quot;),
+    hostPathVolume(mountPath: &quot;/home/jenkins/.helm&quot;, hostPath: &quot;/home/jenkins/.helm&quot;)
+]) {
+    node(label) {
+        stage(&quot;Info&quot;) {
+            sh &quot;&quot;&quot;
+                uname -a
+                date
+            &quot;&quot;&quot;
+        }
+        stage(&quot;Run builder&quot;) {
+            container(&quot;builder&quot;) {
+                sh &quot;&quot;&quot;
+                    uname -a
+                    date
+                    bash /root/extra/jenkins-domain.sh
+                    ls -al /home/jenkins
+                &quot;&quot;&quot;
+            }
+        }
+        stage(&quot;Run docker&quot;) {
+            container(&quot;docker&quot;) {
+                sh &quot;&quot;&quot;
+                    docker version
+                    docker images
+                    docker ps
+                &quot;&quot;&quot;
+            }
+        }
+        stage(&quot;Run kubectl&quot;) {
+            container(&quot;builder&quot;) {
+                sh &quot;&quot;&quot;
+                    kubectl version --client --short
+                    kubectl cluster-info
+                    kubectl get pod,svc,ing
+                &quot;&quot;&quot;
+            }
+        }
+        stage(&quot;Run helm&quot;) {
+            container(&quot;builder&quot;) {
+                sh &quot;&quot;&quot;
+                    bash /root/extra/helm-init.sh
+                &quot;&quot;&quot;
+            }
+        }
+    }
+}
+</script>
+<sandbox>true</sandbox>
+</definition>
+<triggers/>
+<disabled>false</disabled>
+</flow-definition>
