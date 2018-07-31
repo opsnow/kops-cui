@@ -103,7 +103,7 @@ Master:
               <hudson.model.StringParameterDefinition>
                 <name>REPOSITORY_URL</name>
                 <description></description>
-                <defaultValue>https://github.com/nalbam/sample-node</defaultValue>
+                <defaultValue>https://github.com/nalbam/sample-web</defaultValue>
               </hudson.model.StringParameterDefinition>
               <hudson.model.StringParameterDefinition>
                 <name>BRANCH</name>
@@ -113,12 +113,7 @@ Master:
               <hudson.model.StringParameterDefinition>
                 <name>IMAGE_NAME</name>
                 <description></description>
-                <defaultValue>sample-node</defaultValue>
-              </hudson.model.StringParameterDefinition>
-              <hudson.model.StringParameterDefinition>
-                <name>IMAGE_TAG</name>
-                <description></description>
-                <defaultValue>latest</defaultValue>
+                <defaultValue>sample-web</defaultValue>
               </hudson.model.StringParameterDefinition>
             </parameterDefinitions>
           </hudson.model.ParametersDefinitionProperty>
@@ -151,12 +146,21 @@ Master:
               userRemoteConfigs: [[url: &quot;$REPOSITORY_URL&quot;]]]
             )
           }
-          stage(&quot;Build Image&quot;) {
-            container(&quot;docker&quot;) {
+          stage(&quot;Version&quot;) {
+            container(&quot;builder&quot;) {
               sh &quot;&quot;&quot;
-                . /root/extra/jenkins-domain.sh
-                docker build -t $REGISTRY/$IMAGE_NAME:$IMAGE_TAG .
-                docker push $REGISTRY/$IMAGE_NAME:$IMAGE_TAG
+                bash /root/extra/jenkins-domain.sh
+                bash /root/extra/jenkins-version.sh $IMAGE_NAME
+              &quot;&quot;&quot;
+            }
+          }
+          stage(&quot;Image Build&quot;) {
+            container(&quot;docker&quot;) {
+              def REGISTRY = readFile &quot;/home/jenkins/REGISTRY&quot;
+              def VERSION = readFile &quot;/home/jenkins/VERSION&quot;
+              sh &quot;&quot;&quot;
+                docker build -t $REGISTRY/$IMAGE_NAME:$VERSION .
+                docker push $REGISTRY/$IMAGE_NAME:$VERSION
               &quot;&quot;&quot;
             }
           }
@@ -203,19 +207,9 @@ Master:
                 <defaultValue>mvn test</defaultValue>
               </hudson.model.StringParameterDefinition>
               <hudson.model.StringParameterDefinition>
-                <name>IMAGE_REPO</name>
-                <description></description>
-                <defaultValue>docker-registry-devops.demo.opspresso.com/sample</defaultValue>
-              </hudson.model.StringParameterDefinition>
-              <hudson.model.StringParameterDefinition>
                 <name>IMAGE_NAME</name>
                 <description></description>
                 <defaultValue>sample-spring</defaultValue>
-              </hudson.model.StringParameterDefinition>
-              <hudson.model.StringParameterDefinition>
-                <name>IMAGE_TAG</name>
-                <description></description>
-                <defaultValue>latest</defaultValue>
               </hudson.model.StringParameterDefinition>
             </parameterDefinitions>
           </hudson.model.ParametersDefinitionProperty>
@@ -268,17 +262,21 @@ Master:
             archive &quot;target/*.jar&quot;
             sh &quot;cp -rf target/*.jar ROOT.jar&quot;
           }
-          stage(&quot;Build Image&quot;) {
-            container(&quot;docker&quot;) {
+          stage(&quot;Version&quot;) {
+            container(&quot;builder&quot;) {
               sh &quot;&quot;&quot;
-                docker build -t $IMAGE_REPO/$IMAGE_NAME:$IMAGE_TAG .
+                bash /root/extra/jenkins-domain.sh
+                bash /root/extra/jenkins-version.sh $IMAGE_NAME
               &quot;&quot;&quot;
             }
           }
-          stage(&quot;Push Image&quot;) {
+          stage(&quot;Image Build&quot;) {
             container(&quot;docker&quot;) {
+              def REGISTRY = readFile &quot;/home/jenkins/REGISTRY&quot;
+              def VERSION = readFile &quot;/home/jenkins/VERSION&quot;
               sh &quot;&quot;&quot;
-                docker push $IMAGE_REPO/$IMAGE_NAME:$IMAGE_TAG
+                docker build -t $REGISTRY/$IMAGE_NAME:$VERSION .
+                docker push $REGISTRY/$IMAGE_NAME:$VERSION
               &quot;&quot;&quot;
             }
           }
@@ -302,7 +300,7 @@ Master:
               <hudson.model.StringParameterDefinition>
                 <name>REPOSITORY_URL</name>
                 <description></description>
-                <defaultValue>https://github.com/nalbam/sample-node</defaultValue>
+                <defaultValue>https://github.com/nalbam/sample-web</defaultValue>
               </hudson.model.StringParameterDefinition>
               <hudson.model.StringParameterDefinition>
                 <name>BRANCH</name>
@@ -312,7 +310,7 @@ Master:
               <hudson.model.StringParameterDefinition>
                 <name>IMAGE_NAME</name>
                 <description></description>
-                <defaultValue>sample-node</defaultValue>
+                <defaultValue>sample-web</defaultValue>
               </hudson.model.StringParameterDefinition>
             </parameterDefinitions>
           </hudson.model.ParametersDefinitionProperty>
@@ -351,25 +349,33 @@ Master:
                 bash /root/extra/jenkins-domain.sh
                 bash /root/extra/jenkins-version.sh $IMAGE_NAME
               &quot;&quot;&quot;
-              def REGISTRY = readFile "/home/jenkins/REGISTRY"
-              def VERSION = readFile "/home/jenkins/VERSION"
             }
           }
           stage(&quot;Image Build&quot;) {
             container(&quot;docker&quot;) {
+              def REGISTRY = readFile &quot;/home/jenkins/REGISTRY&quot;
+              def VERSION = readFile &quot;/home/jenkins/VERSION&quot;
               sh &quot;&quot;&quot;
                 docker build -t $REGISTRY/$IMAGE_NAME:$VERSION .
                 docker push $REGISTRY/$IMAGE_NAME:$VERSION
+                docker tag $REGISTRY/$IMAGE_NAME $REGISTRY/$IMAGE_NAME:latest
+                docker push $REGISTRY/$IMAGE_NAME:latest
               &quot;&quot;&quot;
             }
           }
           stage(&quot;Push Chartmuseum&quot;) {
             container(&quot;builder&quot;) {
+              def BASE_DOMAIN = readFile &quot;/home/jenkins/BASE_DOMAIN&quot;
+              def REGISTRY = readFile &quot;/home/jenkins/REGISTRY&quot;
+              def VERSION = readFile &quot;/home/jenkins/VERSION&quot;
               sh &quot;&quot;&quot;
                 bash /root/extra/helm-init.sh
                 cd charts/$IMAGE_NAME
-                make out
-                make release
+                sed -i -e &quot;s/version: .*/version: $VERSION/&quot; Chart.yaml
+                sed -i -e &quot;s|basedomain: .*|basedomain: $BASE_DOMAIN|&quot; values.yaml
+                sed -i -e &quot;s|repository: .*|repository: $REGISTRY/$IMAGE_NAME|&quot; values.yaml
+                sed -i -e &quot;s|tag: .*|tag: $VERSION|&quot; values.yaml
+                helm push . chartmuseum
               &quot;&quot;&quot;
             }
           }
@@ -381,9 +387,10 @@ Master:
               &quot;&quot;&quot;
             }
           }
-          stage(&quot;Procees Staging&quot;) {
+          stage(&quot;Proceed Staging&quot;) {
+            def VERSION = readFile &quot;/home/jenkins/VERSION&quot;
             timeout(time: 15, unit: &quot;MINUTES&quot;) {
-              input(message: &quot;Proceed Staging?: $IMAGE_NAME&quot;)
+              input(message: &quot;Proceed Staging?: $IMAGE_NAME-$VERSION&quot;)
             }
           }
           stage(&quot;Draft Staging&quot;) {
@@ -411,17 +418,12 @@ Master:
           <hudson.model.ParametersDefinitionProperty>
             <parameterDefinitions>
               <hudson.model.StringParameterDefinition>
-                <name>IMAGE_REPO</name>
-                <description></description>
-                <defaultValue>docker-registry-devops.demo.opspresso.com/sample</defaultValue>
-              </hudson.model.StringParameterDefinition>
-              <hudson.model.StringParameterDefinition>
                 <name>IMAGE_NAME</name>
                 <description></description>
-                <defaultValue>sample-node</defaultValue>
+                <defaultValue>sample-web</defaultValue>
               </hudson.model.StringParameterDefinition>
               <hudson.model.StringParameterDefinition>
-                <name>IMAGE_TAG</name>
+                <name>VERSION</name>
                 <description></description>
                 <defaultValue>latest</defaultValue>
               </hudson.model.StringParameterDefinition>
@@ -429,31 +431,6 @@ Master:
                 <name>NAMESPACE</name>
                 <description></description>
                 <defaultValue>default</defaultValue>
-              </hudson.model.StringParameterDefinition>
-              <hudson.model.StringParameterDefinition>
-                <name>DEPLOY_NAME</name>
-                <description></description>
-                <defaultValue>sample-node</defaultValue>
-              </hudson.model.StringParameterDefinition>
-              <hudson.model.StringParameterDefinition>
-                <name>REPLICAS</name>
-                <description></description>
-                <defaultValue>1</defaultValue>
-              </hudson.model.StringParameterDefinition>
-              <hudson.model.StringParameterDefinition>
-                <name>SERVICE_TYPE</name>
-                <description></description>
-                <defaultValue>NodePort</defaultValue>
-              </hudson.model.StringParameterDefinition>
-              <hudson.model.StringParameterDefinition>
-                <name>CONTANER_PORT</name>
-                <description></description>
-                <defaultValue>3000</defaultValue>
-              </hudson.model.StringParameterDefinition>
-              <hudson.model.StringParameterDefinition>
-                <name>SERVICE_PORT</name>
-                <description></description>
-                <defaultValue>80</defaultValue>
               </hudson.model.StringParameterDefinition>
             </parameterDefinitions>
           </hudson.model.ParametersDefinitionProperty>
@@ -478,9 +455,9 @@ Master:
       ]) {
         node(label) {
           stage(&quot;Pull Image&quot;) {
-            container(&quot;docker&quot;) {
+            container(&quot;builder&quot;) {
               sh &quot;&quot;&quot;
-                docker pull $IMAGE_REPO/$IMAGE_NAME:$IMAGE_TAG
+                helm install chartmuseum/$IMAGE_NAME --name $IMAGE_NAME --namespace $NAMESPACE
               &quot;&quot;&quot;
             }
           }
@@ -573,8 +550,6 @@ Master:
             sh &quot;&quot;&quot;
               uname -a
               date
-              pwd
-              ls -al
             &quot;&quot;&quot;
           }
           stage(&quot;Run builder&quot;) {
@@ -582,8 +557,6 @@ Master:
               sh &quot;&quot;&quot;
                 uname -a
                 date
-                pwd
-                ls -al
                 bash /root/extra/jenkins-domain.sh
                 ls -al /home/jenkins
               &quot;&quot;&quot;
@@ -610,23 +583,14 @@ Master:
           stage(&quot;Run helm&quot;) {
             container(&quot;builder&quot;) {
               sh &quot;&quot;&quot;
-                helm version --client --short
-                helm init
-                helm list
-                bash /root/extra/helm-chartmuseum.sh
-                helm repo update
-                helm repo list
-                helm plugin list
+                bash /root/extra/helm-init.sh
               &quot;&quot;&quot;
             }
           }
           stage(&quot;Run draft&quot;) {
             container(&quot;builder&quot;) {
               sh &quot;&quot;&quot;
-                draft version --short
-                draft init
-                bash /root/extra/draft-docker-registry.sh
-                draft config list
+                bash /root/extra/draft-init.sh
               &quot;&quot;&quot;
             }
           }
