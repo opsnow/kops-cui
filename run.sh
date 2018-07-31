@@ -632,8 +632,11 @@ read_cluster_list() {
 }
 
 read_cluster_name() {
-    # WORD=$(cat ${SHELL_DIR}/addons/words.txt | shuf -n 1)
-    WORD="demo"
+    WORD=$(cat ${SHELL_DIR}/addons/words.txt | shuf -n 1 | xargs)
+
+    if [ -z ${WORD} ]; then
+        WORD="demo"
+    fi
 
     DEFAULT="${WORD}.k8s.local"
     question "Enter your cluster name [${DEFAULT}] : "
