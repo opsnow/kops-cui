@@ -457,7 +457,8 @@ Master:
           stage(&quot;Pull Image&quot;) {
             container(&quot;builder&quot;) {
               sh &quot;&quot;&quot;
-                helm install chartmuseum/$IMAGE_NAME --name $IMAGE_NAME --namespace $NAMESPACE
+                bash /root/extra/helm-init.sh
+                helm install chartmuseum/$IMAGE_NAME --name $IMAGE_NAME --namespace $NAMESPACE --devel
               &quot;&quot;&quot;
             }
           }
