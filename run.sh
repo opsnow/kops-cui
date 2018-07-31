@@ -426,6 +426,9 @@ devops_menu() {
         1)
             create_cluster_role_binding cluster-admin devops
             helm_apply jenkins devops true
+            echo
+            success "Blue Ocean: https://$DOMAIN/blue"
+            echo
             press_enter devops
             ;;
         2)
@@ -441,9 +444,6 @@ devops_menu() {
         4)
             create_namespace devops
             helm_apply chartmuseum devops true
-            # echo
-            # helm repo add chartmuseum https://$DOMAIN
-            # echo
             press_enter devops
             ;;
         *)

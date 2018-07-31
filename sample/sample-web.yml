@@ -8,7 +8,7 @@ metadata:
   labels:
     app: sample-web
 spec:
-  replicas: 2
+  replicas: 3
   revisionHistoryLimit: 10
   strategy:
     type: RollingUpdate
@@ -99,7 +99,7 @@ spec:
     kind: Deployment
     name: sample-web
   minReplicas: 1
-  maxReplicas: 50
+  maxReplicas: 22
   targetCPUUtilizationPercentage: 50
 
 # apiVersion: autoscaling/v2beta1
@@ -113,7 +113,7 @@ spec:
 #     kind: Deployment
 #     name: sample-web
 #   minReplicas: 1
-#   maxReplicas: 50
+#   maxReplicas: 22
 #   metrics:
 #   - type: Resource
 #     resource:

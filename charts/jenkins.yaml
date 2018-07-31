@@ -364,7 +364,9 @@ Master:
               def VERSION = readFile &quot;/home/jenkins/VERSION&quot;
               sh &quot;&quot;&quot;
                 bash /root/extra/helm-init.sh
+                mv charts/acme charts/$IMAGE_NAME
                 cd charts/$IMAGE_NAME
+                sed -i -e &quot;s/name: .*/name: $IMAGE_NAME/&quot; Chart.yaml
                 sed -i -e &quot;s/version: .*/version: $VERSION/&quot; Chart.yaml
                 sed -i -e &quot;s|basedomain: .*|basedomain: $BASE_DOMAIN|&quot; values.yaml
                 sed -i -e &quot;s|repository: .*|repository: $REGISTRY/$IMAGE_NAME|&quot; values.yaml
@@ -378,7 +380,7 @@ Master:
           }
           stage(&quot;Deploy Development&quot;) {
             container(&quot;builder&quot;) {
-              def NAMESPACE = "development"
+              def NAMESPACE = &quot;development&quot;
               def VERSION = readFile &quot;/home/jenkins/VERSION&quot;
               sh &quot;&quot;&quot;
                 helm upgrade --install $IMAGE_NAME-$NAMESPACE chartmuseum/$IMAGE_NAME --version $VERSION --namespace $NAMESPACE --devel
@@ -386,14 +388,18 @@ Master:
             }
           }
           stage(&quot;Proceed Staging&quot;) {
-            def VERSION = readFile &quot;/home/jenkins/VERSION&quot;
-            timeout(time: 15, unit: &quot;MINUTES&quot;) {
-              input(message: &quot;Proceed Staging?: $IMAGE_NAME-$VERSION&quot;)
+            container(&quot;builder&quot;) {
+              def VERSION = readFile &quot;/home/jenkins/VERSION&quot;
+              def JENKINS = readFile &quot;/home/jenkins/JENKINS&quot;
+              def URL = &quot;https://$JENKINS/blue/organizations/jenkins/$env.JOB_NAME/detail/$env.JOB_NAME/$env.BUILD_NUMBER/pipeline&quot;
+              timeout(time: 15, unit: &quot;MINUTES&quot;) {
+                input(message: &quot;Proceed Staging?: $IMAGE_NAME-$VERSION&quot;)
+              }
             }
           }
           stage(&quot;Deploy Staging&quot;) {
             container(&quot;builder&quot;) {
-              def NAMESPACE = "staging"
+              def NAMESPACE = &quot;staging&quot;
               def VERSION = readFile &quot;/home/jenkins/VERSION&quot;
               sh &quot;&quot;&quot;
                 helm upgrade --install $IMAGE_NAME-$NAMESPACE chartmuseum/$IMAGE_NAME --version $VERSION --namespace $NAMESPACE --devel
@@ -520,6 +526,54 @@ Master:
       }
           </script>
           <sandbox>true</sandbox>
+        </definition>
+        <triggers/>
+        <disabled>false</disabled>
+      </flow-definition>
+    run-pipeline.xml: |-
+      <?xml version='1.0' encoding='UTF-8'?>
+      <flow-definition plugin="workflow-job@2.23">
+        <actions/>
+        <description></description>
+        <keepDependencies>false</keepDependencies>
+        <properties>
+          <hudson.model.ParametersDefinitionProperty>
+            <parameterDefinitions>
+              <hudson.model.StringParameterDefinition>
+                <name>REPOSITORY_URL</name>
+                <description></description>
+                <defaultValue>https://github.com/nalbam/sample-web</defaultValue>
+              </hudson.model.StringParameterDefinition>
+              <hudson.model.StringParameterDefinition>
+                <name>BRANCH</name>
+                <description></description>
+                <defaultValue>master</defaultValue>
+              </hudson.model.StringParameterDefinition>
+            </parameterDefinitions>
+          </hudson.model.ParametersDefinitionProperty>
+          <org.jenkinsci.plugins.workflow.job.properties.PipelineTriggersJobProperty>
+            <triggers/>
+          </org.jenkinsci.plugins.workflow.job.properties.PipelineTriggersJobProperty>
+        </properties>
+        <definition class="org.jenkinsci.plugins.workflow.cps.CpsScmFlowDefinition" plugin="workflow-cps@2.54">
+          <scm class="hudson.plugins.git.GitSCM" plugin="git@3.2.0">
+            <configVersion>2</configVersion>
+            <userRemoteConfigs>
+              <hudson.plugins.git.UserRemoteConfig>
+                <url>$REPOSITORY_URL</url>
+              </hudson.plugins.git.UserRemoteConfig>
+            </userRemoteConfigs>
+            <branches>
+              <hudson.plugins.git.BranchSpec>
+                <name>*/$BRANCH</name>
+              </hudson.plugins.git.BranchSpec>
+            </branches>
+            <doGenerateSubmoduleConfigurations>false</doGenerateSubmoduleConfigurations>
+            <submoduleCfg class="list"/>
+            <extensions/>
+          </scm>
+          <scriptPath>Jenkinsfile</scriptPath>
+          <lightweight>false</lightweight>
         </definition>
         <triggers/>
         <disabled>false</disabled>
