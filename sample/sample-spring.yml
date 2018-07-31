@@ -121,7 +121,7 @@ spec:
     apiVersion: apps/v1
     kind: Deployment
     name: sample-spring
-  minReplicas: 2
+  minReplicas: 1
   maxReplicas: 22
   targetCPUUtilizationPercentage: 50
 
@@ -135,7 +135,7 @@ spec:
 #     apiVersion: apps/v1
 #     kind: Deployment
 #     name: sample-spring
-#   minReplicas: 2
+#   minReplicas: 1
 #   maxReplicas: 22
 #   metrics:
 #   - type: Resource
