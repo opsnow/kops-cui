@@ -44,7 +44,7 @@ Master:
               <hudson.model.StringParameterDefinition>
                 <name>COMMAND</name>
                 <description></description>
-                <defaultValue>draft up</defaultValue>
+                <defaultValue>ls -al</defaultValue>
               </hudson.model.StringParameterDefinition>
             </parameterDefinitions>
           </hudson.model.ParametersDefinitionProperty>
@@ -63,7 +63,6 @@ Master:
       volumes: [
         hostPathVolume(mountPath: &quot;/var/run/docker.sock&quot;, hostPath: &quot;/var/run/docker.sock&quot;),
         hostPathVolume(mountPath: &quot;/home/jenkins/.version&quot;, hostPath: &quot;/home/jenkins/.version&quot;),
-        hostPathVolume(mountPath: &quot;/home/jenkins/.draft&quot;, hostPath: &quot;/home/jenkins/.draft&quot;),
         hostPathVolume(mountPath: &quot;/home/jenkins/.helm&quot;, hostPath: &quot;/home/jenkins/.helm&quot;)
       ]) {
         node(label) {
@@ -133,7 +132,6 @@ Master:
       volumes: [
         hostPathVolume(mountPath: &quot;/var/run/docker.sock&quot;, hostPath: &quot;/var/run/docker.sock&quot;),
         hostPathVolume(mountPath: &quot;/home/jenkins/.version&quot;, hostPath: &quot;/home/jenkins/.version&quot;),
-        hostPathVolume(mountPath: &quot;/home/jenkins/.draft&quot;, hostPath: &quot;/home/jenkins/.draft&quot;),
         hostPathVolume(mountPath: &quot;/home/jenkins/.helm&quot;, hostPath: &quot;/home/jenkins/.helm&quot;)
       ]) {
         node(label) {
@@ -146,7 +144,7 @@ Master:
               userRemoteConfigs: [[url: &quot;$REPOSITORY_URL&quot;]]]
             )
           }
-          stage(&quot;Version&quot;) {
+          stage(&quot;Make Version&quot;) {
             container(&quot;builder&quot;) {
               sh &quot;&quot;&quot;
                 bash /root/extra/jenkins-domain.sh
@@ -230,7 +228,6 @@ Master:
       volumes: [
         hostPathVolume(mountPath: &quot;/var/run/docker.sock&quot;, hostPath: &quot;/var/run/docker.sock&quot;),
         hostPathVolume(mountPath: &quot;/home/jenkins/.version&quot;, hostPath: &quot;/home/jenkins/.version&quot;),
-        hostPathVolume(mountPath: &quot;/home/jenkins/.draft&quot;, hostPath: &quot;/home/jenkins/.draft&quot;),
         hostPathVolume(mountPath: &quot;/home/jenkins/.helm&quot;, hostPath: &quot;/home/jenkins/.helm&quot;)
       ]) {
         node(label) {
@@ -262,7 +259,7 @@ Master:
             archive &quot;target/*.jar&quot;
             sh &quot;cp -rf target/*.jar ROOT.jar&quot;
           }
-          stage(&quot;Version&quot;) {
+          stage(&quot;Make Version&quot;) {
             container(&quot;builder&quot;) {
               sh &quot;&quot;&quot;
                 bash /root/extra/jenkins-domain.sh
@@ -330,7 +327,6 @@ Master:
       volumes: [
         hostPathVolume(mountPath: &quot;/var/run/docker.sock&quot;, hostPath: &quot;/var/run/docker.sock&quot;),
         hostPathVolume(mountPath: &quot;/home/jenkins/.version&quot;, hostPath: &quot;/home/jenkins/.version&quot;),
-        hostPathVolume(mountPath: &quot;/home/jenkins/.draft&quot;, hostPath: &quot;/home/jenkins/.draft&quot;),
         hostPathVolume(mountPath: &quot;/home/jenkins/.helm&quot;, hostPath: &quot;/home/jenkins/.helm&quot;)
       ]) {
         node(label) {
@@ -343,7 +339,7 @@ Master:
               userRemoteConfigs: [[url: &quot;$REPOSITORY_URL&quot;]]]
             )
           }
-          stage(&quot;Version&quot;) {
+          stage(&quot;Make Version&quot;) {
             container(&quot;builder&quot;) {
               sh &quot;&quot;&quot;
                 bash /root/extra/jenkins-domain.sh
@@ -363,7 +359,7 @@ Master:
               &quot;&quot;&quot;
             }
           }
-          stage(&quot;Push Chartmuseum&quot;) {
+          stage(&quot;Chart Build&quot;) {
             container(&quot;builder&quot;) {
               def BASE_DOMAIN = readFile &quot;/home/jenkins/BASE_DOMAIN&quot;
               def REGISTRY = readFile &quot;/home/jenkins/REGISTRY&quot;
@@ -375,15 +371,19 @@ Master:
                 sed -i -e &quot;s|basedomain: .*|basedomain: $BASE_DOMAIN|&quot; values.yaml
                 sed -i -e &quot;s|repository: .*|repository: $REGISTRY/$IMAGE_NAME|&quot; values.yaml
                 sed -i -e &quot;s|tag: .*|tag: $VERSION|&quot; values.yaml
+                helm lint .
                 helm push . chartmuseum
+                helm repo update
+                helm search $IMAGE_NAME
               &quot;&quot;&quot;
             }
           }
-          stage(&quot;Draft Development&quot;) {
+          stage(&quot;Deploy Development&quot;) {
             container(&quot;builder&quot;) {
+              def NAMESPACE = "development"
+              def VERSION = readFile &quot;/home/jenkins/VERSION&quot;
               sh &quot;&quot;&quot;
-                bash /root/extra/draft-init.sh
-                draft up --docker-debug
+                helm upgrade --install $IMAGE_NAME-$NAMESPACE chartmuseum/$IMAGE_NAME --version $VERSION --namespace $NAMESPACE --devel
               &quot;&quot;&quot;
             }
           }
@@ -393,10 +393,12 @@ Master:
               input(message: &quot;Proceed Staging?: $IMAGE_NAME-$VERSION&quot;)
             }
           }
-          stage(&quot;Draft Staging&quot;) {
+          stage(&quot;Deploy Staging&quot;) {
             container(&quot;builder&quot;) {
+              def NAMESPACE = "staging"
+              def VERSION = readFile &quot;/home/jenkins/VERSION&quot;
               sh &quot;&quot;&quot;
-                draft up -e staging
+                helm upgrade --install $IMAGE_NAME-$NAMESPACE chartmuseum/$IMAGE_NAME --version $VERSION --namespace $NAMESPACE --devel
               &quot;&quot;&quot;
             }
           }
@@ -430,7 +432,7 @@ Master:
               <hudson.model.StringParameterDefinition>
                 <name>NAMESPACE</name>
                 <description></description>
-                <defaultValue>default</defaultValue>
+                <defaultValue>production</defaultValue>
               </hudson.model.StringParameterDefinition>
             </parameterDefinitions>
           </hudson.model.ParametersDefinitionProperty>
@@ -450,7 +452,6 @@ Master:
       volumes: [
         hostPathVolume(mountPath: &quot;/var/run/docker.sock&quot;, hostPath: &quot;/var/run/docker.sock&quot;),
         hostPathVolume(mountPath: &quot;/home/jenkins/.version&quot;, hostPath: &quot;/home/jenkins/.version&quot;),
-        hostPathVolume(mountPath: &quot;/home/jenkins/.draft&quot;, hostPath: &quot;/home/jenkins/.draft&quot;),
         hostPathVolume(mountPath: &quot;/home/jenkins/.helm&quot;, hostPath: &quot;/home/jenkins/.helm&quot;)
       ]) {
         node(label) {
@@ -458,7 +459,8 @@ Master:
             container(&quot;builder&quot;) {
               sh &quot;&quot;&quot;
                 bash /root/extra/helm-init.sh
-                helm install chartmuseum/$IMAGE_NAME --name $IMAGE_NAME --namespace $NAMESPACE --devel
+                helm search $IMAGE_NAME
+                helm upgrade --install $IMAGE_NAME-$NAMESPACE chartmuseum/$IMAGE_NAME --version $VERSION --namespace $NAMESPACE --devel
               &quot;&quot;&quot;
             }
           }
@@ -506,7 +508,6 @@ Master:
       volumes: [
         hostPathVolume(mountPath: &quot;/var/run/docker.sock&quot;, hostPath: &quot;/var/run/docker.sock&quot;),
         hostPathVolume(mountPath: &quot;/home/jenkins/.version&quot;, hostPath: &quot;/home/jenkins/.version&quot;),
-        hostPathVolume(mountPath: &quot;/home/jenkins/.draft&quot;, hostPath: &quot;/home/jenkins/.draft&quot;),
         hostPathVolume(mountPath: &quot;/home/jenkins/.helm&quot;, hostPath: &quot;/home/jenkins/.helm&quot;)
       ]) {
         node(label) {
@@ -543,7 +544,6 @@ Master:
       volumes: [
         hostPathVolume(mountPath: &quot;/var/run/docker.sock&quot;, hostPath: &quot;/var/run/docker.sock&quot;),
         hostPathVolume(mountPath: &quot;/home/jenkins/.version&quot;, hostPath: &quot;/home/jenkins/.version&quot;),
-        hostPathVolume(mountPath: &quot;/home/jenkins/.draft&quot;, hostPath: &quot;/home/jenkins/.draft&quot;),
         hostPathVolume(mountPath: &quot;/home/jenkins/.helm&quot;, hostPath: &quot;/home/jenkins/.helm&quot;)
       ]) {
         node(label) {
@@ -585,13 +585,6 @@ Master:
             container(&quot;builder&quot;) {
               sh &quot;&quot;&quot;
                 bash /root/extra/helm-init.sh
-              &quot;&quot;&quot;
-            }
-          }
-          stage(&quot;Run draft&quot;) {
-            container(&quot;builder&quot;) {
-              sh &quot;&quot;&quot;
-                bash /root/extra/draft-init.sh
               &quot;&quot;&quot;
             }
           }
