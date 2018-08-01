@@ -632,7 +632,7 @@ read_cluster_list() {
 }
 
 read_cluster_name() {
-    RND=$(ruby -e 'p rand(1...10)')
+    RND=$(ruby -e 'p rand(1...6)')
     WORD=$(sed -n ${RND}p ${SHELL_DIR}/addons/words.txt)
 
     if [ -z ${WORD} ]; then
