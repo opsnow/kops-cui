@@ -175,15 +175,15 @@ run() {
         fi
     fi
 
-    if [ ! -r ~/.aws/config ] || [ ! -r ~/.aws/credentials ]; then
-        aws configure set default.region ap-northeast-2
-        aws configure
+    # if [ ! -r ~/.aws/config ] || [ ! -r ~/.aws/credentials ]; then
+    #     aws configure set default.region ap-northeast-2
+    #     aws configure
 
-        if [ ! -r ~/.aws/config ] || [ ! -r ~/.aws/credentials ]; then
-            clear_kops_config
-            error
-        fi
-    fi
+    #     if [ ! -r ~/.aws/config ] || [ ! -r ~/.aws/credentials ]; then
+    #         clear_kops_config
+    #         error
+    #     fi
+    # fi
 
     REGION="$(aws configure get default.region)"
 
