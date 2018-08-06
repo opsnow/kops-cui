@@ -1,4 +1,4 @@
-nameOverride: jenkins
+# nameOverride: jenkins
 
 rbac:
   install: true
@@ -9,13 +9,13 @@ Master:
   JavaOpts: "-Dorg.apache.commons.jelly.tags.fmt.timeZone=Asia/Seoul"
   ServiceType: SERVICE_TYPE
   HostName: INGRESS_DOMAIN
-  InstallPlugins:
-    - blueocean:latest
-    - git:latest
-    - kubernetes:latest
-    - workflow-job:latest
-    - workflow-aggregator:latest
-    - credentials-binding:latest
+  # InstallPlugins:
+  #   - blueocean:latest
+  #   - git:latest
+  #   - kubernetes:latest
+  #   - workflow-job:latest
+  #   - workflow-aggregator:latest
+  #   - credentials-binding:latest
   Jobs: |-
     build-command: |-
       <?xml version='1.0' encoding='UTF-8'?>

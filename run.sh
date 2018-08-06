@@ -423,9 +423,6 @@ devops_menu() {
         1)
             create_cluster_role_binding cluster-admin devops
             helm_apply jenkins devops true
-            echo
-            success "Blue Ocean: https://$DOMAIN/blue"
-            echo
             press_enter devops
             ;;
         2)
@@ -1039,11 +1036,11 @@ helm_apply() {
             echo
             get_elb_domain ${APP_NAME} ${NAMESPACE}
             echo
-            success "URL: https://${ELB_DOMAIN}"
+            success "${APP_NAME}: https://${ELB_DOMAIN}"
         else
             echo
             # get_ingres_domain ${APP_NAME} ${NAMESPACE}
-            success "URL: https://${DOMAIN}"
+            success "${APP_NAME}: https://${DOMAIN}"
         fi
     fi
 }
@@ -1182,10 +1179,10 @@ apply_sample_app() {
         get_elb_domain ${APP_NAME} ${NAMESPACE}
 
         echo
-        success "URL: https://${ELB_DOMAIN}"
+        success "${APP_NAME}: https://${ELB_DOMAIN}"
     else
         echo
-        success "URL: https://${DOMAIN}"
+        success "${APP_NAME}: https://${DOMAIN}"
     fi
 }
 
