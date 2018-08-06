@@ -384,6 +384,7 @@ Master:
               def VERSION = readFile &quot;/home/jenkins/VERSION&quot;
               sh &quot;&quot;&quot;
                 helm upgrade --install $IMAGE_NAME-$NAMESPACE chartmuseum/$IMAGE_NAME --version $VERSION --namespace $NAMESPACE --devel
+                helm history $IMAGE_NAME-$NAMESPACE
               &quot;&quot;&quot;
             }
           }
@@ -403,6 +404,7 @@ Master:
               def VERSION = readFile &quot;/home/jenkins/VERSION&quot;
               sh &quot;&quot;&quot;
                 helm upgrade --install $IMAGE_NAME-$NAMESPACE chartmuseum/$IMAGE_NAME --version $VERSION --namespace $NAMESPACE --devel
+                helm history $IMAGE_NAME-$NAMESPACE
               &quot;&quot;&quot;
             }
           }
