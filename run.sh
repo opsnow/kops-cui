@@ -353,29 +353,29 @@ addons_menu() {
 sample_menu() {
     title
 
-    print "1. sample-web"
-    print "2. sample-node"
-    print "3. sample-spring"
+    print "1. redis-master"
     echo
-    print "4. redis-master"
+    print "2. sample-web"
+    print "3. sample-node"
+    print "4. sample-spring"
 
     question
 
     case ${ANSWER} in
         1)
-            apply_sample_app 'sample-web'
+            apply_redis_master
             press_enter sample
             ;;
         2)
-            apply_sample_app 'sample-node'
+            apply_sample_app 'sample-web'
             press_enter sample
             ;;
         3)
-            apply_sample_app 'sample-spring'
+            apply_sample_app 'sample-node'
             press_enter sample
             ;;
         4)
-            apply_redis_master
+            apply_sample_app 'sample-spring'
             press_enter sample
             ;;
         *)
