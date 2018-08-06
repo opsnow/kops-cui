@@ -4,6 +4,8 @@ SHELL_DIR=$(dirname "$0")
 
 L_PAD="$(printf %3s)"
 
+CONFIG=
+
 ANSWER=
 CLUSTER=
 
@@ -26,13 +28,6 @@ topology=private
 zones=
 network_cidr=10.10.0.0/16
 networking=calico
-
-mkdir -p ~/.kops-cui
-
-CONFIG=~/.kops-cui/config
-if [ -f ${CONFIG} ]; then
-    . ${CONFIG}
-fi
 
 print() {
     echo -e "${L_PAD}$@"
@@ -148,6 +143,8 @@ title() {
 run() {
     logo
 
+    get_kops_config
+
     mkdir -p ~/.ssh
     mkdir -p ~/.aws
 
@@ -197,7 +194,7 @@ state_store() {
 
     read_cluster_list
 
-    save_kops_config
+    read_kops_config
 
     get_kops_cluster
 
@@ -541,12 +538,38 @@ get_kops_cluster() {
     CLUSTER=$(kops get --name=${KOPS_CLUSTER_NAME} --state=s3://${KOPS_STATE_STORE} | wc -l | xargs)
 }
 
+get_kops_config() {
+    mkdir -p ~/.kops-cui
+
+    CONFIG=~/.kops-cui/config
+
+    if [ -f ${CONFIG} ]; then
+        . ${CONFIG}
+    fi
+}
+
+read_kops_config() {
+    COUNT=$(aws s3 ls s3://${KOPS_STATE_STORE} | grep ${KOPS_CLUSTER_NAME}.kops-cui | wc -l)
+
+    if [ "${COUNT}" == "0" ]; then
+        save_kops_config
+    else
+        aws s3 cp s3://${KOPS_STATE_STORE}/${KOPS_CLUSTER_NAME}.kops-cui ${CONFIG} --quiet
+    fi
+
+    if [ -f ${CONFIG} ]; then
+        . ${CONFIG}
+    fi
+}
+
 save_kops_config() {
     echo "# kops config" > ${CONFIG}
     echo "KOPS_STATE_STORE=${KOPS_STATE_STORE}" >> ${CONFIG}
     echo "KOPS_CLUSTER_NAME=${KOPS_CLUSTER_NAME}" >> ${CONFIG}
     echo "ROOT_DOMAIN=${ROOT_DOMAIN}" >> ${CONFIG}
     echo "BASE_DOMAIN=${BASE_DOMAIN}" >> ${CONFIG}
+
+    aws s3 cp ${CONFIG} s3://${KOPS_STATE_STORE}/${KOPS_CLUSTER_NAME}.kops-cui --quiet
 }
 
 clear_kops_config() {
@@ -632,7 +655,7 @@ read_cluster_list() {
 }
 
 read_cluster_name() {
-    RND=$(ruby -e 'p rand(1...10)')
+    RND=$(ruby -e 'p rand(1...6)')
     WORD=$(sed -n ${RND}p ${SHELL_DIR}/addons/words.txt)
 
     if [ -z ${WORD} ]; then
@@ -713,14 +736,6 @@ kops_delete() {
     rm -rf ~/.helm ~/.draft
 }
 
-get_ingres_domain() {
-    if [ -z $2 ]; then
-        DOMAIN=$(kubectl get ing --all-namespaces -o wide | grep $1 | awk '{print $3}' | head -1)
-    else
-        DOMAIN=$(kubectl get ing $1 -n $2 -o wide | grep $1 | awk '{print $2}' | head -1)
-    fi
-}
-
 get_elb_domain() {
     ELB_DOMAIN=
 
@@ -763,6 +778,14 @@ get_ingress_elb_name() {
     ELB_NAME=$(echo ${ELB_DOMAIN} | cut -d'-' -f1)
 
     print ${ELB_NAME}
+}
+
+get_ingres_domain() {
+    if [ -z $2 ]; then
+        DOMAIN=$(kubectl get ing --all-namespaces -o wide | grep $1 | awk '{print $3}' | head -1)
+    else
+        DOMAIN=$(kubectl get ing $1 -n $2 -o wide | grep $1 | awk '{print $2}' | head -1)
+    fi
 }
 
 get_ingress_nip_io() {
@@ -960,6 +983,7 @@ helm_nginx_ingress() {
 
     if [ -z ${BASE_DOMAIN} ]; then
         get_ingress_nip_io
+        echo
     else
         get_ingress_elb_name
         echo
@@ -1170,7 +1194,7 @@ get_template() {
     if [ -f ${SHELL_DIR}/${1} ]; then
         cp -rf ${SHELL_DIR}/${1} ${2}
     else
-        curl -s https://raw.githubusercontent.com/opsnow/kops-cui/master/${1} > ${2}
+        curl -sL https://raw.githubusercontent.com/opsnow/kops-cui/master/${1} > ${2}
     fi
     if [ ! -f ${2} ]; then
         error "Template does not exists. [${1}]"

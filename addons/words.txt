@@ -1,10 +1,6 @@
-alderaan
+anakin
 bespin
-corellia
-dagobah
-endor
-geonosis
-jedha
 kamino
-naboo
-tatooine
+chewie
+falcon
+obiwan
