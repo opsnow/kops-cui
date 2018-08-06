@@ -393,7 +393,7 @@ Master:
               def VERSION = readFile &quot;/home/jenkins/VERSION&quot;
               def JENKINS = readFile &quot;/home/jenkins/JENKINS&quot;
               def URL = &quot;https://$JENKINS/blue/organizations/jenkins/$env.JOB_NAME/detail/$env.JOB_NAME/$env.BUILD_NUMBER/pipeline&quot;
-              timeout(time: 15, unit: &quot;MINUTES&quot;) {
+              timeout(time: 30, unit: &quot;MINUTES&quot;) {
                 input(message: &quot;Proceed Staging?: $IMAGE_NAME-$VERSION&quot;)
               }
             }
