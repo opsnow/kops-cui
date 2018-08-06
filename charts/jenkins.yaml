@@ -383,7 +383,9 @@ Master:
               def NAMESPACE = &quot;development&quot;
               def VERSION = readFile &quot;/home/jenkins/VERSION&quot;
               sh &quot;&quot;&quot;
-                helm upgrade --install $IMAGE_NAME-$NAMESPACE chartmuseum/$IMAGE_NAME --version $VERSION --namespace $NAMESPACE --devel
+                helm upgrade --install $IMAGE_NAME-$NAMESPACE chartmuseum/$IMAGE_NAME \
+                             --version $VERSION --namespace $NAMESPACE --devel \
+                             --set fullnameOverride=$IMAGE_NAME-$NAMESPACE
                 helm history $IMAGE_NAME-$NAMESPACE
               &quot;&quot;&quot;
             }
@@ -403,7 +405,9 @@ Master:
               def NAMESPACE = &quot;staging&quot;
               def VERSION = readFile &quot;/home/jenkins/VERSION&quot;
               sh &quot;&quot;&quot;
-                helm upgrade --install $IMAGE_NAME-$NAMESPACE chartmuseum/$IMAGE_NAME --version $VERSION --namespace $NAMESPACE --devel
+                helm upgrade --install $IMAGE_NAME-$NAMESPACE chartmuseum/$IMAGE_NAME \
+                             --version $VERSION --namespace $NAMESPACE --devel \
+                             --set fullnameOverride=$IMAGE_NAME-$NAMESPACE
                 helm history $IMAGE_NAME-$NAMESPACE
               &quot;&quot;&quot;
             }
