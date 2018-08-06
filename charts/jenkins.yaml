@@ -467,6 +467,65 @@ Master:
                 bash /root/extra/helm-init.sh
                 helm search $IMAGE_NAME
                 helm upgrade --install $IMAGE_NAME-$NAMESPACE chartmuseum/$IMAGE_NAME --version $VERSION --namespace $NAMESPACE --devel
+                helm history $IMAGE_NAME-$NAMESPACE
+              &quot;&quot;&quot;
+            }
+          }
+        }
+      }
+          </script>
+          <sandbox>true</sandbox>
+        </definition>
+        <triggers/>
+        <disabled>false</disabled>
+      </flow-definition>
+    remove-image: |-
+      <?xml version='1.0' encoding='UTF-8'?>
+      <flow-definition plugin="workflow-job@2.23">
+        <actions/>
+        <description></description>
+        <keepDependencies>false</keepDependencies>
+        <properties>
+          <hudson.model.ParametersDefinitionProperty>
+            <parameterDefinitions>
+              <hudson.model.StringParameterDefinition>
+                <name>IMAGE_NAME</name>
+                <description></description>
+                <defaultValue>sample-web</defaultValue>
+              </hudson.model.StringParameterDefinition>
+              <hudson.model.StringParameterDefinition>
+                <name>NAMESPACE</name>
+                <description></description>
+                <defaultValue>production</defaultValue>
+              </hudson.model.StringParameterDefinition>
+            </parameterDefinitions>
+          </hudson.model.ParametersDefinitionProperty>
+          <org.jenkinsci.plugins.workflow.job.properties.PipelineTriggersJobProperty>
+            <triggers/>
+          </org.jenkinsci.plugins.workflow.job.properties.PipelineTriggersJobProperty>
+        </properties>
+        <definition class="org.jenkinsci.plugins.workflow.cps.CpsFlowDefinition" plugin="workflow-cps@2.54">
+          <script>def label = &quot;worker-${UUID.randomUUID().toString()}&quot;
+      properties([
+        buildDiscarder(logRotator(daysToKeepStr: &quot;60&quot;, numToKeepStr: &quot;10&quot;))
+      ])
+      podTemplate(label: label, containers: [
+        containerTemplate(name: &quot;builder&quot;, image: &quot;nalbam/builder:latest&quot;, command: &quot;cat&quot;, ttyEnabled: true),
+        containerTemplate(name: &quot;docker&quot;, image: &quot;docker&quot;, command: &quot;cat&quot;, ttyEnabled: true)
+      ],
+      volumes: [
+        hostPathVolume(mountPath: &quot;/var/run/docker.sock&quot;, hostPath: &quot;/var/run/docker.sock&quot;),
+        hostPathVolume(mountPath: &quot;/home/jenkins/.version&quot;, hostPath: &quot;/home/jenkins/.version&quot;),
+        hostPathVolume(mountPath: &quot;/home/jenkins/.helm&quot;, hostPath: &quot;/home/jenkins/.helm&quot;)
+      ]) {
+        node(label) {
+          stage(&quot;Pull Image&quot;) {
+            container(&quot;builder&quot;) {
+              sh &quot;&quot;&quot;
+                bash /root/extra/helm-init.sh
+                helm search $IMAGE_NAME
+                helm history $IMAGE_NAME-$NAMESPACE
+                helm delete --purge $IMAGE_NAME-$NAMESPACE
               &quot;&quot;&quot;
             }
           }
