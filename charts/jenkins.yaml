@@ -318,7 +318,7 @@ Master:
         <definition class="org.jenkinsci.plugins.workflow.cps.CpsFlowDefinition" plugin="workflow-cps@2.54">
           <script>def label = &quot;worker-${UUID.randomUUID().toString()}&quot;
       properties([
-        buildDiscarder(logRotator(daysToKeepStr: &quot;60&quot;, numToKeepStr: &quot;10&quot;))
+        buildDiscarder(logRotator(daysToKeepStr: &quot;60&quot;, numToKeepStr: &quot;30&quot;))
       ])
       podTemplate(label: label, containers: [
         containerTemplate(name: &quot;builder&quot;, image: &quot;nalbam/builder:latest&quot;, command: &quot;cat&quot;, ttyEnabled: true),
