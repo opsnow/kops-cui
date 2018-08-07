@@ -413,9 +413,10 @@ devops_menu() {
     title
 
     print "1. jenkins"
-    print "2. sonatype-nexus"
-    print "3. docker-registry"
-    print "4. chartmuseum"
+    print "2. docker-registry"
+    print "3. chartmuseum"
+    print "4. sonarqube"
+    print "5. sonatype-nexus"
 
     question
 
@@ -427,17 +428,22 @@ devops_menu() {
             ;;
         2)
             create_namespace devops
-            helm_apply sonatype-nexus devops true
+            helm_apply docker-registry devops true
             press_enter devops
             ;;
         3)
             create_namespace devops
-            helm_apply docker-registry devops true
+            helm_apply chartmuseum devops true
             press_enter devops
             ;;
         4)
             create_namespace devops
-            helm_apply chartmuseum devops true
+            helm_apply sonarqube devops true
+            press_enter devops
+            ;;
+        5)
+            create_namespace devops
+            helm_apply sonatype-nexus devops true
             press_enter devops
             ;;
         *)
