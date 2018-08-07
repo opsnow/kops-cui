@@ -48,8 +48,8 @@ spec:
             memory: "256Mi"
             cpu: "250m"
           limits:
-            memory: "1Gi"
-            cpu: "1000m"
+            memory: "256Mi"
+            cpu: "250m"
 #        env:
 #        - name: PROFILE
 #          valueFrom:
