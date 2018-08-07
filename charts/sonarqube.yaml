@@ -1,0 +1,11 @@
+nameOverride: sonarqube
+
+service:
+  type: SERVICE_TYPE
+
+ingress:
+  enabled: INGRESS_ENABLED
+  annotations:
+    kubernetes.io/ingress.class: nginx
+  hosts:
+    - INGRESS_DOMAIN
