@@ -19,7 +19,7 @@ ROOT_DOMAIN=
 BASE_DOMAIN=
 
 cloud=aws
-master_size=m4.large
+master_size=c4.large
 master_count=1
 master_zones=
 node_size=m4.large
@@ -358,6 +358,7 @@ sample_menu() {
     print "2. sample-web"
     print "3. sample-node"
     print "4. sample-spring"
+    print "5. sample-tomcat"
 
     question
 
@@ -376,6 +377,10 @@ sample_menu() {
             ;;
         4)
             apply_sample_app 'sample-spring'
+            press_enter sample
+            ;;
+        5)
+            apply_sample_app 'sample-tomcat'
             press_enter sample
             ;;
         *)

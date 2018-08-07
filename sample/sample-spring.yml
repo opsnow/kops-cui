@@ -8,7 +8,7 @@ metadata:
   labels:
     app: sample-spring
 spec:
-  replicas: 3
+  replicas: 1
   revisionHistoryLimit: 10
   strategy:
     type: RollingUpdate
@@ -24,7 +24,7 @@ spec:
     spec:
       containers:
       - name: sample-spring
-        image: nalbam/sample-spring:alpine
+        image: nalbam/sample-spring:slim
         imagePullPolicy: Always
         ports:
         - containerPort: 8080
@@ -45,8 +45,8 @@ spec:
           periodSeconds: 15
         resources:
           requests:
-            memory: "512Mi"
-            cpu: "500m"
+            memory: "256Mi"
+            cpu: "250m"
           limits:
             memory: "1Gi"
             cpu: "1000m"
