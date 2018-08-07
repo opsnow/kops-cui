@@ -3,10 +3,10 @@
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: sample-node
+  name: sample-tomcat
   namespace: default
   labels:
-    app: sample-node
+    app: sample-tomcat
 spec:
   replicas: 1
   revisionHistoryLimit: 10
@@ -16,23 +16,30 @@ spec:
       maxUnavailable: 25%
   selector:
     matchLabels:
-      k8s-app: sample-node
+      k8s-app: sample-tomcat
   template:
     metadata:
       labels:
-        k8s-app: sample-node
+        k8s-app: sample-tomcat
     spec:
       containers:
-      - name: sample-node
-        image: nalbam/sample-node:slim
+      - name: sample-tomcat
+        image: nalbam/sample-tomcat:slim
         imagePullPolicy: Always
         ports:
-        - containerPort: 3000
+        - containerPort: 8080
           protocol: TCP
         livenessProbe:
           httpGet:
             path: /
-            port: 3000
+            port: 8080
+          initialDelaySeconds: 30
+          timeoutSeconds: 3
+          periodSeconds: 15
+        readinessProbe:
+          httpGet:
+            path: /
+            port: 8080
           initialDelaySeconds: 30
           timeoutSeconds: 3
           periodSeconds: 15
@@ -41,11 +48,14 @@ spec:
             memory: "256Mi"
             cpu: "250m"
           limits:
-            memory: "256Mi"
-            cpu: "250m"
-        env:
-        - name: REDIS_URL
-          value: "redis://redis-master:6379"
+            memory: "1Gi"
+            cpu: "1000m"
+#        env:
+#        - name: PROFILE
+#          valueFrom:
+#            configMapKeyRef:
+#              name: sample-tomcat-dev
+#              key: PROFILE
 
 ---
 # ------------------- Service ------------------- #
@@ -53,18 +63,18 @@ spec:
 apiVersion: v1
 kind: Service
 metadata:
-  name: sample-node
+  name: sample-tomcat
   namespace: default
   labels:
-    app: sample-node
+    app: sample-tomcat
 spec:
   type: SERVICE_TYPE
   ports:
     - name: http
       port: 80
-      targetPort: 3000
+      targetPort: 8080
   selector:
-    k8s-app: sample-node
+    k8s-app: sample-tomcat
 
 ---
 # ------------------- Ingress ------------------- #
@@ -72,10 +82,10 @@ spec:
 apiVersion: extensions/v1beta1
 kind: Ingress
 metadata:
-  name: sample-node
+  name: sample-tomcat
   namespace: default
   labels:
-    app: sample-node
+    app: sample-tomcat
   annotations:
     kubernetes.io/ingress.class: nginx
 spec:
@@ -85,7 +95,7 @@ spec:
       paths:
       - path: /
         backend:
-          serviceName: sample-node
+          serviceName: sample-tomcat
           servicePort: 80
 
 ---
@@ -94,13 +104,13 @@ spec:
 apiVersion: autoscaling/v1
 kind: HorizontalPodAutoscaler
 metadata:
-  name: sample-node
+  name: sample-tomcat
   namespace: default
 spec:
   scaleTargetRef:
     apiVersion: apps/v1
     kind: Deployment
-    name: sample-node
+    name: sample-tomcat
   minReplicas: 1
   maxReplicas: 22
   targetCPUUtilizationPercentage: 50
@@ -108,13 +118,13 @@ spec:
 # apiVersion: autoscaling/v2beta1
 # kind: HorizontalPodAutoscaler
 # metadata:
-#   name: sample-node
+#   name: sample-tomcat
 #   namespace: default
 # spec:
 #   scaleTargetRef:
 #     apiVersion: apps/v1
 #     kind: Deployment
-#     name: sample-node
+#     name: sample-tomcat
 #   minReplicas: 1
 #   maxReplicas: 22
 #   metrics:

@@ -19,7 +19,7 @@ ROOT_DOMAIN=
 BASE_DOMAIN=
 
 cloud=aws
-master_size=m4.large
+master_size=c4.large
 master_count=1
 master_zones=
 node_size=m4.large
@@ -313,7 +313,6 @@ addons_menu() {
             echo
             SECRET=$(kubectl get secret -n ${NAMESPACE} | grep ${APP_NAME}-token | awk '{print $1}')
             kubectl describe secret ${SECRET} -n ${NAMESPACE} | grep 'token:'
-            echo
             press_enter addons
             ;;
         4)
@@ -324,11 +323,17 @@ addons_menu() {
             helm_apply metrics-server kube-system
             echo
             kubectl get hpa
-            echo
             press_enter addons
             ;;
         6)
             helm_apply cluster-autoscaler kube-system
+            echo
+            success "# Edit InstanceGroup for Auto-discovery"
+            echo
+            echo "spec:"
+            echo "  cloudLabels:"
+            echo "    k8s.io/cluster-autoscaler/enabled: \"\""
+            echo "    kubernetes.io/cluster/${KOPS_CLUSTER_NAME}: owned"
             press_enter addons
             ;;
         9)
@@ -358,6 +363,7 @@ sample_menu() {
     print "2. sample-web"
     print "3. sample-node"
     print "4. sample-spring"
+    print "5. sample-tomcat"
 
     question
 
@@ -376,6 +382,10 @@ sample_menu() {
             ;;
         4)
             apply_sample_app 'sample-spring'
+            press_enter sample
+            ;;
+        5)
+            apply_sample_app 'sample-tomcat'
             press_enter sample
             ;;
         *)
