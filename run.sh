@@ -313,7 +313,6 @@ addons_menu() {
             echo
             SECRET=$(kubectl get secret -n ${NAMESPACE} | grep ${APP_NAME}-token | awk '{print $1}')
             kubectl describe secret ${SECRET} -n ${NAMESPACE} | grep 'token:'
-            echo
             press_enter addons
             ;;
         4)
@@ -324,11 +323,17 @@ addons_menu() {
             helm_apply metrics-server kube-system
             echo
             kubectl get hpa
-            echo
             press_enter addons
             ;;
         6)
             helm_apply cluster-autoscaler kube-system
+            echo
+            success "# Edit InstanceGroup for Auto-discovery"
+            echo
+            echo "spec:"
+            echo "  cloudLabels:"
+            echo "    k8s.io/cluster-autoscaler/enabled: \"\""
+            echo "    kubernetes.io/cluster/${KOPS_CLUSTER_NAME}: owned"
             press_enter addons
             ;;
         9)
