@@ -13,7 +13,11 @@ podTemplate(label: label, containers: [
 ]) {
   node(label) {
     stage("Checkout") {
-      git(url: "$REPOSITORY_URL", branch: "$BRANCH")
+      if (env.REPOSITORY_SECRET) {
+        git(url: "$REPOSITORY_URL", branch: "$BRANCH", credentialsId: "$REPOSITORY_SECRET")
+      } else {
+        git(url: "$REPOSITORY_URL", branch: "$BRANCH")
+      }
     }
     stage("Make Version") {
       container("builder") {
