@@ -3,7 +3,7 @@ properties([
   buildDiscarder(logRotator(daysToKeepStr: "60", numToKeepStr: "10"))
 ])
 podTemplate(label: label, containers: [
-  containerTemplate(name: "executor", image: "$EXECUTOR_IMAGE", command: "cat", ttyEnabled: true)
+  containerTemplate(name: "executor", image: "$EXECUTOR_IMAGE", command: "cat", ttyEnabled: true, alwaysPullImage: true)
 ], volumes: [
   hostPathVolume(mountPath: "/var/run/docker.sock", hostPath: "/var/run/docker.sock"),
   hostPathVolume(mountPath: "/home/jenkins/.version", hostPath: "/home/jenkins/.version"),
