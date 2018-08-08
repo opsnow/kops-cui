@@ -1,0 +1,5 @@
+# fullnameOverride: mysql
+
+mysqlUser: demo
+mysqlPassword: password
+mysqlDatabase: demo-db

@@ -358,7 +358,7 @@ addons_menu() {
 sample_menu() {
     title
 
-    print "1. redis-master"
+    print "1. sample-redis"
     echo
     print "2. sample-web"
     print "3. sample-node"
@@ -369,23 +369,23 @@ sample_menu() {
 
     case ${ANSWER} in
         1)
-            apply_redis_master
+            apply_sample sample-redis default true
             press_enter sample
             ;;
         2)
-            apply_sample_app 'sample-web'
+            apply_sample sample-web default true
             press_enter sample
             ;;
         3)
-            apply_sample_app 'sample-node'
+            apply_sample sample-node default true
             press_enter sample
             ;;
         4)
-            apply_sample_app 'sample-spring'
+            apply_sample sample-spring default true
             press_enter sample
             ;;
         5)
-            apply_sample_app 'sample-tomcat'
+            apply_sample sample-tomcat default true
             press_enter sample
             ;;
         *)
@@ -1147,42 +1147,29 @@ create_cluster_role_binding() {
     fi
 }
 
-apply_redis_master() {
-    APP_NAME="sample-redis"
-    NAMESPACE="default"
-
-    create_namespace ${NAMESPACE}
-
-    SAMPLE=/tmp/${APP_NAME}.yml
-    get_template sample/${APP_NAME}.yml ${SAMPLE}
-
-    kubectl apply -f ${SAMPLE}
-
-    waiting 2
-
-    kubectl get pod,svc -n ${NAMESPACE}
-}
-
-apply_sample_app() {
+apply_sample() {
     APP_NAME=${1}
-    NAMESPACE="default"
+    NAMESPACE=${2:-default}
+    INGRESS=${3}
 
-    create_namespace ${NAMESPACE}
-
-    if [ -z ${BASE_DOMAIN} ]; then
-        get_ingress_nip_io
+    if [ ! -z ${INGRESS} ]; then
+        if [ -z ${BASE_DOMAIN} ]; then
+            get_ingress_nip_io
+        fi
     fi
 
     SAMPLE=/tmp/${APP_NAME}.yml
     get_template sample/${APP_NAME}.yml ${SAMPLE}
 
-    if [ -z ${BASE_DOMAIN} ]; then
-        sed -i -e "s/SERVICE_TYPE/LoadBalancer/" ${SAMPLE}
-    else
-        DOMAIN="${APP_NAME}-${NAMESPACE}.${BASE_DOMAIN}"
+    if [ ! -z ${INGRESS} ]; then
+        if [ -z ${BASE_DOMAIN} ]; then
+            sed -i -e "s/SERVICE_TYPE/LoadBalancer/" ${SAMPLE}
+        else
+            DOMAIN="${APP_NAME}-${NAMESPACE}.${BASE_DOMAIN}"
 
-        sed -i -e "s/SERVICE_TYPE/ClusterIP/" ${SAMPLE}
-        sed -i -e "s/INGRESS_DOMAIN/${DOMAIN}/" ${SAMPLE}
+            sed -i -e "s/SERVICE_TYPE/ClusterIP/" ${SAMPLE}
+            sed -i -e "s/INGRESS_DOMAIN/${DOMAIN}/" ${SAMPLE}
+        fi
     fi
 
     kubectl apply -f ${SAMPLE}
@@ -1191,14 +1178,16 @@ apply_sample_app() {
 
     kubectl get pod,svc,ing -n ${NAMESPACE}
 
-    if [ -z ${BASE_DOMAIN} ]; then
-        get_elb_domain ${APP_NAME} ${NAMESPACE}
+    if [ ! -z ${INGRESS} ]; then
+        if [ -z ${BASE_DOMAIN} ]; then
+            get_elb_domain ${APP_NAME} ${NAMESPACE}
 
-        echo
-        success "${APP_NAME}: https://${ELB_DOMAIN}"
-    else
-        echo
-        success "${APP_NAME}: https://${DOMAIN}"
+            echo
+            success "${APP_NAME}: https://${ELB_DOMAIN}"
+        else
+            echo
+            success "${APP_NAME}: https://${DOMAIN}"
+        fi
     fi
 }
 
