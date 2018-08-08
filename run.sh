@@ -1,6 +1,6 @@
 #!/bin/bash
 
-SHELL_DIR=$(dirname "$0")
+SHELL_DIR=$(dirname $0)
 
 L_PAD="$(printf %3s)"
 
@@ -1016,6 +1016,11 @@ helm_apply() {
 
     CHART=/tmp/${APP_NAME}.yaml
     get_template charts/${APP_NAME}.yaml ${CHART}
+
+    # for jenkins jobs
+    if [ "${APP_NAME}" == "jenkins" ]; then
+        ${SHELL_DIR}/jobs/replace.sh ${CHART}
+    fi
 
     sed -i -e "s/CLUSTER_NAME/${KOPS_CLUSTER_NAME}/" ${CHART}
     sed -i -e "s/AWS_REGION/${REGION}/" ${CHART}

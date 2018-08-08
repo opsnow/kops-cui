@@ -1,0 +1,58 @@
+<?xml version='1.0' encoding='UTF-8'?>
+<flow-definition plugin="workflow-job@2.23">
+<actions/>
+<description></description>
+<keepDependencies>false</keepDependencies>
+<properties>
+    <hudson.model.ParametersDefinitionProperty>
+    <parameterDefinitions>
+        <hudson.model.StringParameterDefinition>
+        <name>EXECUTOR_IMAGE</name>
+        <description></description>
+        <defaultValue>nalbam/builder:maven</defaultValue>
+        </hudson.model.StringParameterDefinition>
+        <hudson.model.StringParameterDefinition>
+        <name>REPOSITORY_URL</name>
+        <description></description>
+        <defaultValue>https://github.com/nalbam/sample-spring</defaultValue>
+        </hudson.model.StringParameterDefinition>
+        <hudson.model.StringParameterDefinition>
+        <name>REPOSITORY_SECRET</name>
+        <description></description>
+        <defaultValue></defaultValue>
+        </hudson.model.StringParameterDefinition>
+        <hudson.model.StringParameterDefinition>
+        <name>BRANCH</name>
+        <description></description>
+        <defaultValue>master</defaultValue>
+        </hudson.model.StringParameterDefinition>
+        <hudson.model.StringParameterDefinition>
+        <name>BUILD</name>
+        <description></description>
+        <defaultValue>mvn package -DskipTests -s .m2/settings.xml</defaultValue>
+        </hudson.model.StringParameterDefinition>
+        <hudson.model.StringParameterDefinition>
+        <name>TEST</name>
+        <description></description>
+        <defaultValue>mvn test -s .m2/settings.xml</defaultValue>
+        </hudson.model.StringParameterDefinition>
+        <hudson.model.StringParameterDefinition>
+        <name>IMAGE_NAME</name>
+        <description></description>
+        <defaultValue>sample-spring</defaultValue>
+        </hudson.model.StringParameterDefinition>
+    </parameterDefinitions>
+    </hudson.model.ParametersDefinitionProperty>
+    <org.jenkinsci.plugins.workflow.job.properties.PipelineTriggersJobProperty>
+    <triggers/>
+    </org.jenkinsci.plugins.workflow.job.properties.PipelineTriggersJobProperty>
+</properties>
+<definition class="org.jenkinsci.plugins.workflow.cps.CpsFlowDefinition" plugin="workflow-cps@2.54">
+    <script>// build-maven
+REPLACE
+    </script>
+    <sandbox>true</sandbox>
+</definition>
+<triggers/>
+<disabled>false</disabled>
+</flow-definition>

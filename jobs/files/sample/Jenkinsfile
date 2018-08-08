@@ -1,0 +1,58 @@
+def label = "worker-${UUID.randomUUID().toString()}"
+properties([
+  buildDiscarder(logRotator(daysToKeepStr: "60", numToKeepStr: "10"))
+])
+podTemplate(label: label, containers: [
+  containerTemplate(name: "builder", image: "quay.io/nalbam/builder", command: "cat", ttyEnabled: true),
+  containerTemplate(name: "docker", image: "docker", command: "cat", ttyEnabled: true)
+], volumes: [
+  hostPathVolume(mountPath: "/var/run/docker.sock", hostPath: "/var/run/docker.sock"),
+  hostPathVolume(mountPath: "/home/jenkins/.version", hostPath: "/home/jenkins/.version"),
+  hostPathVolume(mountPath: "/home/jenkins/.helm", hostPath: "/home/jenkins/.helm")
+]) {
+  node(label) {
+    stage("Info") {
+      sh """
+        uname -a
+        date
+        echo $JOB_NAME
+        echo $BUILD_NUMBER
+      """
+    }
+    stage("Run builder") {
+      container("builder") {
+        sh """
+          uname -a
+          date
+          bash /root/extra/jenkins-domain.sh
+          ls -al /home/jenkins
+        """
+      }
+    }
+    stage("Run docker") {
+      container("docker") {
+        sh """
+          docker version
+          docker images
+          docker ps
+        """
+      }
+    }
+    stage("Run kubectl") {
+      container("builder") {
+        sh """
+          kubectl version --client --short
+          kubectl cluster-info
+          kubectl get pod,svc,ing
+        """
+      }
+    }
+    stage("Run helm") {
+      container("builder") {
+        sh """
+          bash /root/extra/helm-init.sh
+        """
+      }
+    }
+  }
+}
