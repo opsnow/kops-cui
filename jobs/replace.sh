@@ -2,7 +2,7 @@
 
 SHELL_DIR=$(dirname $0)
 
-JENKINS=$1
+JENKINS=${1:-/tmp/jenkins.yaml}
 
 rm -rf /tmp/jobs
 mkdir -p /tmp/jobs
@@ -31,11 +31,10 @@ ls /tmp/jobs/ | grep "[.]xml" > /tmp/jobs.txt
 
 echo "  Jobs: |-" >> ${JENKINS}
 while read VAL; do
+    JOB=${VAL%.*l}
     echo "${VAL}"
-    echo "    ${VAL}: |-" >> ${JENKINS}
+    echo "    ${JOB}: |-" >> ${JENKINS}
     while read LINE; do
         echo "      ${LINE}" >> ${JENKINS}
     done < /tmp/jobs/${VAL}
 done < /tmp/jobs.txt
-
-echo

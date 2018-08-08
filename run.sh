@@ -1020,6 +1020,7 @@ helm_apply() {
     # for jenkins jobs
     if [ "${APP_NAME}" == "jenkins" ]; then
         ${SHELL_DIR}/jobs/replace.sh ${CHART}
+        echo
     fi
 
     sed -i -e "s/CLUSTER_NAME/${KOPS_CLUSTER_NAME}/" ${CHART}
