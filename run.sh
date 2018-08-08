@@ -369,7 +369,7 @@ sample_menu() {
 
     case ${ANSWER} in
         1)
-            apply_sample sample-redis default true
+            apply_sample sample-redis default
             press_enter sample
             ;;
         2)

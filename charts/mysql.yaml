@@ -2,4 +2,4 @@
 
 mysqlUser: demo
 mysqlPassword: password
-mysqlDatabase: demo-db
+mysqlDatabase: demo
