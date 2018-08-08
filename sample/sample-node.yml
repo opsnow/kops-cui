@@ -45,7 +45,7 @@ spec:
             cpu: "250m"
         env:
         - name: REDIS_URL
-          value: "redis://redis-master:6379"
+          value: "redis://sample-redis:6379"
 
 ---
 # ------------------- Service ------------------- #

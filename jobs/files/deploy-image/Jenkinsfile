@@ -1,0 +1,27 @@
+def label = "worker-${UUID.randomUUID().toString()}"
+properties([
+  buildDiscarder(logRotator(daysToKeepStr: "60", numToKeepStr: "10"))
+])
+podTemplate(label: label, containers: [
+  containerTemplate(name: "builder", image: "quay.io/nalbam/builder", command: "cat", ttyEnabled: true),
+  containerTemplate(name: "docker", image: "docker", command: "cat", ttyEnabled: true)
+], volumes: [
+  hostPathVolume(mountPath: "/var/run/docker.sock", hostPath: "/var/run/docker.sock"),
+  hostPathVolume(mountPath: "/home/jenkins/.version", hostPath: "/home/jenkins/.version"),
+  hostPathVolume(mountPath: "/home/jenkins/.helm", hostPath: "/home/jenkins/.helm")
+]) {
+  node(label) {
+    stage("Deploy Image") {
+      container("builder") {
+        sh """
+          bash /root/extra/helm-init.sh
+          helm search $IMAGE_NAME
+          helm upgrade --install $IMAGE_NAME-$NAMESPACE chartmuseum/$IMAGE_NAME \
+                       --version $VERSION --namespace $NAMESPACE --devel \
+                       --set fullnameOverride=$IMAGE_NAME-$NAMESPACE
+          helm history $IMAGE_NAME-$NAMESPACE
+        """
+      }
+    }
+  }
+}

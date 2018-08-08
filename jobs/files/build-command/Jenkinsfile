@@ -1,0 +1,24 @@
+def label = "worker-${UUID.randomUUID().toString()}"
+properties([
+  buildDiscarder(logRotator(daysToKeepStr: "60", numToKeepStr: "10"))
+])
+podTemplate(label: label, containers: [
+  containerTemplate(name: "executor", image: "$EXECUTOR_IMAGE", command: "cat", ttyEnabled: true)
+], volumes: [
+  hostPathVolume(mountPath: "/var/run/docker.sock", hostPath: "/var/run/docker.sock"),
+  hostPathVolume(mountPath: "/home/jenkins/.version", hostPath: "/home/jenkins/.version"),
+  hostPathVolume(mountPath: "/home/jenkins/.helm", hostPath: "/home/jenkins/.helm")
+]) {
+  node(label) {
+    stage("Checkout") {
+      git(url: "$REPOSITORY_URL", branch: "$BRANCH")
+    }
+    stage("Command") {
+      container("executor") {
+        sh """
+          $COMMAND
+        """
+      }
+    }
+  }
+}

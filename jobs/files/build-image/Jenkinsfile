@@ -1,0 +1,36 @@
+def label = "worker-${UUID.randomUUID().toString()}"
+properties([
+  buildDiscarder(logRotator(daysToKeepStr: "60", numToKeepStr: "10"))
+])
+podTemplate(label: label, containers: [
+  containerTemplate(name: "builder", image: "quay.io/nalbam/builder", command: "cat", ttyEnabled: true),
+  containerTemplate(name: "docker", image: "docker", command: "cat", ttyEnabled: true)
+], volumes: [
+  hostPathVolume(mountPath: "/var/run/docker.sock", hostPath: "/var/run/docker.sock"),
+  hostPathVolume(mountPath: "/home/jenkins/.version", hostPath: "/home/jenkins/.version"),
+  hostPathVolume(mountPath: "/home/jenkins/.helm", hostPath: "/home/jenkins/.helm")
+]) {
+  node(label) {
+    stage("Checkout") {
+      git(url: "$REPOSITORY_URL", branch: "$BRANCH")
+    }
+    stage("Make Version") {
+      container("builder") {
+        sh """
+          bash /root/extra/jenkins-domain.sh
+          bash /root/extra/jenkins-version.sh $IMAGE_NAME $BRANCH
+        """
+      }
+    }
+    stage("Build Image") {
+      container("docker") {
+        def REGISTRY = readFile "/home/jenkins/REGISTRY"
+        def VERSION = readFile "/home/jenkins/VERSION"
+        sh """
+          docker build -t $REGISTRY/$IMAGE_NAME:$VERSION .
+          docker push $REGISTRY/$IMAGE_NAME:$VERSION
+        """
+      }
+    }
+  }
+}
