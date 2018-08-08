@@ -11,7 +11,7 @@ Master:
   HostName: INGRESS_DOMAIN
   InstallPlugins:
     - blueocean:latest
-    - git:latest
+    - ghprb:latest
     - kubernetes:latest
     - workflow-job:latest
     - workflow-aggregator:latest
@@ -29,7 +29,7 @@ Master:
               <hudson.model.StringParameterDefinition>
                 <name>EXECUTOR_IMAGE</name>
                 <description></description>
-                <defaultValue>nalbam/builder:latest</defaultValue>
+                <defaultValue>quay.io/nalbam/builder</defaultValue>
               </hudson.model.StringParameterDefinition>
               <hudson.model.StringParameterDefinition>
                 <name>REPOSITORY_URL</name>
@@ -67,13 +67,7 @@ Master:
       ]) {
         node(label) {
           stage(&quot;Checkout&quot;) {
-            checkout([$class: &quot;GitSCM&quot;,
-              branches: [[name: &quot;$BRANCH&quot;]],
-              doGenerateSubmoduleConfigurations: false,
-              extensions: [],
-              submoduleCfg: [],
-              userRemoteConfigs: [[url: &quot;$REPOSITORY_URL&quot;]]]
-            )
+            git(url: &quot;$REPOSITORY_URL&quot;, branch: &quot;$BRANCH&quot;)
           }
           stage(&quot;Command&quot;) {
             container(&quot;executor&quot;) {
@@ -126,7 +120,7 @@ Master:
         buildDiscarder(logRotator(daysToKeepStr: &quot;60&quot;, numToKeepStr: &quot;10&quot;))
       ])
       podTemplate(label: label, containers: [
-        containerTemplate(name: &quot;builder&quot;, image: &quot;nalbam/builder:latest&quot;, command: &quot;cat&quot;, ttyEnabled: true),
+        containerTemplate(name: &quot;builder&quot;, image: &quot;quay.io/nalbam/builder&quot;, command: &quot;cat&quot;, ttyEnabled: true),
         containerTemplate(name: &quot;docker&quot;, image: &quot;docker&quot;, command: &quot;cat&quot;, ttyEnabled: true)
       ],
       volumes: [
@@ -136,13 +130,7 @@ Master:
       ]) {
         node(label) {
           stage(&quot;Checkout&quot;) {
-            checkout([$class: &quot;GitSCM&quot;,
-              branches: [[name: &quot;$BRANCH&quot;]],
-              doGenerateSubmoduleConfigurations: false,
-              extensions: [],
-              submoduleCfg: [],
-              userRemoteConfigs: [[url: &quot;$REPOSITORY_URL&quot;]]]
-            )
+            git(url: &quot;$REPOSITORY_URL&quot;, branch: &quot;$BRANCH&quot;)
           }
           stage(&quot;Make Version&quot;) {
             container(&quot;builder&quot;) {
@@ -222,7 +210,7 @@ Master:
       ])
       podTemplate(label: label, containers: [
         containerTemplate(name: &quot;executor&quot;, image: &quot;$EXECUTOR_IMAGE&quot;, command: &quot;cat&quot;, ttyEnabled: true),
-        containerTemplate(name: &quot;builder&quot;, image: &quot;nalbam/builder:latest&quot;, command: &quot;cat&quot;, ttyEnabled: true),
+        containerTemplate(name: &quot;builder&quot;, image: &quot;quay.io/nalbam/builder&quot;, command: &quot;cat&quot;, ttyEnabled: true),
         containerTemplate(name: &quot;docker&quot;, image: &quot;docker&quot;, command: &quot;cat&quot;, ttyEnabled: true)
       ],
       volumes: [
@@ -232,13 +220,7 @@ Master:
       ]) {
         node(label) {
           stage(&quot;Checkout&quot;) {
-            checkout([$class: &quot;GitSCM&quot;,
-              branches: [[name: &quot;$BRANCH&quot;]],
-              doGenerateSubmoduleConfigurations: false,
-              extensions: [],
-              submoduleCfg: [],
-              userRemoteConfigs: [[url: &quot;$REPOSITORY_URL&quot;]]]
-            )
+            git(url: &quot;$REPOSITORY_URL&quot;, branch: &quot;$BRANCH&quot;)
           }
           stage(&quot;Make Version&quot;) {
             container(&quot;builder&quot;) {
@@ -321,7 +303,7 @@ Master:
         buildDiscarder(logRotator(daysToKeepStr: &quot;60&quot;, numToKeepStr: &quot;30&quot;))
       ])
       podTemplate(label: label, containers: [
-        containerTemplate(name: &quot;builder&quot;, image: &quot;nalbam/builder:latest&quot;, command: &quot;cat&quot;, ttyEnabled: true),
+        containerTemplate(name: &quot;builder&quot;, image: &quot;quay.io/nalbam/builder&quot;, command: &quot;cat&quot;, ttyEnabled: true),
         containerTemplate(name: &quot;docker&quot;, image: &quot;docker&quot;, command: &quot;cat&quot;, ttyEnabled: true)
       ],
       volumes: [
@@ -331,19 +313,13 @@ Master:
       ]) {
         node(label) {
           stage(&quot;Checkout&quot;) {
-            checkout([$class: &quot;GitSCM&quot;,
-              branches: [[name: &quot;$BRANCH&quot;]],
-              doGenerateSubmoduleConfigurations: false,
-              extensions: [],
-              submoduleCfg: [],
-              userRemoteConfigs: [[url: &quot;$REPOSITORY_URL&quot;]]]
-            )
+            git(url: &quot;$REPOSITORY_URL&quot;, branch: &quot;$BRANCH&quot;)
           }
           stage(&quot;Make Version&quot;) {
             container(&quot;builder&quot;) {
               sh &quot;&quot;&quot;
                 bash /root/extra/jenkins-domain.sh
-                bash /root/extra/jenkins-version.sh $IMAGE_NAME
+                bash /root/extra/jenkins-version.sh $IMAGE_NAME $BRANCH
               &quot;&quot;&quot;
             }
           }
@@ -456,7 +432,7 @@ Master:
         buildDiscarder(logRotator(daysToKeepStr: &quot;60&quot;, numToKeepStr: &quot;10&quot;))
       ])
       podTemplate(label: label, containers: [
-        containerTemplate(name: &quot;builder&quot;, image: &quot;nalbam/builder:latest&quot;, command: &quot;cat&quot;, ttyEnabled: true),
+        containerTemplate(name: &quot;builder&quot;, image: &quot;quay.io/nalbam/builder&quot;, command: &quot;cat&quot;, ttyEnabled: true),
         containerTemplate(name: &quot;docker&quot;, image: &quot;docker&quot;, command: &quot;cat&quot;, ttyEnabled: true)
       ],
       volumes: [
@@ -514,7 +490,7 @@ Master:
         buildDiscarder(logRotator(daysToKeepStr: &quot;60&quot;, numToKeepStr: &quot;10&quot;))
       ])
       podTemplate(label: label, containers: [
-        containerTemplate(name: &quot;builder&quot;, image: &quot;nalbam/builder:latest&quot;, command: &quot;cat&quot;, ttyEnabled: true),
+        containerTemplate(name: &quot;builder&quot;, image: &quot;quay.io/nalbam/builder&quot;, command: &quot;cat&quot;, ttyEnabled: true),
         containerTemplate(name: &quot;docker&quot;, image: &quot;docker&quot;, command: &quot;cat&quot;, ttyEnabled: true)
       ],
       volumes: [
@@ -553,7 +529,7 @@ Master:
               <hudson.model.StringParameterDefinition>
                 <name>EXECUTOR_IMAGE</name>
                 <description></description>
-                <defaultValue>nalbam/builder:latest</defaultValue>
+                <defaultValue>quay.io/nalbam/builder</defaultValue>
               </hudson.model.StringParameterDefinition>
               <hudson.model.StringParameterDefinition>
                 <name>COMMAND</name>
@@ -655,7 +631,7 @@ Master:
         buildDiscarder(logRotator(daysToKeepStr: &quot;60&quot;, numToKeepStr: &quot;10&quot;))
       ])
       podTemplate(label: label, containers: [
-        containerTemplate(name: &quot;builder&quot;, image: &quot;nalbam/builder:latest&quot;, command: &quot;cat&quot;, ttyEnabled: true),
+        containerTemplate(name: &quot;builder&quot;, image: &quot;quay.io/nalbam/builder&quot;, command: &quot;cat&quot;, ttyEnabled: true),
         containerTemplate(name: &quot;docker&quot;, image: &quot;docker&quot;, command: &quot;cat&quot;, ttyEnabled: true)
       ],
       volumes: [
