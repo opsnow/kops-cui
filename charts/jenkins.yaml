@@ -59,8 +59,7 @@ Master:
       ])
       podTemplate(label: label, containers: [
         containerTemplate(name: &quot;executor&quot;, image: &quot;$EXECUTOR_IMAGE&quot;, command: &quot;cat&quot;, ttyEnabled: true)
-      ],
-      volumes: [
+      ], volumes: [
         hostPathVolume(mountPath: &quot;/var/run/docker.sock&quot;, hostPath: &quot;/var/run/docker.sock&quot;),
         hostPathVolume(mountPath: &quot;/home/jenkins/.version&quot;, hostPath: &quot;/home/jenkins/.version&quot;),
         hostPathVolume(mountPath: &quot;/home/jenkins/.helm&quot;, hostPath: &quot;/home/jenkins/.helm&quot;)
@@ -122,8 +121,7 @@ Master:
       podTemplate(label: label, containers: [
         containerTemplate(name: &quot;builder&quot;, image: &quot;quay.io/nalbam/builder&quot;, command: &quot;cat&quot;, ttyEnabled: true),
         containerTemplate(name: &quot;docker&quot;, image: &quot;docker&quot;, command: &quot;cat&quot;, ttyEnabled: true)
-      ],
-      volumes: [
+      ], volumes: [
         hostPathVolume(mountPath: &quot;/var/run/docker.sock&quot;, hostPath: &quot;/var/run/docker.sock&quot;),
         hostPathVolume(mountPath: &quot;/home/jenkins/.version&quot;, hostPath: &quot;/home/jenkins/.version&quot;),
         hostPathVolume(mountPath: &quot;/home/jenkins/.helm&quot;, hostPath: &quot;/home/jenkins/.helm&quot;)
@@ -212,8 +210,7 @@ Master:
         containerTemplate(name: &quot;executor&quot;, image: &quot;$EXECUTOR_IMAGE&quot;, command: &quot;cat&quot;, ttyEnabled: true),
         containerTemplate(name: &quot;builder&quot;, image: &quot;quay.io/nalbam/builder&quot;, command: &quot;cat&quot;, ttyEnabled: true),
         containerTemplate(name: &quot;docker&quot;, image: &quot;docker&quot;, command: &quot;cat&quot;, ttyEnabled: true)
-      ],
-      volumes: [
+      ], volumes: [
         hostPathVolume(mountPath: &quot;/var/run/docker.sock&quot;, hostPath: &quot;/var/run/docker.sock&quot;),
         hostPathVolume(mountPath: &quot;/home/jenkins/.version&quot;, hostPath: &quot;/home/jenkins/.version&quot;),
         hostPathVolume(mountPath: &quot;/home/jenkins/.helm&quot;, hostPath: &quot;/home/jenkins/.helm&quot;)
@@ -287,6 +284,11 @@ Master:
                 <defaultValue>master</defaultValue>
               </hudson.model.StringParameterDefinition>
               <hudson.model.StringParameterDefinition>
+                <name>REPOSITORY_SECRET</name>
+                <description></description>
+                <defaultValue></defaultValue>
+              </hudson.model.StringParameterDefinition>
+              <hudson.model.StringParameterDefinition>
                 <name>IMAGE_NAME</name>
                 <description></description>
                 <defaultValue>sample-web</defaultValue>
@@ -302,18 +304,24 @@ Master:
       properties([
         buildDiscarder(logRotator(daysToKeepStr: &quot;60&quot;, numToKeepStr: &quot;30&quot;))
       ])
-      podTemplate(label: label, containers: [
+      podTemplate(label: label,
+      containers: [
         containerTemplate(name: &quot;builder&quot;, image: &quot;quay.io/nalbam/builder&quot;, command: &quot;cat&quot;, ttyEnabled: true),
         containerTemplate(name: &quot;docker&quot;, image: &quot;docker&quot;, command: &quot;cat&quot;, ttyEnabled: true)
       ],
       volumes: [
         hostPathVolume(mountPath: &quot;/var/run/docker.sock&quot;, hostPath: &quot;/var/run/docker.sock&quot;),
         hostPathVolume(mountPath: &quot;/home/jenkins/.version&quot;, hostPath: &quot;/home/jenkins/.version&quot;),
+        hostPathVolume(mountPath: &quot;/home/jenkins/.draft&quot;, hostPath: &quot;/home/jenkins/.draft&quot;),
         hostPathVolume(mountPath: &quot;/home/jenkins/.helm&quot;, hostPath: &quot;/home/jenkins/.helm&quot;)
       ]) {
         node(label) {
           stage(&quot;Checkout&quot;) {
-            git(url: &quot;$REPOSITORY_URL&quot;, branch: &quot;$BRANCH&quot;)
+            if (REPOSITORY_SECRET) {
+              git(url: &quot;$REPOSITORY_URL&quot;, branch: &quot;$BRANCH&quot;, credentialsId: &quot;$REPOSITORY_SECRET&quot;)
+            } else {
+              git(url: &quot;$REPOSITORY_URL&quot;, branch: &quot;$BRANCH&quot;)
+            }
           }
           stage(&quot;Make Version&quot;) {
             container(&quot;builder&quot;) {
@@ -323,69 +331,77 @@ Master:
               &quot;&quot;&quot;
             }
           }
-          stage(&quot;Image Build&quot;) {
-            container(&quot;docker&quot;) {
-              def REGISTRY = readFile &quot;/home/jenkins/REGISTRY&quot;
-              def VERSION = readFile &quot;/home/jenkins/VERSION&quot;
-              sh &quot;&quot;&quot;
-                docker build -t $REGISTRY/$IMAGE_NAME:$VERSION .
-                docker push $REGISTRY/$IMAGE_NAME:$VERSION
-              &quot;&quot;&quot;
-            }
-          }
-          stage(&quot;Chart Build&quot;) {
+          stage(&quot;Make Charts&quot;) {
             container(&quot;builder&quot;) {
               def BASE_DOMAIN = readFile &quot;/home/jenkins/BASE_DOMAIN&quot;
               def REGISTRY = readFile &quot;/home/jenkins/REGISTRY&quot;
               def VERSION = readFile &quot;/home/jenkins/VERSION&quot;
               sh &quot;&quot;&quot;
-                bash /root/extra/helm-init.sh
+                # Chart.yaml
+                sed -i -e &quot;s/name: .*/name: $IMAGE_NAME/&quot; charts/acme/Chart.yaml
+                sed -i -e &quot;s/version: .*/version: $VERSION/&quot; charts/acme/Chart.yaml
+                cat charts/acme/Chart.yaml
+                # values.yaml
+                sed -i -e &quot;s|basedomain: .*|basedomain: $BASE_DOMAIN|&quot; charts/acme/values.yaml
+                sed -i -e &quot;s|repository: .*|repository: $REGISTRY/$IMAGE_NAME|&quot; charts/acme/values.yaml
+                sed -i -e &quot;s|tag: .*|tag: $VERSION|&quot; charts/acme/values.yaml
+                cat charts/acme/values.yaml
+                # mv
                 mv charts/acme charts/$IMAGE_NAME
-                cd charts/$IMAGE_NAME
-                sed -i -e &quot;s/name: .*/name: $IMAGE_NAME/&quot; Chart.yaml
-                sed -i -e &quot;s/version: .*/version: $VERSION/&quot; Chart.yaml
-                sed -i -e &quot;s|basedomain: .*|basedomain: $BASE_DOMAIN|&quot; values.yaml
-                sed -i -e &quot;s|repository: .*|repository: $REGISTRY/$IMAGE_NAME|&quot; values.yaml
-                sed -i -e &quot;s|tag: .*|tag: $VERSION|&quot; values.yaml
-                helm lint .
-                helm push . chartmuseum
-                helm repo update
-                helm search $IMAGE_NAME
               &quot;&quot;&quot;
             }
           }
-          stage(&quot;Deploy Development&quot;) {
-            container(&quot;builder&quot;) {
-              def NAMESPACE = &quot;development&quot;
-              def VERSION = readFile &quot;/home/jenkins/VERSION&quot;
-              sh &quot;&quot;&quot;
-                helm upgrade --install $IMAGE_NAME-$NAMESPACE chartmuseum/$IMAGE_NAME \
-                             --version $VERSION --namespace $NAMESPACE --devel \
-                             --set fullnameOverride=$IMAGE_NAME-$NAMESPACE
-                helm history $IMAGE_NAME-$NAMESPACE
-              &quot;&quot;&quot;
-            }
-          }
-          stage(&quot;Proceed Staging&quot;) {
-            container(&quot;builder&quot;) {
-              def VERSION = readFile &quot;/home/jenkins/VERSION&quot;
-              def JENKINS = readFile &quot;/home/jenkins/JENKINS&quot;
-              def URL = &quot;https://$JENKINS/blue/organizations/jenkins/$env.JOB_NAME/detail/$env.JOB_NAME/$env.BUILD_NUMBER/pipeline&quot;
-              timeout(time: 30, unit: &quot;MINUTES&quot;) {
-                input(message: &quot;Proceed Staging?: $IMAGE_NAME-$VERSION&quot;)
+          if (BRANCH != 'master') {
+            stage(&quot;Deploy Development&quot;) {
+              container(&quot;builder&quot;) {
+                def NAMESPACE = &quot;development&quot;
+                sh &quot;&quot;&quot;
+                  bash /root/extra/draft-init.sh
+                  sed -i -e &quot;s/NAMESPACE/$NAMESPACE/g&quot; draft.toml
+                  sed -i -e &quot;s/NAME/$IMAGE_NAME-$NAMESPACE/g&quot; draft.toml
+                  cat draft.toml
+                  draft up --docker-debug
+                &quot;&quot;&quot;
               }
             }
           }
-          stage(&quot;Deploy Staging&quot;) {
-            container(&quot;builder&quot;) {
-              def NAMESPACE = &quot;staging&quot;
-              def VERSION = readFile &quot;/home/jenkins/VERSION&quot;
-              sh &quot;&quot;&quot;
-                helm upgrade --install $IMAGE_NAME-$NAMESPACE chartmuseum/$IMAGE_NAME \
-                             --version $VERSION --namespace $NAMESPACE --devel \
-                             --set fullnameOverride=$IMAGE_NAME-$NAMESPACE
-                helm history $IMAGE_NAME-$NAMESPACE
-              &quot;&quot;&quot;
+          if (BRANCH == 'master') {
+            stage(&quot;Build Image&quot;) {
+              container(&quot;docker&quot;) {
+                def REGISTRY = readFile &quot;/home/jenkins/REGISTRY&quot;
+                def VERSION = readFile &quot;/home/jenkins/VERSION&quot;
+                sh &quot;&quot;&quot;
+                  docker build -t $REGISTRY/$IMAGE_NAME:$VERSION .
+                  docker push $REGISTRY/$IMAGE_NAME:$VERSION
+                &quot;&quot;&quot;
+              }
+            }
+            stage(&quot;Build Charts&quot;) {
+              container(&quot;builder&quot;) {
+                def BASE_DOMAIN = readFile &quot;/home/jenkins/BASE_DOMAIN&quot;
+                def REGISTRY = readFile &quot;/home/jenkins/REGISTRY&quot;
+                def VERSION = readFile &quot;/home/jenkins/VERSION&quot;
+                sh &quot;&quot;&quot;
+                  bash /root/extra/helm-init.sh
+                  cd charts/$IMAGE_NAME
+                  helm lint .
+                  helm push . chartmuseum
+                  helm repo update
+                  helm search $IMAGE_NAME
+                &quot;&quot;&quot;
+              }
+            }
+            stage(&quot;Deploy Staging&quot;) {
+              container(&quot;builder&quot;) {
+                def NAMESPACE = &quot;staging&quot;
+                def VERSION = readFile &quot;/home/jenkins/VERSION&quot;
+                sh &quot;&quot;&quot;
+                  helm upgrade --install $IMAGE_NAME-$NAMESPACE chartmuseum/$IMAGE_NAME \
+                              --version $VERSION --namespace $NAMESPACE --devel \
+                              --set fullnameOverride=$IMAGE_NAME-$NAMESPACE
+                  helm history $IMAGE_NAME-$NAMESPACE
+                &quot;&quot;&quot;
+              }
             }
           }
         }
@@ -434,8 +450,7 @@ Master:
       podTemplate(label: label, containers: [
         containerTemplate(name: &quot;builder&quot;, image: &quot;quay.io/nalbam/builder&quot;, command: &quot;cat&quot;, ttyEnabled: true),
         containerTemplate(name: &quot;docker&quot;, image: &quot;docker&quot;, command: &quot;cat&quot;, ttyEnabled: true)
-      ],
-      volumes: [
+      ], volumes: [
         hostPathVolume(mountPath: &quot;/var/run/docker.sock&quot;, hostPath: &quot;/var/run/docker.sock&quot;),
         hostPathVolume(mountPath: &quot;/home/jenkins/.version&quot;, hostPath: &quot;/home/jenkins/.version&quot;),
         hostPathVolume(mountPath: &quot;/home/jenkins/.helm&quot;, hostPath: &quot;/home/jenkins/.helm&quot;)
@@ -446,7 +461,9 @@ Master:
               sh &quot;&quot;&quot;
                 bash /root/extra/helm-init.sh
                 helm search $IMAGE_NAME
-                helm upgrade --install $IMAGE_NAME-$NAMESPACE chartmuseum/$IMAGE_NAME --version $VERSION --namespace $NAMESPACE --devel
+                helm upgrade --install $IMAGE_NAME-$NAMESPACE chartmuseum/$IMAGE_NAME \
+                             --version $VERSION --namespace $NAMESPACE --devel \
+                             --set fullnameOverride=$IMAGE_NAME-$NAMESPACE
                 helm history $IMAGE_NAME-$NAMESPACE
               &quot;&quot;&quot;
             }
@@ -492,8 +509,7 @@ Master:
       podTemplate(label: label, containers: [
         containerTemplate(name: &quot;builder&quot;, image: &quot;quay.io/nalbam/builder&quot;, command: &quot;cat&quot;, ttyEnabled: true),
         containerTemplate(name: &quot;docker&quot;, image: &quot;docker&quot;, command: &quot;cat&quot;, ttyEnabled: true)
-      ],
-      volumes: [
+      ], volumes: [
         hostPathVolume(mountPath: &quot;/var/run/docker.sock&quot;, hostPath: &quot;/var/run/docker.sock&quot;),
         hostPathVolume(mountPath: &quot;/home/jenkins/.version&quot;, hostPath: &quot;/home/jenkins/.version&quot;),
         hostPathVolume(mountPath: &quot;/home/jenkins/.helm&quot;, hostPath: &quot;/home/jenkins/.helm&quot;)
@@ -549,8 +565,7 @@ Master:
       ])
       podTemplate(label: label, containers: [
         containerTemplate(name: &quot;executor&quot;, image: &quot;$EXECUTOR_IMAGE&quot;, command: &quot;cat&quot;, ttyEnabled: true)
-      ],
-      volumes: [
+      ], volumes: [
         hostPathVolume(mountPath: &quot;/var/run/docker.sock&quot;, hostPath: &quot;/var/run/docker.sock&quot;),
         hostPathVolume(mountPath: &quot;/home/jenkins/.version&quot;, hostPath: &quot;/home/jenkins/.version&quot;),
         hostPathVolume(mountPath: &quot;/home/jenkins/.helm&quot;, hostPath: &quot;/home/jenkins/.helm&quot;)
@@ -571,7 +586,7 @@ Master:
         <triggers/>
         <disabled>false</disabled>
       </flow-definition>
-    run-pipeline.xml: |-
+    run-pipeline: |-
       <?xml version='1.0' encoding='UTF-8'?>
       <flow-definition plugin="workflow-job@2.23">
         <actions/>
@@ -590,6 +605,11 @@ Master:
                 <description></description>
                 <defaultValue>master</defaultValue>
               </hudson.model.StringParameterDefinition>
+              <hudson.model.StringParameterDefinition>
+                <name>IMAGE_NAME</name>
+                <description></description>
+                <defaultValue>sample-web</defaultValue>
+              </hudson.model.StringParameterDefinition>
             </parameterDefinitions>
           </hudson.model.ParametersDefinitionProperty>
           <org.jenkinsci.plugins.workflow.job.properties.PipelineTriggersJobProperty>
@@ -606,7 +626,7 @@ Master:
             </userRemoteConfigs>
             <branches>
               <hudson.plugins.git.BranchSpec>
-                <name>*/$BRANCH</name>
+                <name>$BRANCH</name>
               </hudson.plugins.git.BranchSpec>
             </branches>
             <doGenerateSubmoduleConfigurations>false</doGenerateSubmoduleConfigurations>
@@ -633,8 +653,7 @@ Master:
       podTemplate(label: label, containers: [
         containerTemplate(name: &quot;builder&quot;, image: &quot;quay.io/nalbam/builder&quot;, command: &quot;cat&quot;, ttyEnabled: true),
         containerTemplate(name: &quot;docker&quot;, image: &quot;docker&quot;, command: &quot;cat&quot;, ttyEnabled: true)
-      ],
-      volumes: [
+      ], volumes: [
         hostPathVolume(mountPath: &quot;/var/run/docker.sock&quot;, hostPath: &quot;/var/run/docker.sock&quot;),
         hostPathVolume(mountPath: &quot;/home/jenkins/.version&quot;, hostPath: &quot;/home/jenkins/.version&quot;),
         hostPathVolume(mountPath: &quot;/home/jenkins/.helm&quot;, hostPath: &quot;/home/jenkins/.helm&quot;)
@@ -644,6 +663,8 @@ Master:
             sh &quot;&quot;&quot;
               uname -a
               date
+              echo $env.JOB_NAME
+              echo $env.BUILD_NUMBER
             &quot;&quot;&quot;
           }
           stage(&quot;Run builder&quot;) {
