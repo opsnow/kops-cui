@@ -12,7 +12,7 @@
         <defaultValue>https://github.com/nalbam/sample-web</defaultValue>
         </hudson.model.StringParameterDefinition>
         <hudson.model.StringParameterDefinition>
-        <name>BRANCH</name>
+        <name>BRANCH_NAME</name>
         <description></description>
         <defaultValue>master</defaultValue>
         </hudson.model.StringParameterDefinition>
@@ -37,7 +37,7 @@
     </userRemoteConfigs>
     <branches>
         <hudson.plugins.git.BranchSpec>
-        <name>$BRANCH</name>
+        <name>$BRANCH_NAME</name>
         </hudson.plugins.git.BranchSpec>
     </branches>
     <doGenerateSubmoduleConfigurations>false</doGenerateSubmoduleConfigurations>
