@@ -22,7 +22,7 @@
         <defaultValue></defaultValue>
         </hudson.model.StringParameterDefinition>
         <hudson.model.StringParameterDefinition>
-        <name>BRANCH</name>
+        <name>BRANCH_NAME</name>
         <description></description>
         <defaultValue>master</defaultValue>
         </hudson.model.StringParameterDefinition>
