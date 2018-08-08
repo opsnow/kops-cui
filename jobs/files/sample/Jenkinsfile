@@ -17,7 +17,6 @@ podTemplate(label: label, containers: [
         date
         echo $BUILD_NUMBER
         echo $JOB_NAME
-        echo $BRANCH_NAME
       """
     }
     stage("Run builder") {
