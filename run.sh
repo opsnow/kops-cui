@@ -203,9 +203,9 @@ cluster_menu() {
         print "1. Get Cluster"
         print "2. Edit Cluster"
         print "3. Update Cluster"
-        print "4. Rolling Update Cluster"
+        print "4. Rolling Update"
         print "5. Validate Cluster"
-        print "6. Export Kubernetes Config"
+        print "6. Export Kube Config"
         echo
         print "9. Delete Cluster"
         echo
@@ -302,7 +302,6 @@ addons_menu() {
             press_enter addons
             ;;
         2)
-            create_namespace kube-ingress
             helm_nginx_ingress kube-ingress
             press_enter addons
             ;;
@@ -402,12 +401,10 @@ monitor_menu() {
 
     case ${ANSWER} in
         1)
-            create_namespace monitor
             helm_apply prometheus monitor true
             press_enter monitor
             ;;
         2)
-            create_namespace monitor
             helm_apply grafana monitor true
             press_enter monitor
             ;;
@@ -435,22 +432,18 @@ devops_menu() {
             press_enter devops
             ;;
         2)
-            create_namespace devops
             helm_apply docker-registry devops true
             press_enter devops
             ;;
         3)
-            create_namespace devops
             helm_apply chartmuseum devops true
             press_enter devops
             ;;
         4)
-            create_namespace devops
             helm_apply sonarqube devops true
             press_enter devops
             ;;
         5)
-            create_namespace devops
             helm_apply sonatype-nexus devops true
             press_enter devops
             ;;
@@ -964,6 +957,8 @@ helm_nginx_ingress() {
     APP_NAME="nginx-ingress"
     NAMESPACE=${1:-kube-ingress}
 
+    create_namespace ${NAMESPACE}
+
     helm_check
 
     read_root_domain
@@ -1035,6 +1030,8 @@ helm_apply() {
     NAMESPACE=${2:-default}
     INGRESS=${3}
     DOMAIN=
+
+    create_namespace ${NAMESPACE}
 
     helm_check
 
@@ -1136,9 +1133,6 @@ helm_uninit() {
 
 create_namespace() {
     NAMESPACE=$1
-
-    print "${NAMESPACE}"
-    echo
 
     CHECK=
     kubectl get ns ${NAMESPACE} > /dev/null 2>&1 || CHECK=CREATE
