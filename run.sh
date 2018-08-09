@@ -994,13 +994,7 @@ helm_nginx_ingress() {
         sed -i -e "s@aws-load-balancer-ssl-cert:.*@aws-load-balancer-ssl-cert: ${SSL_CERT_ARN}@" ${CHART}
     fi
 
-    COUNT=$(helm ls | grep ${APP_NAME} | grep ${NAMESPACE} | wc -l | xargs)
-
-    if [ "${COUNT}" == "0" ]; then
-        helm install stable/${APP_NAME} --name ${APP_NAME} --namespace ${NAMESPACE} -f ${CHART}
-    else
-        helm upgrade ${APP_NAME} stable/${APP_NAME} -f ${CHART}
-    fi
+    helm upgrade --install ${APP_NAME} stable/${APP_NAME} --namespace ${NAMESPACE} -f ${CHART}
 
     waiting 2
 
@@ -1060,13 +1054,7 @@ helm_apply() {
         fi
     fi
 
-    COUNT=$(helm ls | grep ${APP_NAME} | grep ${NAMESPACE} | wc -l | xargs)
-
-    if [ "${COUNT}" == "0" ]; then
-        helm install stable/${APP_NAME} --name ${APP_NAME} --namespace ${NAMESPACE} -f ${CHART}
-    else
-        helm upgrade ${APP_NAME} stable/${APP_NAME} -f ${CHART}
-    fi
+    helm upgrade --install ${APP_NAME} stable/${APP_NAME} --namespace ${NAMESPACE} -f ${CHART}
 
     waiting 2
 
@@ -1135,7 +1123,7 @@ create_namespace() {
     NAMESPACE=$1
 
     CHECK=
-    kubectl get ns ${NAMESPACE} > /dev/null 2>&1 || CHECK=CREATE
+    kubectl get ns ${NAMESPACE} > /dev/null 2>&1 || export CHECK=CREATE
 
     if [ "${CHECK}" == "CREATE" ]; then
         kubectl create ns ${NAMESPACE}
@@ -1153,7 +1141,7 @@ create_service_account() {
     echo
 
     CHECK=
-    kubectl get sa ${ACCOUNT} -n ${NAMESPACE} > /dev/null 2>&1 || CHECK=CREATE
+    kubectl get sa ${ACCOUNT} -n ${NAMESPACE} > /dev/null 2>&1 || export CHECK=CREATE
 
     if [ "${CHECK}" == "CREATE" ]; then
         kubectl create sa ${ACCOUNT} -n ${NAMESPACE}
@@ -1172,7 +1160,7 @@ create_cluster_role_binding() {
     echo
 
     CHECK=
-    kubectl get clusterrolebinding ${ROLL}:${NAMESPACE}:${ACCOUNT} > /dev/null 2>&1 || CHECK=CREATE
+    kubectl get clusterrolebinding ${ROLL}:${NAMESPACE}:${ACCOUNT} > /dev/null 2>&1 || exportCHECK=CREATE
 
     if [ "${CHECK}" == "CREATE" ]; then
         kubectl create clusterrolebinding ${ROLL}:${NAMESPACE}:${ACCOUNT} --clusterrole=${ROLL} --serviceaccount=${NAMESPACE}:${ACCOUNT}
