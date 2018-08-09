@@ -9,7 +9,7 @@
         <hudson.model.StringParameterDefinition>
         <name>EXECUTOR_IMAGE</name>
         <description></description>
-        <defaultValue>quay.io/nalbam/builder</defaultValue>
+        <defaultValue>nalbam/builder</defaultValue>
         </hudson.model.StringParameterDefinition>
         <hudson.model.StringParameterDefinition>
         <name>COMMAND</name>
