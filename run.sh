@@ -203,9 +203,9 @@ cluster_menu() {
         print "1. Get Cluster"
         print "2. Edit Cluster"
         print "3. Update Cluster"
-        print "4. Rolling Update Cluster"
+        print "4. Rolling Update"
         print "5. Validate Cluster"
-        print "6. Export Kubernetes Config"
+        print "6. Export Kube Config"
         echo
         print "9. Delete Cluster"
         echo
@@ -302,7 +302,6 @@ addons_menu() {
             press_enter addons
             ;;
         2)
-            create_namespace kube-ingress
             helm_nginx_ingress kube-ingress
             press_enter addons
             ;;
@@ -402,12 +401,10 @@ monitor_menu() {
 
     case ${ANSWER} in
         1)
-            create_namespace monitor
             helm_apply prometheus monitor true
             press_enter monitor
             ;;
         2)
-            create_namespace monitor
             helm_apply grafana monitor true
             press_enter monitor
             ;;
@@ -435,22 +432,18 @@ devops_menu() {
             press_enter devops
             ;;
         2)
-            create_namespace devops
             helm_apply docker-registry devops true
             press_enter devops
             ;;
         3)
-            create_namespace devops
             helm_apply chartmuseum devops true
             press_enter devops
             ;;
         4)
-            create_namespace devops
             helm_apply sonarqube devops true
             press_enter devops
             ;;
         5)
-            create_namespace devops
             helm_apply sonatype-nexus devops true
             press_enter devops
             ;;
@@ -964,6 +957,8 @@ helm_nginx_ingress() {
     APP_NAME="nginx-ingress"
     NAMESPACE=${1:-kube-ingress}
 
+    create_namespace ${NAMESPACE}
+
     helm_check
 
     read_root_domain
@@ -999,13 +994,7 @@ helm_nginx_ingress() {
         sed -i -e "s@aws-load-balancer-ssl-cert:.*@aws-load-balancer-ssl-cert: ${SSL_CERT_ARN}@" ${CHART}
     fi
 
-    COUNT=$(helm ls | grep ${APP_NAME} | grep ${NAMESPACE} | wc -l | xargs)
-
-    if [ "${COUNT}" == "0" ]; then
-        helm install stable/${APP_NAME} --name ${APP_NAME} --namespace ${NAMESPACE} -f ${CHART}
-    else
-        helm upgrade ${APP_NAME} stable/${APP_NAME} -f ${CHART}
-    fi
+    helm upgrade --install ${APP_NAME} stable/${APP_NAME} --namespace ${NAMESPACE} -f ${CHART}
 
     waiting 2
 
@@ -1036,6 +1025,8 @@ helm_apply() {
     INGRESS=${3}
     DOMAIN=
 
+    create_namespace ${NAMESPACE}
+
     helm_check
 
     CHART=/tmp/${APP_NAME}.yaml
@@ -1063,13 +1054,7 @@ helm_apply() {
         fi
     fi
 
-    COUNT=$(helm ls | grep ${APP_NAME} | grep ${NAMESPACE} | wc -l | xargs)
-
-    if [ "${COUNT}" == "0" ]; then
-        helm install stable/${APP_NAME} --name ${APP_NAME} --namespace ${NAMESPACE} -f ${CHART}
-    else
-        helm upgrade ${APP_NAME} stable/${APP_NAME} -f ${CHART}
-    fi
+    helm upgrade --install ${APP_NAME} stable/${APP_NAME} --namespace ${NAMESPACE} -f ${CHART}
 
     waiting 2
 
@@ -1137,11 +1122,8 @@ helm_uninit() {
 create_namespace() {
     NAMESPACE=$1
 
-    print "${NAMESPACE}"
-    echo
-
     CHECK=
-    kubectl get ns ${NAMESPACE} > /dev/null 2>&1 || CHECK=CREATE
+    kubectl get ns ${NAMESPACE} > /dev/null 2>&1 || export CHECK=CREATE
 
     if [ "${CHECK}" == "CREATE" ]; then
         kubectl create ns ${NAMESPACE}
@@ -1159,7 +1141,7 @@ create_service_account() {
     echo
 
     CHECK=
-    kubectl get sa ${ACCOUNT} -n ${NAMESPACE} > /dev/null 2>&1 || CHECK=CREATE
+    kubectl get sa ${ACCOUNT} -n ${NAMESPACE} > /dev/null 2>&1 || export CHECK=CREATE
 
     if [ "${CHECK}" == "CREATE" ]; then
         kubectl create sa ${ACCOUNT} -n ${NAMESPACE}
@@ -1178,7 +1160,7 @@ create_cluster_role_binding() {
     echo
 
     CHECK=
-    kubectl get clusterrolebinding ${ROLL}:${NAMESPACE}:${ACCOUNT} > /dev/null 2>&1 || CHECK=CREATE
+    kubectl get clusterrolebinding ${ROLL}:${NAMESPACE}:${ACCOUNT} > /dev/null 2>&1 || export CHECK=CREATE
 
     if [ "${CHECK}" == "CREATE" ]; then
         kubectl create clusterrolebinding ${ROLL}:${NAMESPACE}:${ACCOUNT} --clusterrole=${ROLL} --serviceaccount=${NAMESPACE}:${ACCOUNT}
