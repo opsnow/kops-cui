@@ -1103,8 +1103,10 @@ helm_init() {
 
     helm init --upgrade --service-account=${ACCOUNT}
 
-    waiting 2
+    waiting 5
 
+    helm repo update
+    echo
     kubectl get pod,svc -n ${NAMESPACE}
 }
 
