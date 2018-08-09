@@ -172,16 +172,6 @@ run() {
         fi
     fi
 
-    # if [ ! -r ~/.aws/config ] || [ ! -r ~/.aws/credentials ]; then
-    #     aws configure set default.region ap-northeast-2
-    #     aws configure
-
-    #     if [ ! -r ~/.aws/config ] || [ ! -r ~/.aws/credentials ]; then
-    #         clear_kops_config
-    #         error
-    #     fi
-    # fi
-
     REGION="$(aws configure get default.region)"
 
     state_store
@@ -582,17 +572,28 @@ save_kops_config() {
     echo "ROOT_DOMAIN=${ROOT_DOMAIN}" >> ${CONFIG}
     echo "BASE_DOMAIN=${BASE_DOMAIN}" >> ${CONFIG}
 
-    aws s3 cp ${CONFIG} s3://${KOPS_STATE_STORE}/${KOPS_CLUSTER_NAME}.kops-cui --quiet
+    if [ ! -z ${KOPS_CLUSTER_NAME} ]; then
+        aws s3 cp ${CONFIG} s3://${KOPS_STATE_STORE}/${KOPS_CLUSTER_NAME}.kops-cui --quiet
+    fi
 }
 
 clear_kops_config() {
-    #KOPS_STATE_STORE=
-    KOPS_CLUSTER_NAME=
-    ROOT_DOMAIN=
-    BASE_DOMAIN=
+    export KOPS_STATE_STORE=
+    export KOPS_CLUSTER_NAME=
+    export ROOT_DOMAIN=
+    export BASE_DOMAIN=
 
     save_kops_config
+
     . ${CONFIG}
+}
+
+delete_kops_config() {
+    if [ ! -z ${KOPS_CLUSTER_NAME} ]; then
+        aws s3 rm s3://${KOPS_STATE_STORE}/${KOPS_CLUSTER_NAME}.kops-cui
+    fi
+
+    clear_kops_config
 }
 
 read_state_store() {
@@ -618,7 +619,6 @@ read_state_store() {
 
         BUCKET=$(aws s3api get-bucket-acl --bucket ${KOPS_STATE_STORE} | jq '.Owner.ID')
         if [ -z ${BUCKET} ]; then
-            KOPS_STATE_STORE=
             clear_kops_config
             error
         fi
@@ -744,7 +744,7 @@ kops_export() {
 kops_delete() {
     kops delete cluster --name=${KOPS_CLUSTER_NAME} --state=s3://${KOPS_STATE_STORE} --yes
 
-    clear_kops_config
+    delete_kops_config
 
     rm -rf ~/.helm ~/.draft
 }
