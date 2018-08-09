@@ -958,6 +958,8 @@ helm_nginx_ingress() {
     APP_NAME="nginx-ingress"
     NAMESPACE=${1:-kube-ingress}
 
+    helm_check
+
     read_root_domain
 
     BASE_DOMAIN=
@@ -1028,6 +1030,8 @@ helm_apply() {
     INGRESS=${3}
     DOMAIN=
 
+    helm_check
+
     CHART=/tmp/${APP_NAME}.yaml
     get_template charts/${APP_NAME}.yaml ${CHART}
 
@@ -1088,6 +1092,14 @@ helm_remove() {
 
     if [ ! -z ${ANSWER} ]; then
         helm delete --purge ${ANSWER}
+    fi
+}
+
+helm_check() {
+    COUNT=$(kubectl get pod -n kube-system | grep tiller-deploy | wc -l)
+
+    if [ "${COUNT}" == "0" ] || [ ! -d ~/.helm ]; then
+        helm_init
     fi
 }
 
