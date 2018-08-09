@@ -2,6 +2,8 @@
 
 SHELL_DIR=$(dirname $0)
 
+OS_NAME="$(uname | awk '{print tolower($0)}')"
+
 L_PAD="$(printf %3s)"
 
 CONFIG=
@@ -668,7 +670,12 @@ read_cluster_list() {
 }
 
 read_cluster_name() {
-    RND=$(ruby -e 'p rand(1...6)')
+    if [ "${OS_NAME}" == "linux" ]; then
+        RND=$(shuf -i 1-6 -n 1)
+    elif [ "${OS_NAME}" == "darwin" ]; then
+        RND=$(ruby -e 'p rand(1...6)')
+    fi
+
     WORD=$(sed -n ${RND}p ${SHELL_DIR}/addons/words.txt)
 
     if [ -z ${WORD} ]; then
