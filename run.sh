@@ -1160,7 +1160,7 @@ create_cluster_role_binding() {
     echo
 
     CHECK=
-    kubectl get clusterrolebinding ${ROLL}:${NAMESPACE}:${ACCOUNT} > /dev/null 2>&1 || exportCHECK=CREATE
+    kubectl get clusterrolebinding ${ROLL}:${NAMESPACE}:${ACCOUNT} > /dev/null 2>&1 || export CHECK=CREATE
 
     if [ "${CHECK}" == "CREATE" ]; then
         kubectl create clusterrolebinding ${ROLL}:${NAMESPACE}:${ACCOUNT} --clusterrole=${ROLL} --serviceaccount=${NAMESPACE}:${ACCOUNT}
