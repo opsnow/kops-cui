@@ -3,9 +3,9 @@ properties([
   buildDiscarder(logRotator(daysToKeepStr: "60", numToKeepStr: "30"))
 ])
 podTemplate(label: label, containers: [
-  containerTemplate(name: "executor", image: "$EXECUTOR_IMAGE", command: "cat", ttyEnabled: true, alwaysPullImage: true),
-  containerTemplate(name: "builder", image: "quay.io/nalbam/builder", command: "cat", ttyEnabled: true, alwaysPullImage: true),
-  containerTemplate(name: "docker", image: "docker", command: "cat", ttyEnabled: true, alwaysPullImage: true)
+  containerTemplate(name: "builder", image: "nalbam/builder", command: "cat", ttyEnabled: true, alwaysPullImage: true),
+  containerTemplate(name: "docker", image: "docker", command: "cat", ttyEnabled: true, alwaysPullImage: true),
+  containerTemplate(name: "executor", image: "$EXECUTOR", command: "cat", ttyEnabled: true, alwaysPullImage: true)
 ], volumes: [
   hostPathVolume(mountPath: "/var/run/docker.sock", hostPath: "/var/run/docker.sock"),
   hostPathVolume(mountPath: "/home/jenkins/.helm", hostPath: "/home/jenkins/.helm")
@@ -21,13 +21,18 @@ podTemplate(label: label, containers: [
     stage("Make Version") {
       container("builder") {
         sh """
-          bash /root/extra/jenkins-domain.sh
-          bash /root/extra/jenkins-version.sh $IMAGE_NAME $BRANCH_NAME
+          bash /root/extra/build-init.sh $IMAGE_NAME $BRANCH_NAME
         """
       }
     }
     stage("Build") {
       container("executor") {
+        def NEXUS = readFile "/home/jenkins/NEXUS"
+        if (NEXUS != '') {
+          def BASE_DOMAIN = readFile "/home/jenkins/BASE_DOMAIN"
+          def NEXUS_PUBLIC = "https://sonatype-nexus-devops.$BASE_DOMAIN/repository/maven-public/"
+          sh "sed -i 's|<!-- ### configured mirrors ### -->|<mirror><id>mirror</id><url>$NEXUS_PUBLIC</url><mirrorOf>*</mirrorOf></mirror>|' .m2/settings.xml"
+        }
         sh """
           $BUILD
         """

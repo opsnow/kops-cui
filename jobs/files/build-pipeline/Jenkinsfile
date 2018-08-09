@@ -3,8 +3,9 @@ properties([
   buildDiscarder(logRotator(daysToKeepStr: "60", numToKeepStr: "30"))
 ])
 podTemplate(label: label, containers: [
-  containerTemplate(name: "builder", image: "quay.io/nalbam/builder", command: "cat", ttyEnabled: true, alwaysPullImage: true),
-  containerTemplate(name: "docker", image: "docker", command: "cat", ttyEnabled: true, alwaysPullImage: true)
+  containerTemplate(name: "builder", image: "nalbam/builder", command: "cat", ttyEnabled: true, alwaysPullImage: true),
+  containerTemplate(name: "docker", image: "docker", command: "cat", ttyEnabled: true, alwaysPullImage: true),
+  containerTemplate(name: "maven", image: "nalbam/builder:maven", command: "cat", ttyEnabled: true, alwaysPullImage: true)
 ], volumes: [
   hostPathVolume(mountPath: "/var/run/docker.sock", hostPath: "/var/run/docker.sock"),
   hostPathVolume(mountPath: "/home/jenkins/.draft", hostPath: "/home/jenkins/.draft"),
@@ -21,11 +22,7 @@ podTemplate(label: label, containers: [
     stage("Make Version") {
       container("builder") {
         sh """
-          echo $BUILD_NUMBER
-          echo $JOB_NAME
-          echo $BRANCH_NAME
-          bash /root/extra/jenkins-domain.sh
-          bash /root/extra/jenkins-version.sh $IMAGE_NAME $BRANCH_NAME
+          bash /root/extra/build-init.sh $IMAGE_NAME $BRANCH_NAME
         """
       }
     }
@@ -35,18 +32,29 @@ podTemplate(label: label, containers: [
         def REGISTRY = readFile "/home/jenkins/REGISTRY"
         def VERSION = readFile "/home/jenkins/VERSION"
         sh """
-          # Chart.yaml
           sed -i -e "s/name: .*/name: $IMAGE_NAME/" charts/acme/Chart.yaml
           sed -i -e "s/version: .*/version: $VERSION/" charts/acme/Chart.yaml
-          cat charts/acme/Chart.yaml
-          # values.yaml
           sed -i -e "s|basedomain: .*|basedomain: $BASE_DOMAIN|" charts/acme/values.yaml
           sed -i -e "s|repository: .*|repository: $REGISTRY/$IMAGE_NAME|" charts/acme/values.yaml
           sed -i -e "s|tag: .*|tag: $VERSION|" charts/acme/values.yaml
-          cat charts/acme/values.yaml
-          # mv
           mv charts/acme charts/$IMAGE_NAME
         """
+      }
+    }
+    def LANG = readFile "/home/jenkins/SOURCE_LANG"
+    if (LANG == 'java') {
+      stage("Build Maven") {
+        container("maven") {
+          def NEXUS = readFile "/home/jenkins/NEXUS"
+          if (NEXUS != '') {
+            def BASE_DOMAIN = readFile "/home/jenkins/BASE_DOMAIN"
+            def NEXUS_PUBLIC = "https://sonatype-nexus-devops.$BASE_DOMAIN/repository/maven-public/"
+            sh "sed -i 's|<!-- ### configured mirrors ### -->|<mirror><id>mirror</id><url>$NEXUS_PUBLIC</url><mirrorOf>*</mirrorOf></mirror>|' .m2/settings.xml"
+          }
+          sh """
+            mvn package -s .m2/settings.xml
+          """
+        }
       }
     }
     if (BRANCH_NAME != 'master') {
@@ -57,7 +65,6 @@ podTemplate(label: label, containers: [
             bash /root/extra/draft-init.sh
             sed -i -e "s/NAMESPACE/$NAMESPACE/g" draft.toml
             sed -i -e "s/NAME/$IMAGE_NAME-$NAMESPACE/g" draft.toml
-            cat draft.toml
             draft up --docker-debug
           """
         }

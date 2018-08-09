@@ -7,7 +7,7 @@
     <hudson.model.ParametersDefinitionProperty>
     <parameterDefinitions>
         <hudson.model.StringParameterDefinition>
-        <name>EXECUTOR_IMAGE</name>
+        <name>EXECUTOR</name>
         <description></description>
         <defaultValue>nalbam/builder:maven</defaultValue>
         </hudson.model.StringParameterDefinition>
