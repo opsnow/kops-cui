@@ -242,7 +242,7 @@ cluster_menu() {
 
             if [ "${ANSWER}" == "YES" ]; then
                 kops_rolling_update
-                press_enter state
+                press_enter cluster
             else
                 cluster_menu
             fi
