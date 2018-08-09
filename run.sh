@@ -238,8 +238,14 @@ cluster_menu() {
             press_enter cluster
             ;;
         4)
-            kops_rolling_update
-            press_enter cluster
+            question "Are you sure? (YES/[no]) : "
+
+            if [ "${ANSWER}" == "YES" ]; then
+                kops_rolling_update
+                press_enter state
+            else
+                cluster_menu
+            fi
             ;;
         5)
             kops_validate
