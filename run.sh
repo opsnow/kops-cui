@@ -596,11 +596,11 @@ clear_kops_config() {
 }
 
 read_state_store() {
-    # username
-    USER=${USER:=$(whoami)}
-
     if [ -z ${KOPS_STATE_STORE} ]; then
-        DEFAULT="kops-state-${USER}"
+        DEFAULT="$(aws s3 ls | grep kops-state | head -1 | awk '{print $3}')"
+        if [ -z ${DEFAULT} ]; then
+            DEFAULT="kops-state-$(whoami)"
+        fi
     else
         DEFAULT="${KOPS_STATE_STORE}"
     fi
