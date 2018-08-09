@@ -45,9 +45,14 @@ podTemplate(label: label, containers: [
     if (LANG == 'java') {
       stage("Build Maven") {
         container("maven") {
-          def ROOT = readFile "/home/jenkins/SOURCE_ROOT"
+          def NEXUS = readFile "/home/jenkins/NEXUS"
+          if (NEXUS != '') {
+            def BASE_DOMAIN = readFile "/home/jenkins/BASE_DOMAIN"
+            def NEXUS_PUBLIC = "https://sonatype-nexus-devops.$BASE_DOMAIN/repository/maven-public/"
+            sh "sed -i 's|<!-- ### configured mirrors ### -->|<mirror><id>mirror</id><url>$NEXUS_PUBLIC</url><mirrorOf>*</mirrorOf></mirror>|' .m2/settings.xml"
+          }
           sh """
-            mvn package
+            mvn package -s .m2/settings.xml
           """
         }
       }
