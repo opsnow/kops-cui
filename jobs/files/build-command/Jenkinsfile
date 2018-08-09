@@ -1,17 +1,29 @@
 def label = "worker-${UUID.randomUUID().toString()}"
 properties([
-  buildDiscarder(logRotator(daysToKeepStr: "60", numToKeepStr: "10"))
+  buildDiscarder(logRotator(daysToKeepStr: "60", numToKeepStr: "30"))
 ])
 podTemplate(label: label, containers: [
-  containerTemplate(name: "executor", image: "$EXECUTOR_IMAGE", command: "cat", ttyEnabled: true)
+  containerTemplate(name: "executor", image: "$EXECUTOR_IMAGE", command: "cat", ttyEnabled: true, alwaysPullImage: true),
+  containerTemplate(name: "builder", image: "quay.io/nalbam/builder", command: "cat", ttyEnabled: true, alwaysPullImage: true)
 ], volumes: [
   hostPathVolume(mountPath: "/var/run/docker.sock", hostPath: "/var/run/docker.sock"),
-  hostPathVolume(mountPath: "/home/jenkins/.version", hostPath: "/home/jenkins/.version"),
   hostPathVolume(mountPath: "/home/jenkins/.helm", hostPath: "/home/jenkins/.helm")
 ]) {
   node(label) {
     stage("Checkout") {
-      git(url: "$REPOSITORY_URL", branch: "$BRANCH")
+      if (env.REPOSITORY_SECRET) {
+        git(url: "$REPOSITORY_URL", branch: "$BRANCH_NAME", credentialsId: "$REPOSITORY_SECRET")
+      } else {
+        git(url: "$REPOSITORY_URL", branch: "$BRANCH_NAME")
+      }
+    }
+    stage("Make Version") {
+      container("builder") {
+        sh """
+          bash /root/extra/jenkins-domain.sh
+          bash /root/extra/jenkins-version.sh $IMAGE_NAME $BRANCH_NAME
+        """
+      }
     }
     stage("Command") {
       container("executor") {

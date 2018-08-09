@@ -1,13 +1,13 @@
 def label = "worker-${UUID.randomUUID().toString()}"
 properties([
-  buildDiscarder(logRotator(daysToKeepStr: "60", numToKeepStr: "10"))
+  buildDiscarder(logRotator(daysToKeepStr: "60", numToKeepStr: "30"))
 ])
 podTemplate(label: label, containers: [
-  containerTemplate(name: "builder", image: "quay.io/nalbam/builder", command: "cat", ttyEnabled: true),
-  containerTemplate(name: "docker", image: "docker", command: "cat", ttyEnabled: true)
+  containerTemplate(name: "builder", image: "quay.io/nalbam/builder", command: "cat", ttyEnabled: true, alwaysPullImage: true),
+  containerTemplate(name: "docker", image: "docker", command: "cat", ttyEnabled: true, alwaysPullImage: true)
 ], volumes: [
   hostPathVolume(mountPath: "/var/run/docker.sock", hostPath: "/var/run/docker.sock"),
-  hostPathVolume(mountPath: "/home/jenkins/.version", hostPath: "/home/jenkins/.version"),
+  hostPathVolume(mountPath: "/home/jenkins/.draft", hostPath: "/home/jenkins/.draft"),
   hostPathVolume(mountPath: "/home/jenkins/.helm", hostPath: "/home/jenkins/.helm")
 ]) {
   node(label) {
@@ -15,8 +15,8 @@ podTemplate(label: label, containers: [
       sh """
         uname -a
         date
-        echo $JOB_NAME
         echo $BUILD_NUMBER
+        echo $JOB_NAME
       """
     }
     stage("Run builder") {
@@ -51,6 +51,13 @@ podTemplate(label: label, containers: [
       container("builder") {
         sh """
           bash /root/extra/helm-init.sh
+        """
+      }
+    }
+    stage("Run draft") {
+      container("builder") {
+        sh """
+          bash /root/extra/draft-init.sh
         """
       }
     }

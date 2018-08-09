@@ -2,40 +2,47 @@
 
 SHELL_DIR=$(dirname $0)
 
-JENKINS=$1
+CHART=${1:-/tmp/jenkins.yaml}
 
-rm -rf /tmp/jobs
-mkdir -p /tmp/jobs
+TMP_DIR=/tmp/jenkins
+JOB_DIR=${TMP_DIR}/jobs
+FILE_DIR=${TMP_DIR}/files
 
-ls ${SHELL_DIR}/files/ > /tmp/jobs.txt
+rm -rf ${TMP_DIR}
+mkdir -p ${JOB_DIR} ${FILE_DIR}
+
+JOBS=${TMP_DIR}/jobs.txt
+ls ${SHELL_DIR}/files/ > ${JOBS}
 
 while read VAL; do
-    JOB=${SHELL_DIR}/files/${VAL}/Jenkinsfile
+    ORIGIN=${SHELL_DIR}/files/${VAL}/Jenkinsfile
+    FILE=${FILE_DIR}/${VAL}
+    JOB=${JOB_DIR}/${VAL}.xml
 
-    if [ -f ${JOB} ]; then
-        cp -rf $JOB /tmp/jenkinsfile-${VAL}
-
-        sed -i -e "s/\"/\&quot;/g" /tmp/jenkinsfile-${VAL}
-
-        while read LINE; do
-            if [ "${LINE}" == "REPLACE" ]; then
-                cat /tmp/jenkinsfile-${VAL} >> /tmp/jobs/${VAL}.xml
-            else
-                echo "${LINE}" >> /tmp/jobs/${VAL}.xml
-            fi
-        done < ${SHELL_DIR}/files/${VAL}/job.xml
+    if [ -f ${ORIGIN} ]; then
+        cp -rf ${ORIGIN} ${FILE}
+        sed -i -e "s/\"/\&quot;/g" ${FILE}
+    else
+        touch ${FILE}
     fi
-done < /tmp/jobs.txt
 
-ls /tmp/jobs/ | grep "[.]xml" > /tmp/jobs.txt
-
-echo "  Jobs: |-" >> ${JENKINS}
-while read VAL; do
-    echo "${VAL}"
-    echo "    ${VAL}: |-" >> ${JENKINS}
     while read LINE; do
-        echo "      ${LINE}" >> ${JENKINS}
-    done < /tmp/jobs/${VAL}
-done < /tmp/jobs.txt
+        if [ "${LINE}" == "REPLACE" ]; then
+            cat ${FILE} >> ${JOB}
+        else
+            echo "${LINE}" >> ${JOB}
+        fi
+    done < ${SHELL_DIR}/files/${VAL}/job.xml
+done < ${JOBS}
 
-echo
+ls ${JOB_DIR} | grep "[.]xml" > ${JOBS}
+
+echo "  Jobs: |-" >> ${CHART}
+while read VAL; do
+    JOB=${VAL%.*l}
+    echo "${VAL}"
+    echo "    ${JOB}: |-" >> ${CHART}
+    while read LINE; do
+        echo "      ${LINE}" >> ${CHART}
+    done < ${JOB_DIR}/${VAL}
+done < ${JOBS}
