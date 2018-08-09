@@ -238,8 +238,14 @@ cluster_menu() {
             press_enter cluster
             ;;
         4)
-            kops_rolling_update
-            press_enter cluster
+            question "Are you sure? (YES/[no]) : "
+
+            if [ "${ANSWER}" == "YES" ]; then
+                kops_rolling_update
+                press_enter state
+            else
+                cluster_menu
+            fi
             ;;
         5)
             kops_validate
@@ -741,7 +747,7 @@ kops_update() {
 }
 
 kops_rolling_update() {
-    kops rolling-update cluster --name=${KOPS_CLUSTER_NAME} --state=s3://${KOPS_STATE_STORE} --yes
+    kops rolling-update cluster --name=${KOPS_CLUSTER_NAME} --state=s3://${KOPS_STATE_STORE} --force --yes
 }
 
 kops_validate() {
@@ -783,7 +789,7 @@ get_elb_domain() {
 
         IDX=$(( ${IDX} + 1 ))
 
-        if [ "${IDX}" == "100" ]; then
+        if [ "${IDX}" == "200" ]; then
             ELB_DOMAIN=
             break
         fi
@@ -1100,6 +1106,7 @@ helm_check() {
 
     if [ "${COUNT}" == "0" ] || [ ! -d ~/.helm ]; then
         helm_init
+        echo
     fi
 }
 
