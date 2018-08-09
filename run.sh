@@ -1163,7 +1163,7 @@ create_service_account() {
 create_cluster_role_binding() {
     ROLL=$1
     NAMESPACE=$2
-    ACCOUNT=${3:-"default"}
+    ACCOUNT=${3:-default}
 
     create_service_account ${NAMESPACE} ${ACCOUNT}
 
