@@ -604,14 +604,15 @@ read_state_store() {
         if [ -z ${BUCKET} ]; then
             clear_kops_config
         fi
-        DEFAULT="${KOPS_STATE_STORE}"
     fi
 
     if [ -z ${KOPS_STATE_STORE} ]; then
-        DEFAULT="$(aws s3 ls | grep kops-state | head -1 | awk '{print $3}')"
+        DEFAULT=$(aws s3 ls | grep kops-state | head -1 | awk '{print $3}')
         if [ -z ${DEFAULT} ]; then
             DEFAULT="kops-state-$(whoami)"
         fi
+    else
+        DEFAULT=${KOPS_STATE_STORE}
     fi
 
     question "Enter cluster store [${DEFAULT}] : "
