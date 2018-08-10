@@ -64,7 +64,7 @@ podTemplate(label: label, containers: [
           def ROOT = readFile "/home/jenkins/SOURCE_ROOT"
           sh """
             cd $ROOT
-            npm install -s
+            npm run build
           """
         }
       }
