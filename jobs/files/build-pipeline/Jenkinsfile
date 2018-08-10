@@ -43,7 +43,7 @@ podTemplate(label: label, containers: [
     }
     def LANG = readFile "/home/jenkins/SOURCE_LANG"
     if (LANG == 'java') {
-      stage("Build Maven") {
+      stage("Build") {
         container("maven") {
           def NEXUS = readFile "/home/jenkins/NEXUS"
           if (NEXUS != '') {
@@ -57,8 +57,8 @@ podTemplate(label: label, containers: [
         }
       }
     }
-    if (LANG == 'nodejs') {
-      stage("Build Nodejs") {
+    else if (LANG == 'nodejs') {
+      stage("Build") {
         container("node") {
           def ROOT = readFile "/home/jenkins/SOURCE_ROOT"
           sh """
@@ -66,6 +66,13 @@ podTemplate(label: label, containers: [
             npm install -s
           """
         }
+      }
+    }
+    else {
+      stage("Build") {
+        sh """
+          echo "skipped."
+        """
       }
     }
     if (BRANCH_NAME != 'master') {
