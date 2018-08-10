@@ -361,6 +361,7 @@ sample_menu() {
     print "3. sample-node"
     print "4. sample-spring"
     print "5. sample-tomcat"
+    print "6. sample-webpack"
 
     question
 
@@ -383,6 +384,10 @@ sample_menu() {
             ;;
         5)
             apply_sample sample-tomcat default true
+            press_enter sample
+            ;;
+        6)
+            apply_sample sample-webpack default true
             press_enter sample
             ;;
         *)
