@@ -24,7 +24,7 @@ spec:
     spec:
       containers:
       - name: sample-node
-        image: nalbam/sample-node:slim
+        image: quay.io/nalbam/sample-node
         imagePullPolicy: Always
         ports:
         - containerPort: 3000
