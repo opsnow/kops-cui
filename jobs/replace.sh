@@ -22,6 +22,8 @@ while read VAL; do
     if [ -f ${ORIGIN} ]; then
         cp -rf ${ORIGIN} ${FILE}
         sed -i -e "s/\"/\&quot;/g" ${FILE}
+        sed -i -e "s/</\&lt;/g" ${FILE}
+        sed -i -e "s/>/\&gt;/g" ${FILE}
     else
         touch ${FILE}
     fi
