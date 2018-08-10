@@ -57,6 +57,17 @@ podTemplate(label: label, containers: [
         }
       }
     }
+    if (LANG == 'nodejs') {
+      stage("Build Nodejs") {
+        container("node") {
+          def ROOT = readFile "/home/jenkins/SOURCE_ROOT"
+          sh """
+            cd $ROOT
+            npm install -s
+          """
+        }
+      }
+    }
     if (BRANCH_NAME != 'master') {
       stage("Deploy Development") {
         container("builder") {
