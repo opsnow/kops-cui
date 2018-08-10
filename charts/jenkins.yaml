@@ -3,17 +3,18 @@
 rbac:
   install: true
 
-Agent:
-  Enabled: true
-  Image: quay.io/nalbam/jnlp-slave
-  ImageTag: latest
-  AlwaysPullImage: true
+# Agent:
+#   Enabled: true
+#   Image: quay.io/nalbam/jnlp-slave
+#   ImageTag: latest
+#   AlwaysPullImage: true
 
 Master:
-  Image: quay.io/nalbam/jenkins
-  ImageTag: latest
+  # Image: quay.io/nalbam/jenkins
+  # ImageTag: latest
   AdminUser: admin
   AdminPassword: password
+  JavaOpts: "-Dorg.apache.commons.jelly.tags.fmt.timeZone=Asia/Seoul"
   ServiceType: SERVICE_TYPE
   HostName: INGRESS_DOMAIN
   InstallPlugins:
