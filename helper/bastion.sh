@@ -90,14 +90,9 @@ fi
 
 aws --version
 
-if [ ! -f ~/.aws/credentials ]; then
+if [ ! -f ~/.aws/config ]; then
     # aws region
     aws configure set default.region ap-northeast-2
-
-    # aws credentials
-    echo "[default]" > ~/.aws/credentials
-    echo "aws_access_key_id=" >> ~/.aws/credentials
-    echo "aws_secret_access_key=" >> ~/.aws/credentials
 fi
 
 # kubectl
