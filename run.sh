@@ -1122,13 +1122,7 @@ helm_efs_provisioner() {
     sed -i -e "s/AWS_REGION/${REGION}/" ${CHART}
     sed -i -e "s/EFS_FILE_SYSTEM_ID/${EFS_FILE_SYSTEM_ID}/" ${CHART}
 
-    COUNT=$(helm ls | grep ${APP_NAME} | grep ${NAMESPACE} | wc -l | xargs)
-
-    if [ "${COUNT}" == "0" ]; then
-        helm install stable/${APP_NAME} --name ${APP_NAME} --namespace ${NAMESPACE} -f ${CHART}
-    else
-        helm upgrade ${APP_NAME} stable/${APP_NAME} -f ${CHART}
-    fi
+    helm upgrade --install ${APP_NAME} stable/${APP_NAME} --namespace ${NAMESPACE} -f ${CHART}
 
     waiting 2
 
