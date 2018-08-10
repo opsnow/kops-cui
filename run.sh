@@ -161,9 +161,10 @@ run() {
     command -v aws > /dev/null     || export NEED_TOOL=awscli
     command -v kubectl > /dev/null || export NEED_TOOL=kubectl
     command -v kops > /dev/null    || export NEED_TOOL=kops
+    command -v helm > /dev/null    || export NEED_TOOL=helm
 
     if [ ! -z ${NEED_TOOL} ]; then
-        question "Do you want to install the required tools? (awscli,kubectl,kops...) [Y/n] : "
+        question "Do you want to install the required tools? (awscli,kubectl,kops,helm...) [Y/n] : "
 
         ANSWER=${ANSWER:-Y}
 
