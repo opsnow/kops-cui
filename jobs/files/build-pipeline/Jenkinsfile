@@ -43,7 +43,7 @@ podTemplate(label: label, containers: [
           def NEXUS = readFile "/home/jenkins/NEXUS"
           if (NEXUS) {
             def NEXUS_PUBLIC = "https://$NEXUS/repository/maven-public/"
-            sh "sed -i 's|<!-- ### configured mirrors ### -->|<mirror><id>mirror</id><url>$NEXUS_PUBLIC</url><mirrorOf>*</mirrorOf></mirror>|' .m2/settings.xml"
+            sh "sed -i 's|<!-- ### configured mirrors ### -->|<mirror><id>mirror</id><url>$NEXUS_PUBLIC</url><mirrorOf>*</mirrorOf></mirror>|' /root/extra/settings.xml"
           }
         }
         sh """
@@ -61,7 +61,7 @@ podTemplate(label: label, containers: [
         container("maven") {
           sh """
             cd $SOURCE_ROOT
-            mvn package -s .m2/settings.xml
+            mvn package -s /root/extra/settings.xml
           """
           notify("good", "Build Success: $IMAGE_NAME-$VERSION <$PIPELINE|#$BUILD_NUMBER>")
         }
@@ -154,8 +154,8 @@ podTemplate(label: label, containers: [
 }
 def notify(COLOR, MESSAGE) {
   try {
+    sh "echo '$MESSAGE'"
     if (SLACK_TOKEN) {
-      sh "echo '$MESSAGE'"
       sh "curl -sL toast.sh/helper/slack.sh | bash -s -- --token=$SLACK_TOKEN --color=$COLOR '$MESSAGE'"
     }
   } catch (ignored) {
