@@ -7,11 +7,6 @@
     <hudson.model.ParametersDefinitionProperty>
     <parameterDefinitions>
         <hudson.model.StringParameterDefinition>
-        <name>EXECUTOR</name>
-        <description></description>
-        <defaultValue>nalbam/builder</defaultValue>
-        </hudson.model.StringParameterDefinition>
-        <hudson.model.StringParameterDefinition>
         <name>REPOSITORY_URL</name>
         <description></description>
         <defaultValue>https://github.com/nalbam/sample-web</defaultValue>
