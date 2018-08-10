@@ -3,9 +3,10 @@ properties([
   buildDiscarder(logRotator(daysToKeepStr: "60", numToKeepStr: "30"))
 ])
 podTemplate(label: label, containers: [
-  containerTemplate(name: "builder", image: "nalbam/builder", command: "cat", ttyEnabled: true, alwaysPullImage: true),
+  containerTemplate(name: "builder", image: "quay.io/nalbam/builder", command: "cat", ttyEnabled: true, alwaysPullImage: true),
   containerTemplate(name: "docker", image: "docker", command: "cat", ttyEnabled: true, alwaysPullImage: true),
-  containerTemplate(name: "maven", image: "nalbam/builder:maven", command: "cat", ttyEnabled: true, alwaysPullImage: true)
+  containerTemplate(name: "maven", image: "maven", command: "cat", ttyEnabled: true, alwaysPullImage: true),
+  containerTemplate(name: "node", image: "node", command: "cat", ttyEnabled: true, alwaysPullImage: true)
 ], volumes: [
   hostPathVolume(mountPath: "/var/run/docker.sock", hostPath: "/var/run/docker.sock"),
   hostPathVolume(mountPath: "/home/jenkins/.draft", hostPath: "/home/jenkins/.draft"),
@@ -13,7 +14,7 @@ podTemplate(label: label, containers: [
 ]) {
   node(label) {
     stage("Checkout") {
-      if (env.REPOSITORY_SECRET) {
+      if (REPOSITORY_SECRET) {
         git(url: "$REPOSITORY_URL", branch: "$BRANCH_NAME", credentialsId: "$REPOSITORY_SECRET")
       } else {
         git(url: "$REPOSITORY_URL", branch: "$BRANCH_NAME")
@@ -41,9 +42,11 @@ podTemplate(label: label, containers: [
         """
       }
     }
+    // def JENKINS = readFile "/home/jenkins/JENKINS"
+    // def PIPELINE = "https://$JENKINS/blue/organizations/jenkins/$JOB_NAME/detail/$JOB_NAME/$BUILD_NUMBER/pipeline"
     def LANG = readFile "/home/jenkins/SOURCE_LANG"
     if (LANG == 'java') {
-      stage("Build Maven") {
+      stage("Build") {
         container("maven") {
           def NEXUS = readFile "/home/jenkins/NEXUS"
           if (NEXUS != '') {
@@ -55,6 +58,26 @@ podTemplate(label: label, containers: [
             mvn package -s .m2/settings.xml
           """
         }
+        //notify("good", "Build Success: $IMAGE_NAME-$VERSION <$PIPELINE|#$BUILD_NUMBER>")
+      }
+    }
+    else if (LANG == 'nodejs') {
+      stage("Build") {
+        container("node") {
+          def ROOT = readFile "/home/jenkins/SOURCE_ROOT"
+          sh """
+            cd $ROOT
+            npm run build
+          """
+        }
+        //notify("good", "Build Success: $IMAGE_NAME-$VERSION <$PIPELINE|#$BUILD_NUMBER>")
+      }
+    }
+    else {
+      stage("Build") {
+        sh """
+          echo "skipped."
+        """
       }
     }
     if (BRANCH_NAME != 'master') {
@@ -111,3 +134,11 @@ podTemplate(label: label, containers: [
     }
   }
 }
+// def notify(COLOR, MESSAGE) {
+//   try {
+//     if (SLACK_TOKEN) {
+//       sh "curl -sL toast.sh/helper/slack.sh | bash -s -- --token=$SLACK_TOKEN --color=$COLOR '$MESSAGE'"
+//     }
+//   } catch (ignored) {
+//   }
+// }

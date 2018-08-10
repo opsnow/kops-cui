@@ -1105,9 +1105,11 @@ helm_init() {
 
     waiting 5
 
+    kubectl get pod,svc -n ${NAMESPACE}
+    echo
     helm repo update
     echo
-    kubectl get pod,svc -n ${NAMESPACE}
+    helm ls
 }
 
 helm_uninit() {
