@@ -28,7 +28,7 @@ podTemplate(label: label, containers: [
                 sh &quot;&quot;&quot;
                     uname -a
                     date
-                    bash /root/extra/jenkins-domain.sh
+                    bash /root/extra/build-init.sh
                     ls -al /home/jenkins
                 &quot;&quot;&quot;
             }

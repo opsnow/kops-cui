@@ -2,6 +2,8 @@
 
 SHELL_DIR=$(dirname $0)
 
+OS_NAME="$(uname | awk '{print tolower($0)}')"
+
 L_PAD="$(printf %3s)"
 
 CONFIG=
@@ -174,16 +176,6 @@ run() {
         fi
     fi
 
-    # if [ ! -r ~/.aws/config ] || [ ! -r ~/.aws/credentials ]; then
-    #     aws configure set default.region ap-northeast-2
-    #     aws configure
-
-    #     if [ ! -r ~/.aws/config ] || [ ! -r ~/.aws/credentials ]; then
-    #         clear_kops_config
-    #         error
-    #     fi
-    # fi
-
     REGION="$(aws configure get default.region)"
 
     state_store
@@ -213,9 +205,9 @@ cluster_menu() {
         print "1. Get Cluster"
         print "2. Edit Cluster"
         print "3. Update Cluster"
-        print "4. Rolling Update Cluster"
+        print "4. Rolling Update"
         print "5. Validate Cluster"
-        print "6. Export Kubernetes Config"
+        print "6. Export Kube Config"
         echo
         print "9. Delete Cluster"
         echo
@@ -248,8 +240,14 @@ cluster_menu() {
             press_enter cluster
             ;;
         4)
-            kops_rolling_update
-            press_enter cluster
+            question "Are you sure? (YES/[no]) : "
+
+            if [ "${ANSWER}" == "YES" ]; then
+                kops_rolling_update
+                press_enter cluster
+            else
+                cluster_menu
+            fi
             ;;
         5)
             kops_validate
@@ -307,7 +305,6 @@ addons_menu() {
             press_enter addons
             ;;
         2)
-            create_namespace kube-ingress
             helm_nginx_ingress kube-ingress
             press_enter addons
             ;;
@@ -411,12 +408,10 @@ monitor_menu() {
 
     case ${ANSWER} in
         1)
-            create_namespace monitor
             helm_apply prometheus monitor true
             press_enter monitor
             ;;
         2)
-            create_namespace monitor
             helm_apply grafana monitor true
             press_enter monitor
             ;;
@@ -444,22 +439,18 @@ devops_menu() {
             press_enter devops
             ;;
         2)
-            create_namespace devops
             helm_apply docker-registry devops true
             press_enter devops
             ;;
         3)
-            create_namespace devops
             helm_apply chartmuseum devops true
             press_enter devops
             ;;
         4)
-            create_namespace devops
             helm_apply sonarqube devops true
             press_enter devops
             ;;
         5)
-            create_namespace devops
             helm_apply sonatype-nexus devops true
             press_enter devops
             ;;
@@ -590,27 +581,45 @@ save_kops_config() {
     echo "BASE_DOMAIN=${BASE_DOMAIN}" >> ${CONFIG}
     echo "EFS_FILE_SYSTEM_ID=${EFS_FILE_SYSTEM_ID}" >> ${CONFIG}
 
-    aws s3 cp ${CONFIG} s3://${KOPS_STATE_STORE}/${KOPS_CLUSTER_NAME}.kops-cui --quiet
+    if [ ! -z ${KOPS_CLUSTER_NAME} ]; then
+        aws s3 cp ${CONFIG} s3://${KOPS_STATE_STORE}/${KOPS_CLUSTER_NAME}.kops-cui --quiet
+    fi
 }
 
 clear_kops_config() {
-    #KOPS_STATE_STORE=
-    KOPS_CLUSTER_NAME=
-    ROOT_DOMAIN=
-    BASE_DOMAIN=
+    export KOPS_STATE_STORE=
+    export KOPS_CLUSTER_NAME=
+    export ROOT_DOMAIN=
+    export BASE_DOMAIN=
 
     save_kops_config
+
     . ${CONFIG}
 }
 
+delete_kops_config() {
+    if [ ! -z ${KOPS_CLUSTER_NAME} ]; then
+        aws s3 rm s3://${KOPS_STATE_STORE}/${KOPS_CLUSTER_NAME}.kops-cui
+    fi
+
+    clear_kops_config
+}
+
 read_state_store() {
+    if [ ! -z ${KOPS_STATE_STORE} ]; then
+        BUCKET=$(aws s3api get-bucket-acl --bucket ${KOPS_STATE_STORE} | jq '.Owner.ID')
+        if [ -z ${BUCKET} ]; then
+            clear_kops_config
+        fi
+    fi
+
     if [ -z ${KOPS_STATE_STORE} ]; then
-        DEFAULT="$(aws s3 ls | grep kops-state | head -1 | awk '{print $3}')"
+        DEFAULT=$(aws s3 ls | grep kops-state | head -1 | awk '{print $3}')
         if [ -z ${DEFAULT} ]; then
             DEFAULT="kops-state-$(whoami)"
         fi
     else
-        DEFAULT="${KOPS_STATE_STORE}"
+        DEFAULT=${KOPS_STATE_STORE}
     fi
 
     question "Enter cluster store [${DEFAULT}] : "
@@ -626,7 +635,6 @@ read_state_store() {
 
         BUCKET=$(aws s3api get-bucket-acl --bucket ${KOPS_STATE_STORE} | jq '.Owner.ID')
         if [ -z ${BUCKET} ]; then
-            KOPS_STATE_STORE=
             clear_kops_config
             error
         fi
@@ -676,7 +684,12 @@ read_cluster_list() {
 }
 
 read_cluster_name() {
-    RND=$(ruby -e 'p rand(1...6)')
+    if [ "${OS_NAME}" == "linux" ]; then
+        RND=$(shuf -i 1-6 -n 1)
+    elif [ "${OS_NAME}" == "darwin" ]; then
+        RND=$(ruby -e 'p rand(1...6)')
+    fi
+
     WORD=$(sed -n ${RND}p ${SHELL_DIR}/addons/words.txt)
 
     if [ -z ${WORD} ]; then
@@ -735,7 +748,7 @@ kops_update() {
 }
 
 kops_rolling_update() {
-    kops rolling-update cluster --name=${KOPS_CLUSTER_NAME} --state=s3://${KOPS_STATE_STORE} --yes
+    kops rolling-update cluster --name=${KOPS_CLUSTER_NAME} --state=s3://${KOPS_STATE_STORE} --force --yes
 }
 
 kops_validate() {
@@ -754,7 +767,7 @@ kops_delete() {
 
     kops delete cluster --name=${KOPS_CLUSTER_NAME} --state=s3://${KOPS_STATE_STORE} --yes
 
-    clear_kops_config
+    delete_kops_config
 
     rm -rf ~/.helm ~/.draft
 }
@@ -779,7 +792,7 @@ get_elb_domain() {
 
         IDX=$(( ${IDX} + 1 ))
 
-        if [ "${IDX}" == "100" ]; then
+        if [ "${IDX}" == "200" ]; then
             ELB_DOMAIN=
             break
         fi
@@ -954,6 +967,10 @@ helm_nginx_ingress() {
     APP_NAME="nginx-ingress"
     NAMESPACE=${1:-kube-ingress}
 
+    create_namespace ${NAMESPACE}
+
+    helm_check
+
     read_root_domain
 
     BASE_DOMAIN=
@@ -987,13 +1004,7 @@ helm_nginx_ingress() {
         sed -i -e "s@aws-load-balancer-ssl-cert:.*@aws-load-balancer-ssl-cert: ${SSL_CERT_ARN}@" ${CHART}
     fi
 
-    COUNT=$(helm ls | grep ${APP_NAME} | grep ${NAMESPACE} | wc -l | xargs)
-
-    if [ "${COUNT}" == "0" ]; then
-        helm install stable/${APP_NAME} --name ${APP_NAME} --namespace ${NAMESPACE} -f ${CHART}
-    else
-        helm upgrade ${APP_NAME} stable/${APP_NAME} -f ${CHART}
-    fi
+    helm upgrade --install ${APP_NAME} stable/${APP_NAME} --namespace ${NAMESPACE} -f ${CHART}
 
     waiting 2
 
@@ -1135,6 +1146,10 @@ helm_apply() {
     INGRESS=${3}
     DOMAIN=
 
+    create_namespace ${NAMESPACE}
+
+    helm_check
+
     CHART=/tmp/${APP_NAME}.yaml
     get_template charts/${APP_NAME}.yaml ${CHART}
 
@@ -1160,13 +1175,7 @@ helm_apply() {
         fi
     fi
 
-    COUNT=$(helm ls | grep ${APP_NAME} | grep ${NAMESPACE} | wc -l | xargs)
-
-    if [ "${COUNT}" == "0" ]; then
-        helm install stable/${APP_NAME} --name ${APP_NAME} --namespace ${NAMESPACE} -f ${CHART}
-    else
-        helm upgrade ${APP_NAME} stable/${APP_NAME} -f ${CHART}
-    fi
+    helm upgrade --install ${APP_NAME} stable/${APP_NAME} --namespace ${NAMESPACE} -f ${CHART}
 
     waiting 2
 
@@ -1198,6 +1207,15 @@ helm_remove() {
     fi
 }
 
+helm_check() {
+    COUNT=$(kubectl get pod -n kube-system | grep tiller-deploy | wc -l)
+
+    if [ "${COUNT}" == "0" ] || [ ! -d ~/.helm ]; then
+        helm_init
+        echo
+    fi
+}
+
 helm_init() {
     NAMESPACE="kube-system"
     ACCOUNT="tiller"
@@ -1206,9 +1224,13 @@ helm_init() {
 
     helm init --upgrade --service-account=${ACCOUNT}
 
-    waiting 2
+    waiting 5
 
     kubectl get pod,svc -n ${NAMESPACE}
+    echo
+    helm repo update
+    echo
+    helm ls
 }
 
 helm_uninit() {
@@ -1225,11 +1247,8 @@ helm_uninit() {
 create_namespace() {
     NAMESPACE=$1
 
-    print "${NAMESPACE}"
-    echo
-
     CHECK=
-    kubectl get ns ${NAMESPACE} > /dev/null 2>&1 || CHECK=CREATE
+    kubectl get ns ${NAMESPACE} > /dev/null 2>&1 || export CHECK=CREATE
 
     if [ "${CHECK}" == "CREATE" ]; then
         kubectl create ns ${NAMESPACE}
@@ -1247,7 +1266,7 @@ create_service_account() {
     echo
 
     CHECK=
-    kubectl get sa ${ACCOUNT} -n ${NAMESPACE} > /dev/null 2>&1 || CHECK=CREATE
+    kubectl get sa ${ACCOUNT} -n ${NAMESPACE} > /dev/null 2>&1 || export CHECK=CREATE
 
     if [ "${CHECK}" == "CREATE" ]; then
         kubectl create sa ${ACCOUNT} -n ${NAMESPACE}
@@ -1258,7 +1277,7 @@ create_service_account() {
 create_cluster_role_binding() {
     ROLL=$1
     NAMESPACE=$2
-    ACCOUNT=${3:-"default"}
+    ACCOUNT=${3:-default}
 
     create_service_account ${NAMESPACE} ${ACCOUNT}
 
@@ -1266,7 +1285,7 @@ create_cluster_role_binding() {
     echo
 
     CHECK=
-    kubectl get clusterrolebinding ${ROLL}:${NAMESPACE}:${ACCOUNT} > /dev/null 2>&1 || CHECK=CREATE
+    kubectl get clusterrolebinding ${ROLL}:${NAMESPACE}:${ACCOUNT} > /dev/null 2>&1 || export CHECK=CREATE
 
     if [ "${CHECK}" == "CREATE" ]; then
         kubectl create clusterrolebinding ${ROLL}:${NAMESPACE}:${ACCOUNT} --clusterrole=${ROLL} --serviceaccount=${NAMESPACE}:${ACCOUNT}

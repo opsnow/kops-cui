@@ -1,10 +1,19 @@
 def label = "worker-${UUID.randomUUID().toString()}"
+def VERSION = ""
+def SOURCE_LANG = ""
+def SOURCE_ROOT = ""
+def BASE_DOMAIN = ""
+def JENKINS = ""
+def REGISTRY = ""
+def PIPELINE = ""
 properties([
   buildDiscarder(logRotator(daysToKeepStr: "60", numToKeepStr: "30"))
 ])
 podTemplate(label: label, containers: [
   containerTemplate(name: "builder", image: "quay.io/nalbam/builder", command: "cat", ttyEnabled: true, alwaysPullImage: true),
-  containerTemplate(name: "docker", image: "docker", command: "cat", ttyEnabled: true, alwaysPullImage: true)
+  containerTemplate(name: "docker", image: "docker", command: "cat", ttyEnabled: true, alwaysPullImage: true),
+  containerTemplate(name: "maven", image: "maven", command: "cat", ttyEnabled: true, alwaysPullImage: true),
+  containerTemplate(name: "node", image: "node", command: "cat", ttyEnabled: true, alwaysPullImage: true)
 ], volumes: [
   hostPathVolume(mountPath: "/var/run/docker.sock", hostPath: "/var/run/docker.sock"),
   hostPathVolume(mountPath: "/home/jenkins/.draft", hostPath: "/home/jenkins/.draft"),
@@ -12,40 +21,67 @@ podTemplate(label: label, containers: [
 ]) {
   node(label) {
     stage("Checkout") {
-      if (env.REPOSITORY_SECRET) {
+      if (REPOSITORY_SECRET) {
         git(url: "$REPOSITORY_URL", branch: "$BRANCH_NAME", credentialsId: "$REPOSITORY_SECRET")
       } else {
         git(url: "$REPOSITORY_URL", branch: "$BRANCH_NAME")
       }
     }
-    stage("Make Version") {
+    stage("Prepare") {
       container("builder") {
         sh """
-          echo $BUILD_NUMBER
-          echo $JOB_NAME
-          echo $BRANCH_NAME
-          bash /root/extra/jenkins-domain.sh
-          bash /root/extra/jenkins-version.sh $IMAGE_NAME $BRANCH_NAME
+          bash /root/extra/build-init.sh $IMAGE_NAME $BRANCH_NAME
         """
-      }
-    }
-    stage("Make Charts") {
-      container("builder") {
-        def BASE_DOMAIN = readFile "/home/jenkins/BASE_DOMAIN"
-        def REGISTRY = readFile "/home/jenkins/REGISTRY"
-        def VERSION = readFile "/home/jenkins/VERSION"
+        VERSION = readFile "/home/jenkins/VERSION"
+        SOURCE_LANG = readFile "/home/jenkins/SOURCE_LANG"
+        SOURCE_ROOT = readFile "/home/jenkins/SOURCE_ROOT"
+        BASE_DOMAIN = readFile "/home/jenkins/BASE_DOMAIN"
+        JENKINS = readFile "/home/jenkins/JENKINS"
+        REGISTRY = readFile "/home/jenkins/REGISTRY"
+        PIPELINE = "https://$JENKINS/blue/organizations/jenkins/$JOB_NAME/detail/$JOB_NAME/$BUILD_NUMBER/pipeline"
+        if (SOURCE_LANG == 'java') {
+          def NEXUS = readFile "/home/jenkins/NEXUS"
+          if (NEXUS) {
+            def NEXUS_PUBLIC = "https://$NEXUS/repository/maven-public/"
+            sh "sed -i 's|<!-- ### configured mirrors ### -->|<mirror><id>mirror</id><url>$NEXUS_PUBLIC</url><mirrorOf>*</mirrorOf></mirror>|' /root/extra/settings.xml"
+          }
+        }
         sh """
-          # Chart.yaml
           sed -i -e "s/name: .*/name: $IMAGE_NAME/" charts/acme/Chart.yaml
           sed -i -e "s/version: .*/version: $VERSION/" charts/acme/Chart.yaml
-          cat charts/acme/Chart.yaml
-          # values.yaml
           sed -i -e "s|basedomain: .*|basedomain: $BASE_DOMAIN|" charts/acme/values.yaml
           sed -i -e "s|repository: .*|repository: $REGISTRY/$IMAGE_NAME|" charts/acme/values.yaml
           sed -i -e "s|tag: .*|tag: $VERSION|" charts/acme/values.yaml
-          cat charts/acme/values.yaml
-          # mv
           mv charts/acme charts/$IMAGE_NAME
+        """
+      }
+    }
+    if (SOURCE_LANG == 'java') {
+      stage("Build") {
+        container("maven") {
+          sh """
+            cd $SOURCE_ROOT
+            mvn package -s /root/extra/settings.xml
+          """
+          notify("good", "Build Success: $IMAGE_NAME-$VERSION <$PIPELINE|#$BUILD_NUMBER>")
+        }
+      }
+    }
+    else if (SOURCE_LANG == 'nodejs') {
+      stage("Build") {
+        container("node") {
+          sh """
+            cd $SOURCE_ROOT
+            npm run build
+          """
+          notify("good", "Build Success: $IMAGE_NAME-$VERSION <$PIPELINE|#$BUILD_NUMBER>")
+        }
+      }
+    }
+    else {
+      stage("Build") {
+        sh """
+          echo "skipped."
         """
       }
     }
@@ -57,7 +93,6 @@ podTemplate(label: label, containers: [
             bash /root/extra/draft-init.sh
             sed -i -e "s/NAMESPACE/$NAMESPACE/g" draft.toml
             sed -i -e "s/NAME/$IMAGE_NAME-$NAMESPACE/g" draft.toml
-            cat draft.toml
             draft up --docker-debug
           """
         }
@@ -66,8 +101,6 @@ podTemplate(label: label, containers: [
     if (BRANCH_NAME == 'master') {
       stage("Build Image") {
         container("docker") {
-          def REGISTRY = readFile "/home/jenkins/REGISTRY"
-          def VERSION = readFile "/home/jenkins/VERSION"
           sh """
             docker build -t $REGISTRY/$IMAGE_NAME:$VERSION .
             docker push $REGISTRY/$IMAGE_NAME:$VERSION
@@ -76,9 +109,6 @@ podTemplate(label: label, containers: [
       }
       stage("Build Charts") {
         container("builder") {
-          def BASE_DOMAIN = readFile "/home/jenkins/BASE_DOMAIN"
-          def REGISTRY = readFile "/home/jenkins/REGISTRY"
-          def VERSION = readFile "/home/jenkins/VERSION"
           sh """
             bash /root/extra/helm-init.sh
             cd charts/$IMAGE_NAME
@@ -89,10 +119,28 @@ podTemplate(label: label, containers: [
           """
         }
       }
-      stage("Deploy Staging") {
+      stage("Staging") {
         container("builder") {
           def NAMESPACE = "staging"
-          def VERSION = readFile "/home/jenkins/VERSION"
+          sh """
+            helm upgrade --install $IMAGE_NAME-$NAMESPACE chartmuseum/$IMAGE_NAME \
+                         --version $VERSION --namespace $NAMESPACE --devel \
+                         --set fullnameOverride=$IMAGE_NAME-$NAMESPACE
+            helm history $IMAGE_NAME-$NAMESPACE
+          """
+        }
+      }
+      stage('Proceed') {
+        container("builder") {
+          notify("#439FE0", "Proceed Production?: $IMAGE_NAME-$VERSION <$PIPELINE|#$BUILD_NUMBER>")
+          timeout(time: 60, unit: 'MINUTES') {
+            input(message: "Proceed Production?: $IMAGE_NAME-$VERSION")
+          }
+        }
+      }
+      stage("Production") {
+        container("builder") {
+          def NAMESPACE = "production"
           sh """
             helm upgrade --install $IMAGE_NAME-$NAMESPACE chartmuseum/$IMAGE_NAME \
                          --version $VERSION --namespace $NAMESPACE --devel \
@@ -102,5 +150,14 @@ podTemplate(label: label, containers: [
         }
       }
     }
+  }
+}
+def notify(COLOR, MESSAGE) {
+  try {
+    sh "echo '$MESSAGE'"
+    if (SLACK_TOKEN) {
+      sh "curl -sL toast.sh/helper/slack.sh | bash -s -- --token=$SLACK_TOKEN --color=$COLOR '$MESSAGE'"
+    }
+  } catch (ignored) {
   }
 }
