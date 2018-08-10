@@ -7,11 +7,6 @@
     <hudson.model.ParametersDefinitionProperty>
     <parameterDefinitions>
         <hudson.model.StringParameterDefinition>
-        <name>EXECUTOR</name>
-        <description></description>
-        <defaultValue>nalbam/builder:maven</defaultValue>
-        </hudson.model.StringParameterDefinition>
-        <hudson.model.StringParameterDefinition>
         <name>REPOSITORY_URL</name>
         <description></description>
         <defaultValue>https://github.com/nalbam/sample-spring</defaultValue>
@@ -27,6 +22,11 @@
         <defaultValue>master</defaultValue>
         </hudson.model.StringParameterDefinition>
         <hudson.model.StringParameterDefinition>
+        <name>IMAGE_NAME</name>
+        <description></description>
+        <defaultValue>sample-spring</defaultValue>
+        </hudson.model.StringParameterDefinition>
+        <hudson.model.StringParameterDefinition>
         <name>BUILD</name>
         <description></description>
         <defaultValue>mvn package -DskipTests -s .m2/settings.xml</defaultValue>
@@ -35,11 +35,6 @@
         <name>TEST</name>
         <description></description>
         <defaultValue>mvn test -s .m2/settings.xml</defaultValue>
-        </hudson.model.StringParameterDefinition>
-        <hudson.model.StringParameterDefinition>
-        <name>IMAGE_NAME</name>
-        <description></description>
-        <defaultValue>sample-spring</defaultValue>
         </hudson.model.StringParameterDefinition>
     </parameterDefinitions>
     </hudson.model.ParametersDefinitionProperty>
