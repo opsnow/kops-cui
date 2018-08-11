@@ -19,7 +19,7 @@ podTemplate(label: label, containers: [
         echo $JOB_NAME
       """
     }
-    stage("Run builder") {
+    stage("Prepare") {
       container("builder") {
         sh """
           uname -a
@@ -29,37 +29,43 @@ podTemplate(label: label, containers: [
         """
       }
     }
-    stage("Run docker") {
-      container("docker") {
-        sh """
-          docker version
-          docker images
-          docker ps
-        """
-      }
-    }
-    stage("Run kubectl") {
-      container("builder") {
-        sh """
-          kubectl version --client --short
-          kubectl cluster-info
-          kubectl get pod,svc,ing
-        """
-      }
-    }
-    stage("Run helm") {
-      container("builder") {
-        sh """
-          bash /root/extra/helm-init.sh
-        """
-      }
-    }
-    stage("Run draft") {
-      container("builder") {
-        sh """
-          bash /root/extra/draft-init.sh
-        """
-      }
+    stage("Run") {
+      parallel(
+        "Run docker": {
+          container("docker") {
+            sh """
+              docker version
+              docker images
+              docker ps
+            """
+          }
+        },
+        "Run kubectl": {
+          container("builder") {
+            sh """
+              kubectl version --client --short
+              kubectl cluster-info
+              kubectl get pod,svc,ing
+            """
+          }
+        },
+        "Run helm": {
+          container("builder") {
+            sh """
+              bash /root/extra/helm-init.sh
+            """
+          }
+        },
+        "Run draft": {
+          stage("Run draft") {
+            container("builder") {
+              sh """
+                bash /root/extra/draft-init.sh
+              """
+            }
+          }
+        }
+      )
     }
   }
 }
