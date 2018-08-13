@@ -56,7 +56,7 @@ podTemplate(label: label, containers: [
             cd $SOURCE_ROOT
             mvn package -s /home/jenkins/settings.xml
           """
-          notify("good", "Build Success: $IMAGE_NAME-$VERSION <$PIPELINE|#$BUILD_NUMBER>")
+          notify("good", "Build Success", "Build Success: $IMAGE_NAME-$VERSION <$PIPELINE|#$BUILD_NUMBER>")
         }
       }
     }
@@ -67,7 +67,7 @@ podTemplate(label: label, containers: [
             cd $SOURCE_ROOT
             npm run build
           """
-          notify("good", "Build Success: $IMAGE_NAME-$VERSION <$PIPELINE|#$BUILD_NUMBER>")
+          notify("good", "Build Success", "Build Success: $IMAGE_NAME-$VERSION <$PIPELINE|#$BUILD_NUMBER>")
         }
       }
     }
@@ -129,7 +129,7 @@ podTemplate(label: label, containers: [
       }
       stage("Proceed") {
         container("builder") {
-          notify("#439FE0", "Proceed Production?: $IMAGE_NAME-$VERSION <$PIPELINE|#$BUILD_NUMBER>")
+          notify("#439FE0", "Deply Confirm", "Proceed Production?: $IMAGE_NAME-$VERSION <$PIPELINE|#$BUILD_NUMBER>")
           timeout(time: 60, unit: "MINUTES") {
             input(message: "Proceed Production?: $IMAGE_NAME-$VERSION")
           }
@@ -149,10 +149,10 @@ podTemplate(label: label, containers: [
     }
   }
 }
-def notify(COLOR, MESSAGE) {
+def notify(COLOR, TITLE, MESSAGE) {
   try {
     if (SLACK_TOKEN) {
-      sh "curl -sL toast.sh/helper/slack.sh | bash -s -- --token=$SLACK_TOKEN --color=$COLOR '$MESSAGE'"
+      sh "curl -sL toast.sh/helper/slack.sh | bash -s -- --token=$SLACK_TOKEN --color=$COLOR --title='$TITLE' '$MESSAGE'"
     }
   } catch (ignored) {
   }
