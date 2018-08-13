@@ -890,7 +890,9 @@ kops_nat_gateway() {
 }
 
 kops_delete() {
-    delete_efs
+    if [ ! -z ${EFS_FILE_SYSTEM_ID} ]; then
+        delete_efs
+    fi
 
     if [ ! -z ${KOPS_AWS_NAT} ]; then
         kops_nat_gateway destroy -auto-approve
