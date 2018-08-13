@@ -1,0 +1,15 @@
+nameOverride: efs-provisioner
+
+efsProvisioner:
+  efsFileSystemId: EFS_FILE_SYSTEM_ID
+  awsRegion: AWS_REGION
+  path: /shared
+  provisionerName: CLUSTER_NAME/efs
+  storageClass:
+    name: efs
+    isDefault: false
+    gidAllocate:
+      enabled: true
+      gidMin: 40000
+      gidMax: 50000
+    reclaimPolicy: Retain
