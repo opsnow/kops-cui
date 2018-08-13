@@ -1334,7 +1334,6 @@ delete_efs() {
 }
 
 helm_efs_provisioner() {
-
     create_efs
 
     APP_NAME="efs-provisioner"
