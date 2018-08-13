@@ -34,8 +34,6 @@ network_cidr=10.0.0.0/16
 networking=calico
 vpc=
 
-# nat=$(aws ec2 describe-subnets --filters Name=tag:KubernetesCluster,Values=chewie.k8s.local)
-
 print() {
     echo -e "${L_PAD}$@"
 }
