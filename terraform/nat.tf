@@ -1,11 +1,4 @@
-
-variable region {
-  default = "REGION"
-}
-
-variable kops_cluster_name {
-  default = "KOPS_CLUSTER_NAME"
-}
+# AWS NAT Gateway
 
 variable subnet_ids {
   default = "SUBNET_IDS"
