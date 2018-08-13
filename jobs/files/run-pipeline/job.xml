@@ -9,7 +9,7 @@
         <hudson.model.StringParameterDefinition>
         <name>REPOSITORY_URL</name>
         <description></description>
-        <defaultValue>https://github.com/nalbam/sample-node</defaultValue>
+        <defaultValue>https://github.com/nalbam/sample-spring</defaultValue>
         </hudson.model.StringParameterDefinition>
         <hudson.model.StringParameterDefinition>
         <name>REPOSITORY_SECRET</name>
@@ -24,7 +24,7 @@
         <hudson.model.StringParameterDefinition>
         <name>IMAGE_NAME</name>
         <description></description>
-        <defaultValue>sample-node</defaultValue>
+        <defaultValue>sample-spring</defaultValue>
         </hudson.model.StringParameterDefinition>
         <hudson.model.StringParameterDefinition>
         <name>SLACK_TOKEN</name>
