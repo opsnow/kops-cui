@@ -17,6 +17,7 @@ AZ_LIST=
 KOPS_STATE_STORE=
 KOPS_CLUSTER_NAME=
 KOPS_TERRAFORM=
+KOPS_AWS_NAT=
 
 ROOT_DOMAIN=
 BASE_DOMAIN=
@@ -31,8 +32,9 @@ node_size=m4.large
 node_count=2
 topology=private
 zones=
-network_cidr=10.10.0.0/16
+network_cidr=10.0.0.0/16
 networking=calico
+vpc=
 
 print() {
     echo -e "${L_PAD}$@"
@@ -195,6 +197,7 @@ run() {
     command -v kubectl > /dev/null || export NEED_TOOL=kubectl
     command -v kops > /dev/null    || export NEED_TOOL=kops
     command -v helm > /dev/null    || export NEED_TOOL=helm
+    command -v terraform > /dev/null || export NEED_TOOL=terraform
 
     if [ ! -z ${NEED_TOOL} ]; then
         question "Do you want to install the required tools? (awscli,kubectl,kops,helm...) [Y/n] : "
@@ -240,6 +243,7 @@ cluster_menu() {
         print "4. Rolling Update"
         print "5. Validate Cluster"
         print "6. Export Kube Config"
+        print "7. AWS NAT Gateway"
         echo
         print "9. Delete Cluster"
         echo
@@ -287,6 +291,13 @@ cluster_menu() {
             ;;
         6)
             kops_export
+            press_enter cluster
+            ;;
+        7)
+            KOPS_AWS_NAT=true
+            save_kops_config
+
+            kops_nat_gateway apply -auto-approve
             press_enter cluster
             ;;
         9)
@@ -369,7 +380,7 @@ addons_menu() {
             press_enter addons
             ;;
         7)
-            helm_efs_provisioner 
+            helm_efs_provisioner
             press_enter addons
             ;;
         9)
@@ -516,6 +527,7 @@ create_menu() {
     print "   zones=${zones}"
     print "5. network-cidr=${network_cidr}"
     print "6. networking=${networking}"
+    # print "7. vpc=${vpc}"
     echo
     print "0. create"
     # print "t. terraform"
@@ -555,7 +567,15 @@ create_menu() {
             networking=${ANSWER:-${networking}}
             create_menu
             ;;
+        7)
+            question "Enter vpc id [${vpc}] : "
+            vpc=${ANSWER:-${vpc}}
+            create_menu
+            ;;
         0)
+            KOPS_TERRAFORM=
+            save_kops_config
+
             kops create cluster \
                 --cloud=${cloud} \
                 --name=${KOPS_CLUSTER_NAME} \
@@ -567,7 +587,8 @@ create_menu() {
                 --node-count=${node_count} \
                 --zones=${zones} \
                 --network-cidr=${network_cidr} \
-                --networking=${networking}
+                --networking=${networking} \
+                --vpc=${vpc}
 
             press_enter
 
@@ -593,6 +614,7 @@ create_menu() {
                 --zones=${zones} \
                 --network-cidr=${network_cidr} \
                 --networking=${networking} \
+                --vpc=${vpc} \
                 --target=terraform \
                 --out=terraform-${KOPS_CLUSTER_NAME}
 
@@ -643,6 +665,7 @@ save_kops_config() {
     echo "KOPS_STATE_STORE=${KOPS_STATE_STORE}" >> ${CONFIG}
     echo "KOPS_CLUSTER_NAME=${KOPS_CLUSTER_NAME}" >> ${CONFIG}
     echo "KOPS_TERRAFORM=${KOPS_TERRAFORM}" >> ${CONFIG}
+    echo "KOPS_AWS_NAT=${KOPS_AWS_NAT}" >> ${CONFIG}
     echo "ROOT_DOMAIN=${ROOT_DOMAIN}" >> ${CONFIG}
     echo "BASE_DOMAIN=${BASE_DOMAIN}" >> ${CONFIG}
     echo "EFS_FILE_SYSTEM_ID=${EFS_FILE_SYSTEM_ID}" >> ${CONFIG}
@@ -656,6 +679,7 @@ clear_kops_config() {
     export KOPS_STATE_STORE=
     export KOPS_CLUSTER_NAME=
     export KOPS_TERRAFORM=
+    export KOPS_AWS_NAT=
     export ROOT_DOMAIN=
     export BASE_DOMAIN=
     export EFS_FILE_SYSTEM_ID=
@@ -756,9 +780,13 @@ read_cluster_name() {
         RND=$(shuf -i 1-6 -n 1)
     elif [ "${OS_NAME}" == "darwin" ]; then
         RND=$(ruby -e 'p rand(1...6)')
+    else
+        RND=
     fi
 
-    WORD=$(sed -n ${RND}p ${SHELL_DIR}/addons/words.txt)
+    if [ ! -z ${RND} ]; then
+        WORD=$(sed -n ${RND}p ${SHELL_DIR}/addons/words.txt)
+    fi
 
     if [ -z ${WORD} ]; then
         WORD="demo"
@@ -835,8 +863,40 @@ kops_export() {
     kops export kubecfg --name ${KOPS_CLUSTER_NAME} --state=s3://${KOPS_STATE_STORE}
 }
 
+kops_nat_gateway() {
+    CMD=${1:-plan}
+    OPT=${2}
+
+    SUBNET_IDS=$(aws ec2 describe-subnets --filters Name=tag:KubernetesCluster,Values=${KOPS_CLUSTER_NAME} | jq '.Subnets[] | {SubnetId}' | grep SubnetId | cut -d'"' -f4 | tr -s '\r\n' ',' | sed 's/.$//')
+
+    if [ ! -z ${SUBNET_IDS} ]; then
+        TF=/tmp/tf-${KOPS_CLUSTER_NAME}
+
+        rm -rf ${TF}
+        mkdir -p ${TF}
+
+        cp -rf ${SHELL_DIR}/terraform/nat.tf ${TF}/
+
+        sed -i -e "s/REGION/${REGION}/g" ${TF}/nat.tf
+        sed -i -e "s/KOPS_STATE_STORE/${KOPS_STATE_STORE}/g" ${TF}/nat.tf
+        sed -i -e "s/KOPS_CLUSTER_NAME/${KOPS_CLUSTER_NAME}/g" ${TF}/nat.tf
+        sed -i -e "s/SUBNET_IDS/${SUBNET_IDS}/g" ${TF}/nat.tf
+
+        pushd ${TF}
+        terraform init
+        terraform ${CMD} ${OPT}
+        popd
+    fi
+}
+
 kops_delete() {
-    delete_efs
+    if [ ! -z ${EFS_FILE_SYSTEM_ID} ]; then
+        delete_efs
+    fi
+
+    if [ ! -z ${KOPS_AWS_NAT} ]; then
+        kops_nat_gateway destroy -auto-approve
+    fi
 
     kops delete cluster --name=${KOPS_CLUSTER_NAME} --state=s3://${KOPS_STATE_STORE} --yes
 
@@ -1158,7 +1218,7 @@ isMountTargetDeleted() {
 }
 
 create_efs() {
-    # get the security group id 
+    # get the security group id
     K8S_NODE_SG_ID=$(aws ec2 describe-security-groups --filters "Name=group-name,Values=nodes.${KOPS_CLUSTER_NAME}" | jq -r '.SecurityGroups[0].GroupId')
     if [ -z ${K8S_NODE_SG_ID} ]; then
         error "Not found the security group for the nodes."
@@ -1204,9 +1264,9 @@ create_efs() {
     # create an efs
     EFS_LENGTH=$(aws efs describe-file-systems --creation-token ${KOPS_CLUSTER_NAME} | jq '.FileSystems | length')
     if [ ${EFS_LENGTH} -eq 0 ]; then
-        
+
         echo "Creating a elastic file system"
-        
+
         EFS_FILE_SYSTEM_ID=$(aws efs create-file-system --creation-token ${KOPS_CLUSTER_NAME} --region ${REGION} | jq -r '.FileSystemId')
         aws efs create-tags \
             --file-system-id ${EFS_FILE_SYSTEM_ID} \
@@ -1224,9 +1284,9 @@ create_efs() {
     # create mount targets
     EFS_MOUNT_TARGET_LENGTH=$(aws efs describe-mount-targets --file-system-id ${EFS_FILE_SYSTEM_ID} --region ${REGION} | jq -r '.MountTargets | length')
     if [ ${EFS_MOUNT_TARGET_LENGTH} -eq 0 ]; then
-        
+
         echo "Creating mount targets"
-        
+
         for SubnetId in ${VPC_SUBNETS}; do
             EFS_MOUNT_TARGET_ID=$(aws efs create-mount-target \
                 --file-system-id ${EFS_FILE_SYSTEM_ID} \
@@ -1276,7 +1336,6 @@ delete_efs() {
 }
 
 helm_efs_provisioner() {
-
     create_efs
 
     APP_NAME="efs-provisioner"
