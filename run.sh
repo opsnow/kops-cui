@@ -16,6 +16,7 @@ AZ_LIST=
 
 KOPS_STATE_STORE=
 KOPS_CLUSTER_NAME=
+KOPS_TERRAFORM=
 
 ROOT_DOMAIN=
 BASE_DOMAIN=
@@ -193,9 +194,10 @@ run() {
     command -v aws > /dev/null     || export NEED_TOOL=awscli
     command -v kubectl > /dev/null || export NEED_TOOL=kubectl
     command -v kops > /dev/null    || export NEED_TOOL=kops
+    command -v helm > /dev/null    || export NEED_TOOL=helm
 
     if [ ! -z ${NEED_TOOL} ]; then
-        question "Do you want to install the required tools? (awscli,kubectl,kops...) [Y/n] : "
+        question "Do you want to install the required tools? (awscli,kubectl,kops,helm...) [Y/n] : "
 
         ANSWER=${ANSWER:-Y}
 
@@ -228,7 +230,7 @@ state_store() {
 cluster_menu() {
     title
 
-    if [ "${CLUSTER}" == "0" ]; then
+    if [ "x${CLUSTER}" == "x0" ]; then
         print "1. Create Cluster"
         print "2. Update Tools"
     else
@@ -250,7 +252,7 @@ cluster_menu() {
 
     case ${ANSWER} in
         1)
-            if [ "${CLUSTER}" == "0" ]; then
+            if [ "x${CLUSTER}" == "x0" ]; then
                 create_menu
             else
                 kops_get
@@ -258,7 +260,7 @@ cluster_menu() {
             fi
             ;;
         2)
-            if [ "${CLUSTER}" == "0" ]; then
+            if [ "x${CLUSTER}" == "x0" ]; then
                 install_tools
             else
                 kops_edit
@@ -398,6 +400,7 @@ sample_menu() {
     print "3. sample-node"
     print "4. sample-spring"
     print "5. sample-tomcat"
+    print "6. sample-webpack"
 
     question
 
@@ -420,6 +423,10 @@ sample_menu() {
             ;;
         5)
             apply_sample sample-tomcat default true
+            press_enter sample
+            ;;
+        6)
+            apply_sample sample-webpack default true
             press_enter sample
             ;;
         *)
@@ -511,6 +518,7 @@ create_menu() {
     print "6. networking=${networking}"
     echo
     print "0. create"
+    # print "t. terraform"
 
     question
 
@@ -567,6 +575,33 @@ create_menu() {
 
             cluster_menu
             ;;
+        t)
+            KOPS_TERRAFORM=true
+            save_kops_config
+
+            mkdir -p ${KOPS_CLUSTER_NAME}
+
+            kops create cluster \
+                --cloud=${cloud} \
+                --name=${KOPS_CLUSTER_NAME} \
+                --state=s3://${KOPS_STATE_STORE} \
+                --master-size=${master_size} \
+                --master-count=${master_count} \
+                --master-zones=${master_zones} \
+                --node-size=${node_size} \
+                --node-count=${node_count} \
+                --zones=${zones} \
+                --network-cidr=${network_cidr} \
+                --networking=${networking} \
+                --target=terraform \
+                --out=terraform-${KOPS_CLUSTER_NAME}
+
+            press_enter
+
+            get_kops_cluster
+
+            cluster_menu
+            ;;
         *)
             get_kops_cluster
 
@@ -590,9 +625,9 @@ get_kops_config() {
 }
 
 read_kops_config() {
-    COUNT=$(aws s3 ls s3://${KOPS_STATE_STORE} | grep ${KOPS_CLUSTER_NAME}.kops-cui | wc -l)
+    COUNT=$(aws s3 ls s3://${KOPS_STATE_STORE} | grep ${KOPS_CLUSTER_NAME}.kops-cui | wc -l | xargs)
 
-    if [ "${COUNT}" == "0" ]; then
+    if [ "x${COUNT}" == "x0" ]; then
         save_kops_config
     else
         aws s3 cp s3://${KOPS_STATE_STORE}/${KOPS_CLUSTER_NAME}.kops-cui ${CONFIG} --quiet
@@ -607,6 +642,7 @@ save_kops_config() {
     echo "# kops config" > ${CONFIG}
     echo "KOPS_STATE_STORE=${KOPS_STATE_STORE}" >> ${CONFIG}
     echo "KOPS_CLUSTER_NAME=${KOPS_CLUSTER_NAME}" >> ${CONFIG}
+    echo "KOPS_TERRAFORM=${KOPS_TERRAFORM}" >> ${CONFIG}
     echo "ROOT_DOMAIN=${ROOT_DOMAIN}" >> ${CONFIG}
     echo "BASE_DOMAIN=${BASE_DOMAIN}" >> ${CONFIG}
     echo "EFS_FILE_SYSTEM_ID=${EFS_FILE_SYSTEM_ID}" >> ${CONFIG}
@@ -619,6 +655,7 @@ save_kops_config() {
 clear_kops_config() {
     export KOPS_STATE_STORE=
     export KOPS_CLUSTER_NAME=
+    export KOPS_TERRAFORM=
     export ROOT_DOMAIN=
     export BASE_DOMAIN=
     export EFS_FILE_SYSTEM_ID=
@@ -690,7 +727,7 @@ read_cluster_list() {
         print "${IDX}. ${ARR[0]}"
     done < ${CLUSTER_LIST}
 
-    if [ "${IDX}" == "0" ]; then
+    if [ "x${IDX}" == "x0" ]; then
         read_cluster_name
     else
         echo
@@ -700,7 +737,7 @@ read_cluster_list() {
 
         ANSWER=${ANSWER:-1}
 
-        if [ "${ANSWER}" == "0" ]; then
+        if [ "x${ANSWER}" == "x0" ]; then
             read_cluster_name
         else
             ARR=($(sed -n $(( ${ANSWER} + 1 ))p ${CLUSTER_LIST}))
@@ -762,7 +799,7 @@ kops_edit() {
 
     SELECTED=
 
-    if [ "${ANSWER}" == "0" ]; then
+    if [ "x${ANSWER}" == "x0" ]; then
         SELECTED="cluster"
     elif [ ! -z ${ANSWER} ]; then
         ARR=($(sed -n $(( ${ANSWER} + 1 ))p ${IG_LIST}))
@@ -775,7 +812,12 @@ kops_edit() {
 }
 
 kops_update() {
-    kops update cluster --name=${KOPS_CLUSTER_NAME} --state=s3://${KOPS_STATE_STORE} --yes
+    if [ -z ${KOPS_TERRAFORM} ]; then
+        kops update cluster --name=${KOPS_CLUSTER_NAME} --state=s3://${KOPS_STATE_STORE} --yes
+    else
+        kops update cluster --name=${KOPS_CLUSTER_NAME} --state=s3://${KOPS_STATE_STORE} --yes \
+                            --target=terraform --out=terraform-${KOPS_CLUSTER_NAME}
+    fi
 }
 
 kops_rolling_update() {
@@ -1327,9 +1369,9 @@ helm_remove() {
 }
 
 helm_check() {
-    COUNT=$(kubectl get pod -n kube-system | grep tiller-deploy | wc -l)
+    COUNT=$(kubectl get pod -n kube-system | grep tiller-deploy | wc -l | xargs)
 
-    if [ "${COUNT}" == "0" ] || [ ! -d ~/.helm ]; then
+    if [ "x${COUNT}" == "x0" ] || [ ! -d ~/.helm ]; then
         helm_init
         echo
     fi

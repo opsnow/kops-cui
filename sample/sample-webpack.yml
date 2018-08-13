@@ -3,10 +3,10 @@
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: sample-tomcat
+  name: sample-webpack
   namespace: default
   labels:
-    app: sample-tomcat
+    app: sample-webpack
 spec:
   replicas: 1
   revisionHistoryLimit: 10
@@ -16,46 +16,33 @@ spec:
       maxUnavailable: 25%
   selector:
     matchLabels:
-      k8s-app: sample-tomcat
+      k8s-app: sample-webpack
   template:
     metadata:
       labels:
-        k8s-app: sample-tomcat
+        k8s-app: sample-webpack
     spec:
       containers:
-      - name: sample-tomcat
-        image: quay.io/nalbam/sample-tomcat
+      - name: sample-webpack
+        image: quay.io/nalbam/sample-webpack
         imagePullPolicy: Always
         ports:
-        - containerPort: 8080
+        - containerPort: 80
           protocol: TCP
         livenessProbe:
           httpGet:
             path: /
-            port: 8080
-          initialDelaySeconds: 30
-          timeoutSeconds: 3
-          periodSeconds: 15
-        readinessProbe:
-          httpGet:
-            path: /
-            port: 8080
+            port: 80
           initialDelaySeconds: 30
           timeoutSeconds: 3
           periodSeconds: 15
         resources:
           requests:
-            memory: "256Mi"
-            cpu: "250m"
+            memory: "100Mi"
+            cpu: "100m"
           limits:
-            memory: "256Mi"
-            cpu: "250m"
-#        env:
-#        - name: PROFILE
-#          valueFrom:
-#            configMapKeyRef:
-#              name: sample-tomcat-dev
-#              key: PROFILE
+            memory: "100Mi"
+            cpu: "100m"
 
 ---
 # ------------------- Service ------------------- #
@@ -63,18 +50,18 @@ spec:
 apiVersion: v1
 kind: Service
 metadata:
-  name: sample-tomcat
+  name: sample-webpack
   namespace: default
   labels:
-    app: sample-tomcat
+    app: sample-webpack
 spec:
   type: SERVICE_TYPE
   ports:
     - name: http
       port: 80
-      targetPort: 8080
+      targetPort: 80
   selector:
-    k8s-app: sample-tomcat
+    k8s-app: sample-webpack
 
 ---
 # ------------------- Ingress ------------------- #
@@ -82,10 +69,10 @@ spec:
 apiVersion: extensions/v1beta1
 kind: Ingress
 metadata:
-  name: sample-tomcat
+  name: sample-webpack
   namespace: default
   labels:
-    app: sample-tomcat
+    app: sample-webpack
   annotations:
     kubernetes.io/ingress.class: nginx
 spec:
@@ -95,7 +82,7 @@ spec:
       paths:
       - path: /
         backend:
-          serviceName: sample-tomcat
+          serviceName: sample-webpack
           servicePort: 80
 
 ---
@@ -104,13 +91,13 @@ spec:
 apiVersion: autoscaling/v1
 kind: HorizontalPodAutoscaler
 metadata:
-  name: sample-tomcat
+  name: sample-webpack
   namespace: default
 spec:
   scaleTargetRef:
     apiVersion: apps/v1
     kind: Deployment
-    name: sample-tomcat
+    name: sample-webpack
   minReplicas: 1
   maxReplicas: 22
   targetCPUUtilizationPercentage: 50
@@ -118,13 +105,13 @@ spec:
 # apiVersion: autoscaling/v2beta1
 # kind: HorizontalPodAutoscaler
 # metadata:
-#   name: sample-tomcat
+#   name: sample-webpack
 #   namespace: default
 # spec:
 #   scaleTargetRef:
 #     apiVersion: apps/v1
 #     kind: Deployment
-#     name: sample-tomcat
+#     name: sample-webpack
 #   minReplicas: 1
 #   maxReplicas: 22
 #   metrics:

@@ -24,7 +24,7 @@ spec:
     spec:
       containers:
       - name: sample-spring
-        image: nalbam/sample-spring:slim
+        image: quay.io/nalbam/sample-spring
         imagePullPolicy: Always
         ports:
         - containerPort: 8080
