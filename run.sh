@@ -21,6 +21,8 @@ KOPS_TERRAFORM=
 ROOT_DOMAIN=
 BASE_DOMAIN=
 
+EFS_FILE_SYSTEM_ID=
+
 cloud=aws
 master_size=c4.large
 master_count=1
@@ -102,6 +104,36 @@ waiting() {
 
     progress end
     echo
+}
+
+waitingfor() {
+    echo
+    progress start
+
+    IDX=0
+    while true; do
+        $@ ${IDX}
+        DONE=$?
+        if [ ${DONE} -eq 0 ]; then
+            break
+        fi
+        IDX=$(( ${IDX} + 1 ))
+        progress
+    done
+
+    progress end
+    echo
+}
+
+isElapsed() {
+    SEC=${1}
+    IDX=${2}
+
+    if [ "${IDX}" == "${SEC}" ]; then
+        return 0;
+    else
+        return -1;
+    fi
 }
 
 progress() {
@@ -289,6 +321,7 @@ addons_menu() {
     print "4. heapster (deprecated)"
     print "5. metrics-server"
     print "6. cluster-autoscaler"
+    print "7. efs-provisioner"
     echo
     print "9. remove"
     echo
@@ -333,6 +366,10 @@ addons_menu() {
             echo "  cloudLabels:"
             echo "    k8s.io/cluster-autoscaler/enabled: \"\""
             echo "    kubernetes.io/cluster/${KOPS_CLUSTER_NAME}: owned"
+            press_enter addons
+            ;;
+        7)
+            helm_efs_provisioner 
             press_enter addons
             ;;
         9)
@@ -608,6 +645,7 @@ save_kops_config() {
     echo "KOPS_TERRAFORM=${KOPS_TERRAFORM}" >> ${CONFIG}
     echo "ROOT_DOMAIN=${ROOT_DOMAIN}" >> ${CONFIG}
     echo "BASE_DOMAIN=${BASE_DOMAIN}" >> ${CONFIG}
+    echo "EFS_FILE_SYSTEM_ID=${EFS_FILE_SYSTEM_ID}" >> ${CONFIG}
 
     if [ ! -z ${KOPS_CLUSTER_NAME} ]; then
         aws s3 cp ${CONFIG} s3://${KOPS_STATE_STORE}/${KOPS_CLUSTER_NAME}.kops-cui --quiet
@@ -620,6 +658,7 @@ clear_kops_config() {
     export KOPS_TERRAFORM=
     export ROOT_DOMAIN=
     export BASE_DOMAIN=
+    export EFS_FILE_SYSTEM_ID=
 
     save_kops_config
 
@@ -797,6 +836,8 @@ kops_export() {
 }
 
 kops_delete() {
+    delete_efs
+
     kops delete cluster --name=${KOPS_CLUSTER_NAME} --state=s3://${KOPS_STATE_STORE} --yes
 
     delete_kops_config
@@ -1057,6 +1098,205 @@ helm_nginx_ingress() {
         set_record_alias
         echo
     fi
+
+    save_kops_config
+}
+
+isEFSAvailable() {
+    FILE_SYSTEMS=$(aws efs describe-file-systems --creation-token ${KOPS_CLUSTER_NAME} --region ${REGION})
+    FILE_SYSTEM_LENGH=$(echo ${FILE_SYSTEMS} | jq -r '.FileSystems | length')
+    if [ ${FILE_SYSTEM_LENGH} -gt 0 ]; then
+        STATES=$(echo ${FILE_SYSTEMS} | jq -r '.FileSystems[].LifeCycleState')
+
+        COUNT=0
+        for state in ${STATES}; do
+            if [ "${state}" == "available" ]; then
+                COUNT=$(( ${COUNT} + 1 ))
+            fi
+        done
+
+        # echo ${COUNT}/${FILE_SYSTEM_LENGH}
+
+        if [ ${COUNT} -eq ${FILE_SYSTEM_LENGH} ]; then
+            return 0;
+        fi
+    fi
+
+    return -1;
+}
+
+isMountTargetAvailable() {
+    MOUNT_TARGETS=$(aws efs describe-mount-targets --file-system-id ${EFS_FILE_SYSTEM_ID} --region ${REGION})
+    MOUNT_TARGET_LENGH=$(echo ${MOUNT_TARGETS} | jq -r '.MountTargets | length')
+    if [ ${MOUNT_TARGET_LENGH} -gt 0 ]; then
+        STATES=$(echo ${MOUNT_TARGETS} | jq -r '.MountTargets[].LifeCycleState')
+
+        COUNT=0
+        for state in ${STATES}; do
+            if [ "${state}" == "available" ]; then
+                COUNT=$(( ${COUNT} + 1 ))
+            fi
+        done
+
+        # echo ${COUNT}/${MOUNT_TARGET_LENGH}
+
+        if [ ${COUNT} -eq ${MOUNT_TARGET_LENGH} ]; then
+            return 0;
+        fi
+    fi
+
+    return -1;
+}
+
+isMountTargetDeleted() {
+    MOUNT_TARGET_LENGTH=$(aws efs describe-mount-targets --file-system-id ${EFS_FILE_SYSTEM_ID} --region ${REGION} | jq -r '.MountTargets | length')
+    if [ ${MOUNT_TARGET_LENGTH} == 0 ]; then
+        return 0
+    else
+        return -1
+    fi
+}
+
+create_efs() {
+    # get the security group id 
+    K8S_NODE_SG_ID=$(aws ec2 describe-security-groups --filters "Name=group-name,Values=nodes.${KOPS_CLUSTER_NAME}" | jq -r '.SecurityGroups[0].GroupId')
+    if [ -z ${K8S_NODE_SG_ID} ]; then
+        error "Not found the security group for the nodes."
+    fi
+
+    # get vpc id & subent ids
+    VPC_ID=$(aws ec2 describe-vpcs --filters "Name=tag:Name,Values=${KOPS_CLUSTER_NAME}" | jq -r '.Vpcs[0].VpcId')
+    VPC_SUBNETS=$(aws ec2 describe-subnets --filters="Name=tag:KubernetesCluster,Values=${KOPS_CLUSTER_NAME}" | jq -r '(.Subnets[].SubnetId)')
+    if [ -z ${VPC_ID} ]; then
+        error "Not found the VPC."
+    fi
+
+    echo "General conditions:"
+    echo "   K8S_NODE_SG_ID=${K8S_NODE_SG_ID}"
+    echo "   VPC_ID=${VPC_ID}"
+    echo "   VPC_SUBNETS=${VPC_SUBNETS}"
+
+    # create a security group for efs mount targets
+    EFS_SG_LENGTH=$(aws ec2 describe-security-groups --filters "Name=group-name,Values=efs-sg.${KOPS_CLUSTER_NAME}" | jq '.SecurityGroups | length')
+    if [ ${EFS_SG_LENGTH} -eq 0 ]; then
+
+        echo "Creating a security group for mount targets"
+
+        EFS_SG_ID=$(aws ec2 create-security-group \
+            --region ${REGION} \
+            --group-name efs-sg.${KOPS_CLUSTER_NAME} \
+            --description "Security group for EFS mount targets" \
+            --vpc-id ${VPC_ID} | jq -r '.GroupId')
+
+        aws ec2 authorize-security-group-ingress \
+            --group-id ${EFS_SG_ID} \
+            --protocol tcp \
+            --port 2049 \
+            --source-group ${K8S_NODE_SG_ID} \
+            --region ${REGION}
+    else
+        EFS_SG_ID=$(aws ec2 describe-security-groups --filters "Name=group-name,Values=efs-sg.${KOPS_CLUSTER_NAME}" | jq -r '.SecurityGroups[].GroupId')
+    fi
+
+    echo "Security group for mount targets:"
+    echo "    EFS_SG_ID=${EFS_SG_ID}"
+
+    # create an efs
+    EFS_LENGTH=$(aws efs describe-file-systems --creation-token ${KOPS_CLUSTER_NAME} | jq '.FileSystems | length')
+    if [ ${EFS_LENGTH} -eq 0 ]; then
+        
+        echo "Creating a elastic file system"
+        
+        EFS_FILE_SYSTEM_ID=$(aws efs create-file-system --creation-token ${KOPS_CLUSTER_NAME} --region ${REGION} | jq -r '.FileSystemId')
+        aws efs create-tags \
+            --file-system-id ${EFS_FILE_SYSTEM_ID} \
+            --tags Key=Name,Value=efs.${KOPS_CLUSTER_NAME} \
+            --region ap-northeast-2
+    else
+        EFS_FILE_SYSTEM_ID=$(aws efs describe-file-systems --creation-token ${KOPS_CLUSTER_NAME} --region ${REGION} | jq -r '.FileSystems[].FileSystemId')
+    fi
+
+    echo "EFS:"
+    echo "   EFS_FILE_SYSTEM_ID=${EFS_FILE_SYSTEM_ID}"
+    echo 'Waiting for the state of the EFS to be available.'
+    waitingfor isEFSAvailable
+
+    # create mount targets
+    EFS_MOUNT_TARGET_LENGTH=$(aws efs describe-mount-targets --file-system-id ${EFS_FILE_SYSTEM_ID} --region ${REGION} | jq -r '.MountTargets | length')
+    if [ ${EFS_MOUNT_TARGET_LENGTH} -eq 0 ]; then
+        
+        echo "Creating mount targets"
+        
+        for SubnetId in ${VPC_SUBNETS}; do
+            EFS_MOUNT_TARGET_ID=$(aws efs create-mount-target \
+                --file-system-id ${EFS_FILE_SYSTEM_ID} \
+                --subnet-id ${SubnetId} \
+                --security-group ${EFS_SG_ID} \
+                --region ${REGION} | jq -r '.MountTargetId')
+            EFS_MOUNT_TARGET_IDS=(${EFS_MOUNT_TARGET_IDS[@]} ${EFS_MOUNT_TARGET_ID})
+        done
+    else
+        EFS_MOUNT_TARGET_IDS=$(aws efs describe-mount-targets --file-system-id ${EFS_FILE_SYSTEM_ID} --region ${REGION} | jq -r '.MountTargets[].MountTargetId')
+    fi
+
+    echo "Mount targets:"
+    echo "   EFS_MOUNT_TARGET_IDS=${EFS_MOUNT_TARGET_IDS[@]}"
+
+    echo 'Waiting for the state of the EFS mount targets to be available.'
+    waitingfor isMountTargetAvailable
+
+    echo
+}
+
+delete_efs() {
+    # delete mount targets
+    EFS_MOUNT_TARGET_IDS=$(aws efs describe-mount-targets --file-system-id ${EFS_FILE_SYSTEM_ID} --region ${REGION} | jq -r '.MountTargets[].MountTargetId')
+    for MountTargetId in ${EFS_MOUNT_TARGET_IDS}; do
+        echo "Deleting the mount targets"
+        aws efs delete-mount-target --mount-target-id ${MountTargetId}
+    done
+
+    echo 'Waiting for the EFS mount targets to be deleted.'
+    waitingfor isMountTargetDeleted
+
+    # delete security group for efs mount targets
+    EFS_SG_ID=$(aws ec2 describe-security-groups --filters "Name=group-name,Values=efs-sg.${KOPS_CLUSTER_NAME}" | jq -r '.SecurityGroups[0].GroupId')
+    if [ -n ${EFS_SG_ID} ]; then
+        echo "Deleting the security group for mount targets"
+        aws ec2 delete-security-group --group-id=${EFS_SG_ID}
+    fi
+
+    # delete efs
+    if [ -n ${EFS_FILE_SYSTEM_ID} ]; then
+        echo "Deleting the elastic file system"
+        aws efs delete-file-system --file-system-id ${EFS_FILE_SYSTEM_ID} --region ${REGION}
+    fi
+
+    echo
+}
+
+helm_efs_provisioner() {
+
+    create_efs
+
+    APP_NAME="efs-provisioner"
+    NAMESPACE="kube-system"
+
+    CHART=/tmp/${APP_NAME}.yaml
+    get_template charts/${APP_NAME}.yaml ${CHART}
+
+    sed -i -e "s/CLUSTER_NAME/${KOPS_CLUSTER_NAME}/" ${CHART}
+    sed -i -e "s/AWS_REGION/${REGION}/" ${CHART}
+    sed -i -e "s/EFS_FILE_SYSTEM_ID/${EFS_FILE_SYSTEM_ID}/" ${CHART}
+
+    helm upgrade --install ${APP_NAME} stable/${APP_NAME} --namespace ${NAMESPACE} -f ${CHART}
+
+    waiting 2
+
+    helm history ${APP_NAME}
+    echo
+    kubectl get pod,svc -n ${NAMESPACE}
+    echo
 
     save_kops_config
 }
