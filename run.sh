@@ -17,7 +17,6 @@ AZ_LIST=
 KOPS_STATE_STORE=
 KOPS_CLUSTER_NAME=
 KOPS_TERRAFORM=
-KOPS_AWS_NAT=
 
 ROOT_DOMAIN=
 BASE_DOMAIN=
@@ -30,10 +29,10 @@ master_count=1
 master_zones=
 node_size=m4.large
 node_count=2
-topology=private
 zones=
 network_cidr=10.0.0.0/16
 networking=calico
+topology=private
 vpc=
 
 print() {
@@ -197,7 +196,6 @@ run() {
     command -v kubectl > /dev/null || export NEED_TOOL=kubectl
     command -v kops > /dev/null    || export NEED_TOOL=kops
     command -v helm > /dev/null    || export NEED_TOOL=helm
-    command -v terraform > /dev/null || export NEED_TOOL=terraform
 
     if [ ! -z ${NEED_TOOL} ]; then
         question "Do you want to install the required tools? (awscli,kubectl,kops,helm...) [Y/n] : "
@@ -243,7 +241,6 @@ cluster_menu() {
         print "4. Rolling Update"
         print "5. Validate Cluster"
         print "6. Export Kube Config"
-        print "7. AWS NAT Gateway"
         echo
         print "9. Delete Cluster"
         echo
@@ -291,13 +288,6 @@ cluster_menu() {
             ;;
         6)
             kops_export
-            press_enter cluster
-            ;;
-        7)
-            KOPS_AWS_NAT=true
-            save_kops_config
-
-            kops_nat_gateway apply -auto-approve
             press_enter cluster
             ;;
         9)
@@ -527,7 +517,7 @@ create_menu() {
     print "   zones=${zones}"
     print "5. network-cidr=${network_cidr}"
     print "6. networking=${networking}"
-    # print "7. vpc=${vpc}"
+    print "7. topology=${topology}"
     echo
     print "0. create"
     # print "t. terraform"
@@ -568,8 +558,8 @@ create_menu() {
             create_menu
             ;;
         7)
-            question "Enter vpc id [${vpc}] : "
-            vpc=${ANSWER:-${vpc}}
+            question "Enter topology [${topology}] : "
+            topology=${ANSWER:-${topology}}
             create_menu
             ;;
         0)
@@ -588,7 +578,7 @@ create_menu() {
                 --zones=${zones} \
                 --network-cidr=${network_cidr} \
                 --networking=${networking} \
-                --vpc=${vpc}
+                --topology=${topology}
 
             press_enter
 
@@ -614,7 +604,7 @@ create_menu() {
                 --zones=${zones} \
                 --network-cidr=${network_cidr} \
                 --networking=${networking} \
-                --vpc=${vpc} \
+                --topology=${topology} \
                 --target=terraform \
                 --out=terraform-${KOPS_CLUSTER_NAME}
 
@@ -665,7 +655,6 @@ save_kops_config() {
     echo "KOPS_STATE_STORE=${KOPS_STATE_STORE}" >> ${CONFIG}
     echo "KOPS_CLUSTER_NAME=${KOPS_CLUSTER_NAME}" >> ${CONFIG}
     echo "KOPS_TERRAFORM=${KOPS_TERRAFORM}" >> ${CONFIG}
-    echo "KOPS_AWS_NAT=${KOPS_AWS_NAT}" >> ${CONFIG}
     echo "ROOT_DOMAIN=${ROOT_DOMAIN}" >> ${CONFIG}
     echo "BASE_DOMAIN=${BASE_DOMAIN}" >> ${CONFIG}
     echo "EFS_FILE_SYSTEM_ID=${EFS_FILE_SYSTEM_ID}" >> ${CONFIG}
@@ -679,7 +668,6 @@ clear_kops_config() {
     export KOPS_STATE_STORE=
     export KOPS_CLUSTER_NAME=
     export KOPS_TERRAFORM=
-    export KOPS_AWS_NAT=
     export ROOT_DOMAIN=
     export BASE_DOMAIN=
     export EFS_FILE_SYSTEM_ID=
@@ -863,40 +851,8 @@ kops_export() {
     kops export kubecfg --name ${KOPS_CLUSTER_NAME} --state=s3://${KOPS_STATE_STORE}
 }
 
-kops_nat_gateway() {
-    CMD=${1:-plan}
-    OPT=${2}
-
-    SUBNET_IDS=$(aws ec2 describe-subnets --filters Name=tag:KubernetesCluster,Values=${KOPS_CLUSTER_NAME} | jq '.Subnets[] | {SubnetId}' | grep SubnetId | cut -d'"' -f4 | tr -s '\r\n' ',' | sed 's/.$//')
-
-    if [ ! -z ${SUBNET_IDS} ]; then
-        TF=/tmp/tf-${KOPS_CLUSTER_NAME}
-
-        rm -rf ${TF}
-        mkdir -p ${TF}
-
-        cp -rf ${SHELL_DIR}/terraform/nat.tf ${TF}/
-
-        sed -i -e "s/REGION/${REGION}/g" ${TF}/nat.tf
-        sed -i -e "s/KOPS_STATE_STORE/${KOPS_STATE_STORE}/g" ${TF}/nat.tf
-        sed -i -e "s/KOPS_CLUSTER_NAME/${KOPS_CLUSTER_NAME}/g" ${TF}/nat.tf
-        sed -i -e "s/SUBNET_IDS/${SUBNET_IDS}/g" ${TF}/nat.tf
-
-        pushd ${TF}
-        terraform init
-        terraform ${CMD} ${OPT}
-        popd
-    fi
-}
-
 kops_delete() {
-    if [ ! -z ${EFS_FILE_SYSTEM_ID} ]; then
-        delete_efs
-    fi
-
-    if [ ! -z ${KOPS_AWS_NAT} ]; then
-        kops_nat_gateway destroy -auto-approve
-    fi
+    delete_efs
 
     kops delete cluster --name=${KOPS_CLUSTER_NAME} --state=s3://${KOPS_STATE_STORE} --yes
 
@@ -1309,6 +1265,10 @@ create_efs() {
 }
 
 delete_efs() {
+    if [ -z ${EFS_FILE_SYSTEM_ID} ]; then
+        return
+    fi
+
     # delete mount targets
     EFS_MOUNT_TARGET_IDS=$(aws efs describe-mount-targets --file-system-id ${EFS_FILE_SYSTEM_ID} --region ${REGION} | jq -r '.MountTargets[].MountTargetId')
     for MountTargetId in ${EFS_MOUNT_TARGET_IDS}; do
