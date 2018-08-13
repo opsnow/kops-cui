@@ -9,7 +9,12 @@
         <hudson.model.StringParameterDefinition>
         <name>REPOSITORY_URL</name>
         <description></description>
-        <defaultValue>https://github.com/nalbam/sample-web</defaultValue>
+        <defaultValue>https://github.com/nalbam/sample-node</defaultValue>
+        </hudson.model.StringParameterDefinition>
+        <hudson.model.StringParameterDefinition>
+        <name>REPOSITORY_SECRET</name>
+        <description></description>
+        <defaultValue></defaultValue>
         </hudson.model.StringParameterDefinition>
         <hudson.model.StringParameterDefinition>
         <name>BRANCH_NAME</name>
@@ -19,7 +24,7 @@
         <hudson.model.StringParameterDefinition>
         <name>IMAGE_NAME</name>
         <description></description>
-        <defaultValue>sample-web</defaultValue>
+        <defaultValue>sample-node</defaultValue>
         </hudson.model.StringParameterDefinition>
         <hudson.model.StringParameterDefinition>
         <name>SLACK_TOKEN</name>
