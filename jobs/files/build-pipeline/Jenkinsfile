@@ -106,6 +106,7 @@ podTemplate(label: label, containers: [
             sed -i -e "s/NAME/$IMAGE_NAME-$NAMESPACE/g" draft.toml
             draft up --docker-debug
           """
+          deploy_success(IMAGE_NAME, VERSION, NAMESPACE, BASE_DOMAIN)
         }
       }
     }
@@ -143,6 +144,7 @@ podTemplate(label: label, containers: [
                         --set fullnameOverride=$IMAGE_NAME-$NAMESPACE
             helm history $IMAGE_NAME-$NAMESPACE
           """
+          // deploy_success(IMAGE_NAME, VERSION, NAMESPACE, BASE_DOMAIN)
         }
       }
       stage("Confirm") {
@@ -163,6 +165,7 @@ podTemplate(label: label, containers: [
                         --set fullnameOverride=$IMAGE_NAME-$NAMESPACE
             helm history $IMAGE_NAME-$NAMESPACE
           """
+          deploy_success(IMAGE_NAME, VERSION, NAMESPACE, BASE_DOMAIN)
         }
       }
     }
@@ -179,6 +182,10 @@ def build_success(IMAGE_NAME, VERSION, PIPELINE) {
 }
 def deploy_confirm(IMAGE_NAME, VERSION, STAGE, PIPELINE) {
   notify("warning", "Deply Confirm", "`$IMAGE_NAME` `$VERSION` :rocket: `$STAGE`", "$env.JOB_NAME <$PIPELINE|#$env.BUILD_NUMBER>")
+}
+def deploy_success(IMAGE_NAME, VERSION, STAGE, BASE_DOMAIN) {
+  URL="https://$IMAGE_NAME-$STAGE.$BASE_DOMAIN"
+  notify("warning", "Deply Success", "`$IMAGE_NAME` `$VERSION` :satellite: `$STAGE`", "see <$URL|#$env.IMAGE_NAME>")
 }
 def notify(COLOR, TITLE, MESSAGE, LINK) {
   try {
