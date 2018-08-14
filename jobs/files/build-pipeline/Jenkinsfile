@@ -3,6 +3,7 @@ def VERSION = ""
 def SOURCE_LANG = ""
 def SOURCE_ROOT = ""
 def BASE_DOMAIN = ""
+def REGISTRY = ""
 def JENKINS = ""
 def PIPELINE = ""
 properties([
@@ -26,6 +27,7 @@ podTemplate(label: label, containers: [
         """
         VERSION = readFile "/home/jenkins/VERSION"
         BASE_DOMAIN = readFile "/home/jenkins/BASE_DOMAIN"
+        REGISTRY = readFile "/home/jenkins/REGISTRY"
         JENKINS = readFile "/home/jenkins/JENKINS"
         PIPELINE = "https://$JENKINS/blue/organizations/jenkins/$JOB_NAME/detail/$JOB_NAME/$BUILD_NUMBER/pipeline"
       }
@@ -99,17 +101,29 @@ podTemplate(label: label, containers: [
     }
     if (BRANCH_NAME == "master") {
       stage("Build Image") {
-        container("builder") {
-          sh """
-            /root/extra/build-charts.sh
-          """
-        }
+        parallel(
+          "Build Docker": {
+            container("docker") {
+              sh """
+                docker build -t $REGISTRY/$IMAGE_NAME:$VERSION .
+                docker push $REGISTRY/$IMAGE_NAME:$VERSION
+              """
+            }
+          },
+          "Build Charts": {
+            container("builder") {
+              sh """
+                /root/extra/build-charts.sh
+              """
+            }
+          }
+        )
       }
       stage("Staging") {
         container("builder") {
           def NAMESPACE = "staging"
           sh """
-            /root/extra/draft-up.sh $NAMESPACE
+            /root/extra/deploy.sh $IMAGE_NAME $VERSION $NAMESPACE
           """
           // deploy_success(IMAGE_NAME, VERSION, NAMESPACE, BASE_DOMAIN)
         }
