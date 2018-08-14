@@ -22,7 +22,7 @@ podTemplate(label: label, containers: [
     stage("Prepare") {
       container("builder") {
         sh """
-          bash /root/extra/prepare.sh $IMAGE_NAME $BRANCH_NAME
+          /root/extra/prepare.sh $IMAGE_NAME $BRANCH_NAME
         """
         VERSION = readFile "/home/jenkins/VERSION"
         BASE_DOMAIN = readFile "/home/jenkins/BASE_DOMAIN"
@@ -45,7 +45,7 @@ podTemplate(label: label, containers: [
       }
       container("builder") {
         sh """
-          bash /root/extra/detect.sh $IMAGE_NAME
+          /root/extra/detect.sh
         """
         SOURCE_LANG = readFile "/home/jenkins/SOURCE_LANG"
         SOURCE_ROOT = readFile "/home/jenkins/SOURCE_ROOT"
@@ -91,7 +91,7 @@ podTemplate(label: label, containers: [
         container("builder") {
           def NAMESPACE = "development"
           sh """
-            bash /root/extra/draft-up.sh $IMAGE_NAME $NAMESPACE
+            /root/extra/draft-up.sh $NAMESPACE
           """
           deploy_success(IMAGE_NAME, VERSION, NAMESPACE, BASE_DOMAIN)
         }
@@ -99,28 +99,17 @@ podTemplate(label: label, containers: [
     }
     if (BRANCH_NAME == "master") {
       stage("Build Image") {
-        parallel(
-          "Build Docker": {
-            container("docker") {
-              sh """
-                bash /root/extra/build-image.sh $IMAGE_NAME
-              """
-            }
-          },
-          "Build Charts": {
-            container("builder") {
-              sh """
-                bash /root/extra/build-charts.sh $IMAGE_NAME
-              """
-            }
-          }
-        )
+        container("builder") {
+          sh """
+            /root/extra/build-charts.sh
+          """
+        }
       }
       stage("Staging") {
         container("builder") {
           def NAMESPACE = "staging"
           sh """
-            bash /root/extra/deploy.sh $IMAGE_NAME $VERSION $NAMESPACE
+            /root/extra/draft-up.sh $NAMESPACE
           """
           // deploy_success(IMAGE_NAME, VERSION, NAMESPACE, BASE_DOMAIN)
         }
@@ -138,7 +127,7 @@ podTemplate(label: label, containers: [
         container("builder") {
           def NAMESPACE = "production"
           sh """
-            bash /root/extra/deploy.sh $IMAGE_NAME $VERSION $NAMESPACE
+            /root/extra/deploy.sh $IMAGE_NAME $VERSION $NAMESPACE
           """
           deploy_success(IMAGE_NAME, VERSION, NAMESPACE, BASE_DOMAIN)
         }

@@ -13,18 +13,18 @@ podTemplate(label: label, containers: [
   node(label) {
     stage("Info") {
       sh """
-        uname -a
         date
-        echo $BUILD_NUMBER
+        uname -a
         echo $JOB_NAME
+        echo $BUILD_NUMBER
       """
     }
     stage("Prepare") {
       container("builder") {
         sh """
-          uname -a
           date
-          bash /root/extra/build-init.sh
+          uname -a
+          bash /root/extra/prepare.sh
           ls -al /home/jenkins
         """
       }

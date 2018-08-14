@@ -19,7 +19,7 @@ podTemplate(label: label, containers: [
     stage("Make Version") {
       container("builder") {
         sh """
-          bash /root/extra/build-init.sh
+          /root/extra/prepare.sh
         """
       }
     }
