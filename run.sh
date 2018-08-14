@@ -33,6 +33,7 @@ zones=
 network_cidr=10.0.0.0/16
 networking=calico
 topology=private
+dns_zone=
 vpc=
 
 print() {
@@ -312,6 +313,132 @@ cluster_menu() {
     esac
 }
 
+create_menu() {
+    title
+
+    get_az_list
+
+    get_master_zones
+    get_node_zones
+
+    print "   cloud=${cloud}"
+    print "   name=${KOPS_CLUSTER_NAME}"
+    print "   state=s3://${KOPS_STATE_STORE}"
+    print "1. master-size=${master_size}"
+    print "2. master-count=${master_count}"
+    print "   master-zones=${master_zones}"
+    print "3. node-size=${node_size}"
+    print "4. node-count=${node_count}"
+    print "   zones=${zones}"
+    print "5. network-cidr=${network_cidr}"
+    print "6. networking=${networking}"
+    print "7. topology=${topology}"
+    # print "8. dns-zone=${dns_zone}"
+    # print "9. vpc=${vpc}"
+    echo
+    print "c. create"
+    print "t. terraform"
+
+    question
+
+    case ${ANSWER} in
+        1)
+            question "Enter master size [${master_size}] : "
+            master_size=${ANSWER:-${master_size}}
+            create_menu
+            ;;
+        2)
+            question "Enter master count [${master_count}] : "
+            master_count=${ANSWER:-${master_count}}
+            get_master_zones
+            create_menu
+            ;;
+        3)
+            question "Enter node size [${node_size}] : "
+            node_size=${ANSWER:-${node_size}}
+            create_menu
+            ;;
+        4)
+            question "Enter node count [${node_count}] : "
+            node_count=${ANSWER:-${node_count}}
+            get_node_zones
+            create_menu
+            ;;
+        5)
+            question "Enter network cidr [${network_cidr}] : "
+            network_cidr=${ANSWER:-${network_cidr}}
+            create_menu
+            ;;
+        6)
+            question "Enter networking [${networking}] : "
+            networking=${ANSWER:-${networking}}
+            create_menu
+            ;;
+        7)
+            question "Enter topology [${topology}] : "
+            topology=${ANSWER:-${topology}}
+            create_menu
+            ;;
+        c)
+            KOPS_TERRAFORM=
+            save_kops_config
+
+            kops create cluster \
+                --cloud=${cloud} \
+                --name=${KOPS_CLUSTER_NAME} \
+                --state=s3://${KOPS_STATE_STORE} \
+                --master-size=${master_size} \
+                --master-count=${master_count} \
+                --master-zones=${master_zones} \
+                --node-size=${node_size} \
+                --node-count=${node_count} \
+                --zones=${zones} \
+                --network-cidr=${network_cidr} \
+                --networking=${networking} \
+                --topology=${topology}
+
+            press_enter
+
+            get_kops_cluster
+
+            cluster_menu
+            ;;
+        t)
+            KOPS_TERRAFORM=true
+            save_kops_config
+
+            mkdir -p ${KOPS_CLUSTER_NAME}
+
+            kops create cluster \
+                --cloud=${cloud} \
+                --name=${KOPS_CLUSTER_NAME} \
+                --state=s3://${KOPS_STATE_STORE} \
+                --master-size=${master_size} \
+                --master-count=${master_count} \
+                --master-zones=${master_zones} \
+                --node-size=${node_size} \
+                --node-count=${node_count} \
+                --zones=${zones} \
+                --network-cidr=${network_cidr} \
+                --networking=${networking} \
+                --topology=${topology} \
+                --target=terraform \
+                --out=terraform-${KOPS_CLUSTER_NAME}
+
+            press_enter
+
+            get_kops_cluster
+
+            cluster_menu
+            ;;
+        *)
+            get_kops_cluster
+
+            cluster_menu
+            ;;
+    esac
+}
+
 addons_menu() {
     title
 
@@ -494,130 +621,6 @@ devops_menu() {
             ;;
         *)
             addons_menu
-            ;;
-    esac
-}
-
-create_menu() {
-    title
-
-    get_az_list
-
-    get_master_zones
-    get_node_zones
-
-    print "   cloud=${cloud}"
-    print "   name=${KOPS_CLUSTER_NAME}"
-    print "   state=s3://${KOPS_STATE_STORE}"
-    print "1. master-size=${master_size}"
-    print "2. master-count=${master_count}"
-    print "   master-zones=${master_zones}"
-    print "3. node-size=${node_size}"
-    print "4. node-count=${node_count}"
-    print "   zones=${zones}"
-    print "5. network-cidr=${network_cidr}"
-    print "6. networking=${networking}"
-    print "7. topology=${topology}"
-    echo
-    print "0. create"
-    # print "t. terraform"
-
-    question
-
-    case ${ANSWER} in
-        1)
-            question "Enter master size [${master_size}] : "
-            master_size=${ANSWER:-${master_size}}
-            create_menu
-            ;;
-        2)
-            question "Enter master count [${master_count}] : "
-            master_count=${ANSWER:-${master_count}}
-            get_master_zones
-            create_menu
-            ;;
-        3)
-            question "Enter node size [${node_size}] : "
-            node_size=${ANSWER:-${node_size}}
-            create_menu
-            ;;
-        4)
-            question "Enter node count [${node_count}] : "
-            node_count=${ANSWER:-${node_count}}
-            get_node_zones
-            create_menu
-            ;;
-        5)
-            question "Enter network cidr [${network_cidr}] : "
-            network_cidr=${ANSWER:-${network_cidr}}
-            create_menu
-            ;;
-        6)
-            question "Enter networking [${networking}] : "
-            networking=${ANSWER:-${networking}}
-            create_menu
-            ;;
-        7)
-            question "Enter topology [${topology}] : "
-            topology=${ANSWER:-${topology}}
-            create_menu
-            ;;
-        0)
-            KOPS_TERRAFORM=
-            save_kops_config
-
-            kops create cluster \
-                --cloud=${cloud} \
-                --name=${KOPS_CLUSTER_NAME} \
-                --state=s3://${KOPS_STATE_STORE} \
-                --master-size=${master_size} \
-                --master-count=${master_count} \
-                --master-zones=${master_zones} \
-                --node-size=${node_size} \
-                --node-count=${node_count} \
-                --zones=${zones} \
-                --network-cidr=${network_cidr} \
-                --networking=${networking} \
-                --topology=${topology}
-
-            press_enter
-
-            get_kops_cluster
-
-            cluster_menu
-            ;;
-        t)
-            KOPS_TERRAFORM=true
-            save_kops_config
-
-            mkdir -p ${KOPS_CLUSTER_NAME}
-
-            kops create cluster \
-                --cloud=${cloud} \
-                --name=${KOPS_CLUSTER_NAME} \
-                --state=s3://${KOPS_STATE_STORE} \
-                --master-size=${master_size} \
-                --master-count=${master_count} \
-                --master-zones=${master_zones} \
-                --node-size=${node_size} \
-                --node-count=${node_count} \
-                --zones=${zones} \
-                --network-cidr=${network_cidr} \
-                --networking=${networking} \
-                --topology=${topology} \
-                --target=terraform \
-                --out=terraform-${KOPS_CLUSTER_NAME}
-
-            press_enter
-
-            get_kops_cluster
-
-            cluster_menu
-            ;;
-        *)
-            get_kops_cluster
-
-            cluster_menu
             ;;
     esac
 }
@@ -837,7 +840,7 @@ kops_update() {
 }
 
 kops_rolling_update() {
-    kops rolling-update cluster --name=${KOPS_CLUSTER_NAME} --state=s3://${KOPS_STATE_STORE} --force --yes
+    kops rolling-update cluster --name=${KOPS_CLUSTER_NAME} --state=s3://${KOPS_STATE_STORE} --yes
 }
 
 kops_validate() {
