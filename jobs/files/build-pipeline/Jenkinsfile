@@ -184,8 +184,8 @@ def deploy_confirm(IMAGE_NAME, VERSION, STAGE, PIPELINE) {
   notify("warning", "Deply Confirm", "`$IMAGE_NAME` `$VERSION` :rocket: `$STAGE`", "$env.JOB_NAME <$PIPELINE|#$env.BUILD_NUMBER>")
 }
 def deploy_success(IMAGE_NAME, VERSION, STAGE, BASE_DOMAIN) {
-  URL="https://$IMAGE_NAME-$STAGE.$BASE_DOMAIN"
-  notify("warning", "Deply Success", "`$IMAGE_NAME` `$VERSION` :satellite: `$STAGE`", "see <$URL|#$env.IMAGE_NAME>")
+  def SEE="https://$IMAGE_NAME-$STAGE.$BASE_DOMAIN"
+  notify("good", "Deply Success", "`$IMAGE_NAME` `$VERSION` :satellite: `$STAGE`", "see <$SEE|#$env.IMAGE_NAME>")
 }
 def notify(COLOR, TITLE, MESSAGE, LINK) {
   try {
