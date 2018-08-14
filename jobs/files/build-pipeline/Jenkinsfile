@@ -185,7 +185,7 @@ def deploy_confirm(IMAGE_NAME, VERSION, STAGE, PIPELINE) {
 }
 def deploy_success(IMAGE_NAME, VERSION, STAGE, BASE_DOMAIN) {
   def SEE="https://$IMAGE_NAME-$STAGE.$BASE_DOMAIN"
-  notify("good", "Deply Success", "`$IMAGE_NAME` `$VERSION` :satellite: `$STAGE`", "see <$SEE|#$env.IMAGE_NAME>")
+  notify("good", "Deply Success", "`$IMAGE_NAME` `$VERSION` :satellite: `$STAGE`", "see <$SEE|$env.IMAGE_NAME-$STAGE>")
 }
 def notify(COLOR, TITLE, MESSAGE, LINK) {
   try {
