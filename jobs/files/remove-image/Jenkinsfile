@@ -13,10 +13,7 @@ podTemplate(label: label, containers: [
     stage("Remove Image") {
       container("builder") {
         sh """
-          bash /root/extra/helm-init.sh
-          helm search $IMAGE_NAME
-          helm history $IMAGE_NAME-$NAMESPACE
-          helm delete --purge $IMAGE_NAME-$NAMESPACE
+          /root/extra/remove.sh $IMAGE_NAME $NAMESPACE
         """
       }
     }
