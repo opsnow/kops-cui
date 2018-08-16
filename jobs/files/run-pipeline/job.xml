@@ -9,7 +9,7 @@
         <hudson.model.StringParameterDefinition>
         <name>REPOSITORY_URL</name>
         <description></description>
-        <defaultValue>https://github.com/nalbam/sample-spring</defaultValue>
+        <defaultValue>git@github.com:nalbam/sample-spring.git</defaultValue>
         </hudson.model.StringParameterDefinition>
         <hudson.model.StringParameterDefinition>
         <name>REPOSITORY_SECRET</name>
