@@ -886,7 +886,6 @@ get_elb_domain() {
             ELB_DOMAIN=$(kubectl get svc --all-namespaces -o wide | grep LoadBalancer | grep $1 | awk '{print $5}' | head -1)
         else
             ELB_DOMAIN=$(kubectl get svc -n $2 -o wide | grep LoadBalancer | grep $1 | awk '{print $4}' | head -1)
-            # ELB_DOMAIN=$(kubectl get ing $1 -n $2 -o json | jq -r '.spec.rules[0].host')
         fi
 
         if [ ! -z ${ELB_DOMAIN} ] && [ "${ELB_DOMAIN}" != "<pending>" ]; then
@@ -911,7 +910,7 @@ get_elb_domain() {
 get_ingress_elb_name() {
     ELB_NAME=
 
-    get_elb_domain "nginx-ingress-controller"
+    get_elb_domain "nginx-ingress"
     echo
 
     ELB_NAME=$(echo ${ELB_DOMAIN} | cut -d'-' -f1)
@@ -922,7 +921,7 @@ get_ingress_elb_name() {
 get_ingress_nip_io() {
     ELB_IP=
 
-    get_elb_domain "nginx-ingress-controller"
+    get_elb_domain "nginx-ingress"
 
     if [ -z ${ELB_DOMAIN} ]; then
         return
