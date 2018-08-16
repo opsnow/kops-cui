@@ -9,6 +9,15 @@ podTemplate(label: label, containers: [
   hostPathVolume(mountPath: "/home/jenkins/.helm", hostPath: "/home/jenkins/.helm")
 ]) {
   node(label) {
+    stage("Environment") {
+      container("builder") {
+        if (CLUSTER) {
+          sh """
+            /root/extra/secret.sh $REPOSITORY_SECRET .kube.config /root/.kube/config
+          """
+        }
+      }
+    }
     stage("Deploy Image") {
       container("builder") {
         sh """
