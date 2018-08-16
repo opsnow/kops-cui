@@ -859,6 +859,8 @@ kops_validate() {
 }
 
 kops_export() {
+    rm -rf ~/.kube
+
     kops export kubecfg --name ${KOPS_CLUSTER_NAME} --state=s3://${KOPS_STATE_STORE}
 }
 
@@ -869,7 +871,7 @@ kops_delete() {
 
     delete_kops_config
 
-    rm -rf ~/.helm ~/.draft
+    rm -rf ~/.kube ~/.helm ~/.draft
 }
 
 get_elb_domain() {
