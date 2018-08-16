@@ -397,6 +397,14 @@ create_menu() {
                 --networking=${networking} \
                 --topology=${topology}
 
+            echo
+            success "# Edit InstanceGroup for Cluster Autoscaler"
+            echo
+            echo "spec:"
+            echo "  cloudLabels:"
+            echo "    k8s.io/cluster-autoscaler/enabled: \"\""
+            echo "    kubernetes.io/cluster/${KOPS_CLUSTER_NAME}: owned"
+
             press_enter
 
             get_kops_cluster
@@ -488,7 +496,7 @@ addons_menu() {
         6)
             helm_apply cluster-autoscaler kube-system
             echo
-            success "# Edit InstanceGroup for Auto-discovery"
+            success "# Edit InstanceGroup for AutoDiscovery"
             echo
             echo "spec:"
             echo "  cloudLabels:"
