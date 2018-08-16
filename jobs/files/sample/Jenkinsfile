@@ -24,7 +24,8 @@ podTemplate(label: label, containers: [
         sh """
           date
           uname -a
-          bash /root/extra/prepare.sh
+          /root/extra/prepare.sh
+          /root/extra/detect.sh
           ls -al /home/jenkins
         """
       }
@@ -52,7 +53,7 @@ podTemplate(label: label, containers: [
         "Run helm": {
           container("builder") {
             sh """
-              bash /root/extra/helm-init.sh
+              /root/extra/helm-init.sh
             """
           }
         },
@@ -60,7 +61,7 @@ podTemplate(label: label, containers: [
           stage("Run draft") {
             container("builder") {
               sh """
-                bash /root/extra/draft-init.sh
+                /root/extra/draft-init.sh
               """
             }
           }
