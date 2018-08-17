@@ -15,6 +15,7 @@ podTemplate(label: label, containers: [
       sh """
         pwd
         date
+        whoami
         uname -a
         echo $JOB_NAME
         echo $BUILD_NUMBER
@@ -25,6 +26,7 @@ podTemplate(label: label, containers: [
         sh """
           pwd
           date
+          whoami
           uname -a
           /root/extra/prepare.sh
           /root/extra/detect.sh
