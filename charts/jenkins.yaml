@@ -11,7 +11,7 @@ rbac:
 
 Persistence:
   Enabled: true
-  #(EFS)StorageClass: "efs"
+  #:EFS:StorageClass: "efs"
 
 Master:
   # Image: quay.io/nalbam/jenkins

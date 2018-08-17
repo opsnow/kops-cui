@@ -10,17 +10,17 @@ ingress:
   hosts:
     - INGRESS_DOMAIN
 
-#(EFS)persistence:
-#(EFS)  enabled: true
-#(EFS)  storageClass: "efs"
-#(EFS)  accessMode: ReadWriteOnce
-#(EFS)  size: 10Gi
+#:EFS:persistence:
+#:EFS:  enabled: true
+#:EFS:  storageClass: "efs"
+#:EFS:  accessMode: ReadWriteOnce
+#:EFS:  size: 10Gi
 
-#(EFS)postgresql:
-#(EFS)  persistence:
-#(EFS)    enabled: true
-#(EFS)    storageClass: "efs"
-#(EFS)    accessMode: ReadWriteOnce
-#(EFS)    size: 8Gi
-#(EFS)    subPath: "postgresql-db"
-#(EFS)    mountPath: /var/lib/postgresql/data/pgdata
+#:EFS:postgresql:
+#:EFS:  persistence:
+#:EFS:    enabled: true
+#:EFS:    storageClass: "efs"
+#:EFS:    accessMode: ReadWriteOnce
+#:EFS:    size: 8Gi
+#:EFS:    subPath: "postgresql-db"
+#:EFS:    mountPath: /var/lib/postgresql/data/pgdata
