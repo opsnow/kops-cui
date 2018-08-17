@@ -105,6 +105,8 @@ else
     VERSION=$(curl -s https://storage.googleapis.com/kubernetes-release/release/stable.txt)
 
     if [ "${KUBECTL}" != "${VERSION}" ]; then
+        title " ${KUBECTL} >> ${VERSION}"
+
         curl -LO https://storage.googleapis.com/kubernetes-release/release/${VERSION}/bin/${OS_NAME}/amd64/kubectl
         chmod +x kubectl && sudo mv kubectl /usr/local/bin/kubectl
 
@@ -121,9 +123,11 @@ title "# install kops..."
 if [ "${OS_TYPE}" == "brew" ]; then
     command -v kops > /dev/null || brew install kops
 else
-    VERSION=$(curl -s https://api.github.com/repos/kubernetes/kops/releases/latest | jq --raw-output '.tag_name')
+    VERSION=$(curl -s https://api.github.com/repos/kubernetes/kops/releases/latest | jq -r '.tag_name')
 
     if [ "${KOPS}" != "${VERSION}" ]; then
+        title " ${KOPS} >> ${VERSION}"
+
         curl -LO https://github.com/kubernetes/kops/releases/download/${VERSION}/kops-${OS_NAME}-amd64
         chmod +x kops-${OS_NAME}-amd64 && sudo mv kops-${OS_NAME}-amd64 /usr/local/bin/kops
 
@@ -140,9 +144,11 @@ title "# install helm..."
 if [ "${OS_TYPE}" == "brew" ]; then
     command -v helm > /dev/null || brew install kubernetes-helm
 else
-    VERSION=$(curl -s https://api.github.com/repos/helm/helm/releases/latest | jq --raw-output '.tag_name')
+    VERSION=$(curl -s https://api.github.com/repos/helm/helm/releases/latest | jq -r '.tag_name')
 
     if [ "${HELM}" != "${VERSION}" ]; then
+        title " ${HELM} >> ${VERSION}"
+
         curl -L https://storage.googleapis.com/kubernetes-helm/helm-${VERSION}-${OS_NAME}-amd64.tar.gz | tar xz
         sudo mv ${OS_NAME}-amd64/helm /usr/local/bin/helm && rm -rf ${OS_NAME}-amd64
 
@@ -159,9 +165,11 @@ title "# install draft..."
 #if [ "${OS_TYPE}" == "brew" ]; then
 #    command -v draft > /dev/null || brew install draft
 #else
-    VERSION=$(curl -s https://api.github.com/repos/Azure/draft/releases/latest | jq --raw-output '.tag_name')
+    VERSION=$(curl -s https://api.github.com/repos/Azure/draft/releases/latest | jq -r '.tag_name')
 
     if [ "${DRAFT}" != "${VERSION}" ]; then
+        title " ${DRAFT} >> ${VERSION}"
+
         curl -L https://azuredraft.blob.core.windows.net/draft/draft-${VERSION}-${OS_NAME}-amd64.tar.gz | tar xz
         sudo mv ${OS_NAME}-amd64/draft /usr/local/bin/draft && rm -rf ${OS_NAME}-amd64
 
@@ -178,9 +186,11 @@ title "# install skaffold..."
 #if [ "${OS_TYPE}" == "brew" ]; then
 #    command -v skaffold > /dev/null || brew install skaffold
 #else
-    VERSION=$(curl -s https://api.github.com/repos/GoogleContainerTools/skaffold/releases/latest | jq --raw-output '.tag_name')
+    VERSION=$(curl -s https://api.github.com/repos/GoogleContainerTools/skaffold/releases/latest | jq -r '.tag_name')
 
     if [ "${SKAFFOLD}" != "${VERSION}" ]; then
+        title " ${SKAFFOLD} >> ${VERSION}"
+
         curl -LO https://storage.googleapis.com/skaffold/releases/${VERSION}/skaffold-${OS_NAME}-amd64
         chmod +x skaffold-${OS_NAME}-amd64 && sudo mv skaffold-${OS_NAME}-amd64 /usr/local/bin/skaffold
 
@@ -197,9 +207,11 @@ title "# install istioctl..."
 # if [ "${OS_TYPE}" == "brew" ]; then
 #     command -v istioctl > /dev/null || brew install istioctl
 # else
-    VERSION=$(curl -s https://api.github.com/repos/istio/istio/releases/latest | jq --raw-output '.tag_name')
+    VERSION=$(curl -s https://api.github.com/repos/istio/istio/releases/latest | jq -r '.tag_name')
 
     if [ "${ISTIOCTL}" != "${VERSION}" ]; then
+        title " ${ISTIOCTL} >> ${VERSION}"
+
         if [ "${OS_NAME}" == "darwin" ]; then
             ISTIO_OS="osx"
         else

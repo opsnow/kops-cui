@@ -4,7 +4,7 @@ properties([
 ])
 podTemplate(label: label, containers: [
   containerTemplate(name: "builder", image: "quay.io/nalbam/builder", command: "cat", ttyEnabled: true, alwaysPullImage: true),
-  containerTemplate(name: "docker", image: "docker", command: "cat", ttyEnabled: true, alwaysPullImage: true)
+  containerTemplate(name: "docker", image: "docker", command: "cat", ttyEnabled: true)
 ], volumes: [
   hostPathVolume(mountPath: "/var/run/docker.sock", hostPath: "/var/run/docker.sock"),
   hostPathVolume(mountPath: "/home/jenkins/.draft", hostPath: "/home/jenkins/.draft"),
@@ -13,6 +13,7 @@ podTemplate(label: label, containers: [
   node(label) {
     stage("Info") {
       sh """
+        pwd
         date
         uname -a
         echo $JOB_NAME
@@ -22,9 +23,11 @@ podTemplate(label: label, containers: [
     stage("Prepare") {
       container("builder") {
         sh """
+          pwd
           date
           uname -a
-          bash /root/extra/prepare.sh
+          /root/extra/prepare.sh
+          /root/extra/detect.sh
           ls -al /home/jenkins
         """
       }
@@ -52,7 +55,7 @@ podTemplate(label: label, containers: [
         "Run helm": {
           container("builder") {
             sh """
-              bash /root/extra/helm-init.sh
+              /root/extra/helm-init.sh
             """
           }
         },
@@ -60,7 +63,7 @@ podTemplate(label: label, containers: [
           stage("Run draft") {
             container("builder") {
               sh """
-                bash /root/extra/draft-init.sh
+                /root/extra/draft-init.sh
               """
             }
           }

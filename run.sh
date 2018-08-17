@@ -479,8 +479,8 @@ addons_menu() {
         3)
             helm_apply kubernetes-dashboard kube-system false
             echo
-            SECRET=$(kubectl get secret -n ${NAMESPACE} | grep ${APP_NAME}-token | awk '{print $1}')
-            kubectl describe secret ${SECRET} -n ${NAMESPACE} | grep 'token:'
+            SECRET=$(kubectl get secret -n kube-system | grep kubernetes-dashboard-token | awk '{print $1}')
+            kubectl describe secret ${SECRET} -n kube-system | grep 'token:'
             press_enter addons
             ;;
         4)
@@ -698,7 +698,7 @@ delete_kops_config() {
 
 read_state_store() {
     if [ ! -z ${KOPS_STATE_STORE} ]; then
-        BUCKET=$(aws s3api get-bucket-acl --bucket ${KOPS_STATE_STORE} | jq '.Owner.ID')
+        BUCKET=$(aws s3api get-bucket-acl --bucket ${KOPS_STATE_STORE} | jq -r '.Owner.ID')
         if [ -z ${BUCKET} ]; then
             clear_kops_config
         fi
@@ -718,13 +718,13 @@ read_state_store() {
     KOPS_STATE_STORE=${ANSWER:-${DEFAULT}}
 
     # S3 Bucket
-    BUCKET=$(aws s3api get-bucket-acl --bucket ${KOPS_STATE_STORE} | jq '.Owner.ID')
+    BUCKET=$(aws s3api get-bucket-acl --bucket ${KOPS_STATE_STORE} | jq -r '.Owner.ID')
     if [ -z ${BUCKET} ]; then
         aws s3 mb s3://${KOPS_STATE_STORE} --region ${REGION}
 
         waiting 2
 
-        BUCKET=$(aws s3api get-bucket-acl --bucket ${KOPS_STATE_STORE} | jq '.Owner.ID')
+        BUCKET=$(aws s3api get-bucket-acl --bucket ${KOPS_STATE_STORE} | jq -r '.Owner.ID')
         if [ -z ${BUCKET} ]; then
             clear_kops_config
             error
@@ -859,6 +859,8 @@ kops_validate() {
 }
 
 kops_export() {
+    rm -rf ~/.kube
+
     kops export kubecfg --name ${KOPS_CLUSTER_NAME} --state=s3://${KOPS_STATE_STORE}
 }
 
@@ -869,7 +871,7 @@ kops_delete() {
 
     delete_kops_config
 
-    rm -rf ~/.helm ~/.draft
+    rm -rf ~/.kube ~/.helm ~/.draft
 }
 
 get_elb_domain() {
@@ -916,14 +918,6 @@ get_ingress_elb_name() {
     print ${ELB_NAME}
 }
 
-get_ingres_domain() {
-    if [ -z $2 ]; then
-        DOMAIN=$(kubectl get ing --all-namespaces -o wide | grep $1 | awk '{print $3}' | head -1)
-    else
-        DOMAIN=$(kubectl get ing $1 -n $2 -o wide | grep $1 | awk '{print $2}' | head -1)
-    fi
-}
-
 get_ingress_nip_io() {
     ELB_IP=
 
@@ -962,7 +956,7 @@ get_ingress_nip_io() {
 read_root_domain() {
     HOST_LIST=/tmp/hosted-zones
 
-    aws route53 list-hosted-zones | jq '.HostedZones[]' | grep Name | cut -d'"' -f4 > ${HOST_LIST}
+    aws route53 list-hosted-zones | jq -r '.HostedZones[] | .Name' > ${HOST_LIST}
 
     IDX=0
     while read VAR; do
@@ -1004,23 +998,23 @@ git_checkout() {
 
 get_ssl_cert_arn() {
     # get certificate arn
-    SSL_CERT_ARN=$(aws acm list-certificates | DOMAIN="*.${BASE_DOMAIN}" jq '[.CertificateSummaryList[] | select(.DomainName==env.DOMAIN)][0]' | grep CertificateArn | cut -d'"' -f4)
+    SSL_CERT_ARN=$(aws acm list-certificates | DOMAIN="*.${BASE_DOMAIN}" jq -r '[.CertificateSummaryList[] | select(.DomainName==env.DOMAIN)][0] | .CertificateArn')
 }
 
 set_record_cname() {
     # request certificate
-    SSL_CERT_ARN=$(aws acm request-certificate --domain-name "*.${BASE_DOMAIN}" --validation-method DNS | grep CertificateArn | cut -d'"' -f4)
+    SSL_CERT_ARN=$(aws acm request-certificate --domain-name "*.${BASE_DOMAIN}" --validation-method DNS | jq -r '.CertificateArn')
 
     print "Request Certificate..."
 
     waiting 2
 
     # domain validate
-    CERT_DNS_NAME=$(aws acm describe-certificate --certificate-arn ${SSL_CERT_ARN} | jq '.Certificate.DomainValidationOptions[].ResourceRecord' | grep Name | cut -d'"' -f4)
-    CERT_DNS_VALUE=$(aws acm describe-certificate --certificate-arn ${SSL_CERT_ARN} | jq '.Certificate.DomainValidationOptions[].ResourceRecord' | grep Value | cut -d'"' -f4)
+    CERT_DNS_NAME=$(aws acm describe-certificate --certificate-arn ${SSL_CERT_ARN} | jq -r '.Certificate.DomainValidationOptions[].ResourceRecord | .Name')
+    CERT_DNS_VALUE=$(aws acm describe-certificate --certificate-arn ${SSL_CERT_ARN} | jq -r '.Certificate.DomainValidationOptions[].ResourceRecord | .Value')
 
     # Route53 에서 해당 도메인의 Hosted Zone ID 를 획득
-    ZONE_ID=$(aws route53 list-hosted-zones | ROOT_DOMAIN="${ROOT_DOMAIN}." jq '.HostedZones[] | select(.Name==env.ROOT_DOMAIN)' | grep '"Id"' | cut -d'"' -f4 | cut -d'/' -f3)
+    ZONE_ID=$(aws route53 list-hosted-zones | ROOT_DOMAIN="${ROOT_DOMAIN}." jq -r '.HostedZones[] | select(.Name==env.ROOT_DOMAIN) | .Id' | cut -d'/' -f3)
 
     # record sets
     RECORD=/tmp/record-sets-cname.json
@@ -1038,11 +1032,11 @@ set_record_cname() {
 
 set_record_alias() {
     # ELB 에서 Hosted Zone ID, DNS Name 을 획득
-    ELB_ZONE_ID=$(aws elb describe-load-balancers --load-balancer-name ${ELB_NAME} | grep CanonicalHostedZoneNameID | cut -d'"' -f4)
-    ELB_DNS_NAME=$(aws elb describe-load-balancers --load-balancer-name ${ELB_NAME} | grep '"DNSName"' | cut -d'"' -f4)
+    ELB_ZONE_ID=$(aws elb describe-load-balancers --load-balancer-name ${ELB_NAME} | jq -r '.LoadBalancerDescriptions[] | .CanonicalHostedZoneNameID')
+    ELB_DNS_NAME=$(aws elb describe-load-balancers --load-balancer-name ${ELB_NAME} | jq -r '.LoadBalancerDescriptions[] | .DNSName')
 
     # Route53 에서 해당 도메인의 Hosted Zone ID 를 획득
-    ZONE_ID=$(aws route53 list-hosted-zones | ROOT_DOMAIN="${ROOT_DOMAIN}." jq '.HostedZones[] | select(.Name==env.ROOT_DOMAIN)' | grep '"Id"' | cut -d'"' -f4 | cut -d'/' -f3)
+    ZONE_ID=$(aws route53 list-hosted-zones | ROOT_DOMAIN="${ROOT_DOMAIN}." jq -r '.HostedZones[] | select(.Name==env.ROOT_DOMAIN) | .Id' | cut -d'/' -f3)
 
     if [ -z ${ZONE_ID} ]; then
         return
@@ -1386,7 +1380,6 @@ helm_apply() {
             success "${APP_NAME}: https://${ELB_DOMAIN}"
         else
             echo
-            # get_ingres_domain ${APP_NAME} ${NAMESPACE}
             success "${APP_NAME}: https://${DOMAIN}"
         fi
     fi
@@ -1546,7 +1539,7 @@ get_template() {
 
 get_az_list() {
     if [ -z ${AZ_LIST} ]; then
-        AZ_LIST="$(aws ec2 describe-availability-zones | grep ZoneName | cut -d'"' -f4 | head -3 | tr -s '\r\n' ',' | sed 's/.$//')"
+        AZ_LIST="$(aws ec2 describe-availability-zones | jq -r '.AvailabilityZones[] | .ZoneName' | head -3 | tr -s '\r\n' ',' | sed 's/.$//')"
     fi
 }
 

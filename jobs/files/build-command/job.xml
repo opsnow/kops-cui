@@ -9,7 +9,7 @@
         <hudson.model.StringParameterDefinition>
         <name>REPOSITORY_URL</name>
         <description></description>
-        <defaultValue>https://github.com/nalbam/sample-web</defaultValue>
+        <defaultValue>git@github.com:nalbam/sample-web.git</defaultValue>
         </hudson.model.StringParameterDefinition>
         <hudson.model.StringParameterDefinition>
         <name>REPOSITORY_SECRET</name>
@@ -20,6 +20,11 @@
         <name>BRANCH_NAME</name>
         <description></description>
         <defaultValue>master</defaultValue>
+        </hudson.model.StringParameterDefinition>
+        <hudson.model.StringParameterDefinition>
+        <name>IMAGE_NAME</name>
+        <description></description>
+        <defaultValue>sample-web</defaultValue>
         </hudson.model.StringParameterDefinition>
         <hudson.model.StringParameterDefinition>
         <name>COMMAND</name>

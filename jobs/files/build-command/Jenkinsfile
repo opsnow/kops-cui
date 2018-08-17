@@ -9,17 +9,19 @@ podTemplate(label: label, containers: [
   hostPathVolume(mountPath: "/home/jenkins/.helm", hostPath: "/home/jenkins/.helm")
 ]) {
   node(label) {
-    stage("Checkout") {
-      if (REPOSITORY_SECRET) {
-        git(url: "$REPOSITORY_URL", branch: "$BRANCH_NAME", credentialsId: "$REPOSITORY_SECRET")
-      } else {
-        git(url: "$REPOSITORY_URL", branch: "$BRANCH_NAME")
-      }
-    }
-    stage("Make Version") {
+    stage("Prepare") {
       container("builder") {
         sh """
-          /root/extra/prepare.sh
+          /root/extra/prepare.sh $IMAGE_NAME $BRANCH_NAME
+        """
+      }
+    }
+    stage("Checkout") {
+      container("builder") {
+        sh """
+          /root/extra/secret.sh $REPOSITORY_SECRET
+          git clone $REPOSITORY_URL -b $BRANCH_NAME .
+          /root/extra/detect.sh
         """
       }
     }

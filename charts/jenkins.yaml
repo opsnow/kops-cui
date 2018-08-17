@@ -28,3 +28,4 @@ Master:
     - workflow-job:latest
     - workflow-aggregator:latest
     - credentials-binding:latest
+    - kubernetes-credentials-provider:latest
