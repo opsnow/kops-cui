@@ -1360,7 +1360,7 @@ helm_apply() {
         fi
     fi
 
-    if [ -n ${F_MODIFY_CHART_VALUES} ]; then
+    if [ -n ${EFS_FILE_SYSTEM_ID} ]; then
         sed -i -e "s/#:EFS://" ${CHART}
     fi
 
