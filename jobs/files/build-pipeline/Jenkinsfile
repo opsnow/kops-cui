@@ -34,9 +34,7 @@ podTemplate(label: label, containers: [
     stage("Checkout") {
       container("builder") {
         sh """
-          /root/extra/secret.sh $REPOSITORY_SECRET
-          git clone $REPOSITORY_URL -b $BRANCH_NAME .
-          /root/extra/detect.sh
+          /root/extra/checkout.sh $REPOSITORY_URL $BRANCH_NAME $REPOSITORY_SECRET
         """
         VERSION = readFile "/home/jenkins/VERSION"
         SOURCE_LANG = readFile "/home/jenkins/SOURCE_LANG"

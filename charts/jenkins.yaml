@@ -9,9 +9,9 @@ rbac:
 #   ImageTag: latest
 #   AlwaysPullImage: true
 
-Persistence:
-  Enabled: true
-  #:EFS:StorageClass: "efs"
+#:EFS:Persistence:
+#:EFS:  Enabled: true
+#:EFS:  StorageClass: "efs"
 
 Master:
   # Image: quay.io/nalbam/jenkins
