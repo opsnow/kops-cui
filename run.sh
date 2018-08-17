@@ -1361,7 +1361,7 @@ helm_apply() {
     fi
 
     if [ -n ${F_MODIFY_CHART_VALUES} ]; then
-        sed -i -e "s/#{EFS}//" ${CHART}
+        sed -i -e "s/#(EFS)//" ${CHART}
     fi
 
     helm upgrade --install ${APP_NAME} stable/${APP_NAME} --namespace ${NAMESPACE} -f ${CHART}
