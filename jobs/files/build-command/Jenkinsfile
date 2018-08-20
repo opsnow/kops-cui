@@ -18,8 +18,18 @@ podTemplate(label: label, containers: [
     }
     stage("Checkout") {
       container("builder") {
+        try {
+          if (REPOSITORY_SECRET) {
+            git(url: REPOSITORY_URL, branch: BRANCH_NAME, credentialsId: REPOSITORY_SECRET)
+          } else {
+            git(url: REPOSITORY_URL, branch: BRANCH_NAME)
+          }
+        } catch (e) {
+          checkout_failure(IMAGE_NAME, PIPELINE)
+          throw e
+        }
         sh """
-          /root/extra/checkout.sh $REPOSITORY_URL $BRANCH_NAME $REPOSITORY_SECRET
+          /root/extra/detect.sh $IMAGE_NAME $BRANCH_NAME
         """
       }
     }
