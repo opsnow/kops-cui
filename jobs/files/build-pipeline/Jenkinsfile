@@ -33,9 +33,14 @@ podTemplate(label: label, containers: [
     }
     stage("Checkout") {
       container("builder") {
-        sh """
-          /root/extra/checkout.sh $REPOSITORY_URL $BRANCH_NAME $REPOSITORY_SECRET
-        """
+        try {
+          sh """
+            /root/extra/checkout.sh $REPOSITORY_URL $BRANCH_NAME $REPOSITORY_SECRET
+          """
+        } catch (e) {
+          checkout_failure(IMAGE_NAME, PIPELINE)
+          throw e
+        }
         VERSION = readFile "/home/jenkins/VERSION"
         SOURCE_LANG = readFile "/home/jenkins/SOURCE_LANG"
         SOURCE_ROOT = readFile "/home/jenkins/SOURCE_ROOT"
@@ -113,7 +118,7 @@ podTemplate(label: label, containers: [
           sh """
             /root/extra/deploy.sh $IMAGE_NAME $VERSION $NAMESPACE
           """
-          // deploy_success(IMAGE_NAME, VERSION, NAMESPACE, BASE_DOMAIN)
+          deploy_success(IMAGE_NAME, VERSION, NAMESPACE, BASE_DOMAIN)
         }
       }
       stage("Confirm") {
