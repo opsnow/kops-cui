@@ -111,7 +111,7 @@ podTemplate(label: label, containers: [
           "Build Charts": {
             container("builder") {
               sh """
-                toaster build init
+                toaster build chart
               """
             }
           }
