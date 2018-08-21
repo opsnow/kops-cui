@@ -5,7 +5,7 @@ JENKINS=$(kubectl get ing -n ${1:-devops} -o wide | grep jenkins | awk '{print $
 USERNAME="admin"
 PASSWORD=$(kubectl get secret -n ${1:-devops} jenkins -o jsonpath="{.data.jenkins-admin-password}" | base64 --decode)
 
-JOB="sample-job"
+JOB="sample"
 
 curl --request POST "http://$JENKINS/createItem?name=$JOB" \
      --data-binary "@$JOB.xml" \
