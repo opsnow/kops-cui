@@ -9,19 +9,17 @@ podTemplate(label: label, containers: [
   hostPathVolume(mountPath: "/home/jenkins/.helm", hostPath: "/home/jenkins/.helm")
 ]) {
   node(label) {
-    stage("Environment") {
-      container("builder") {
-        if (CLUSTER) {
-          sh """
-            /root/extra/secret.sh $REPOSITORY_SECRET .kube.config /root/.kube/config
-          """
-        }
-      }
-    }
-    stage("Deploy Image") {
+    stage("Prepare") {
       container("builder") {
         sh """
-          /root/extra/deploy.sh $IMAGE_NAME $VERSION $NAMESPACE
+          toaster detect domain --namespace=devops
+        """
+      }
+    }
+    stage("Deploy") {
+      container("builder") {
+        sh """
+          toaster helm deploy --name=$IMAGE_NAME --version=$VERSION --namespace=$NAMESPACE --cluster=$CLUSTER
         """
       }
     }

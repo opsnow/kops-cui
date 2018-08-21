@@ -9,10 +9,17 @@ podTemplate(label: label, containers: [
   hostPathVolume(mountPath: "/home/jenkins/.helm", hostPath: "/home/jenkins/.helm")
 ]) {
   node(label) {
-    stage("Remove Image") {
+    stage("Prepare") {
       container("builder") {
         sh """
-          /root/extra/remove.sh $IMAGE_NAME $NAMESPACE
+          toaster detect domain --namespace=devops
+        """
+      }
+    }
+    stage("Remove") {
+      container("builder") {
+        sh """
+          toaster helm remove --name=$IMAGE_NAME --namespace=$NAMESPACE --cluster=$CLUSTER
         """
       }
     }
