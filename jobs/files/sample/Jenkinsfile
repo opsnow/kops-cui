@@ -28,8 +28,8 @@ podTemplate(label: label, containers: [
           date
           whoami
           uname -a
-          /root/extra/prepare.sh
-          /root/extra/detect.sh
+          toaster detect domain --namespace=devops
+          toaster detect source --name=sample --branch=master
           ls -al /home/jenkins
         """
       }
@@ -48,7 +48,7 @@ podTemplate(label: label, containers: [
         "Run kubectl": {
           container("builder") {
             sh """
-              kubectl version --client --short
+              kubectl version
               kubectl cluster-info
               kubectl get pod,svc,ing
             """
@@ -57,20 +57,26 @@ podTemplate(label: label, containers: [
         "Run helm": {
           container("builder") {
             sh """
-              /root/extra/helm-init.sh
+              toaster helm init
             """
           }
         },
         "Run draft": {
-          stage("Run draft") {
-            container("builder") {
-              sh """
-                /root/extra/draft-init.sh
-              """
-            }
+          container("builder") {
+            sh """
+              toaster draft init
+            """
           }
         }
       )
+    }
+    stage("End") {
+      container("builder") {
+        sh """
+          ls -al /home/jenkins
+          ls -al
+        """
+      }
     }
   }
 }
