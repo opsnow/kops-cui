@@ -1023,7 +1023,7 @@ git_checkout() {
 
 get_ssl_cert_arn() {
     # get certificate arn
-    SSL_CERT_ARN=$(aws acm list-certificates | DOMAIN="*.${BASE_DOMAIN}" jq -r '[.CertificateSummaryList[] | select(.DomainName==env.DOMAIN)][0] | .CertificateArn')
+    SSL_CERT_ARN=$(aws acm list-certificates | DOMAIN="*.${BASE_DOMAIN}" jq -r '.CertificateSummaryList[] | select(.DomainName==env.DOMAIN) | .CertificateArn')
 }
 
 set_record_cname() {
