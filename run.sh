@@ -878,7 +878,9 @@ kops_validate() {
     kops validate cluster --name=${KOPS_CLUSTER_NAME} --state=s3://${KOPS_STATE_STORE}
 
     echo
-    kubectl get pod --all-namespaces
+    kubectl get node -o wide
+    echo
+    kubectl get pod -n kube-system
 }
 
 kops_export() {
