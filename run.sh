@@ -36,32 +36,57 @@ topology=private
 dns_zone=
 vpc=
 
-print() {
-    echo -e "${L_PAD}$@"
+TPUT=
+command -v tput > /dev/null || TPUT=false
+
+_echo() {
+    if [ -z ${TPUT} ] && [ ! -z $2 ]; then
+        echo -e "${L_PAD}$(tput setaf $2)$1$(tput sgr0)"
+    else
+        echo -e "${L_PAD}$1"
+    fi
 }
 
-success() {
-    echo -e "${L_PAD}$(tput setaf 6)$@$(tput sgr0)"
+_read() {
+    if [ -z ${TPUT} ] && [ ! -z $2 ]; then
+        read -p "${L_PAD}$(tput setaf $2)$1$(tput sgr0)" ANSWER
+    else
+        read -p "${L_PAD}$1" ANSWER
+    fi
 }
 
-error() {
-    echo
-    echo -e "${L_PAD}$(tput setaf 1)$@$(tput sgr0)"
-    echo
+_result() {
+    _echo "# $@" 4
+}
 
+_command() {
+    _echo "$ $@" 3
+}
+
+_success() {
+    echo
+    _echo "+ $@" 2
+    echo
+    exit 0
+}
+
+_error() {
+    echo
+    _echo "- $@" 1
+    echo
     exit 1
 }
 
 question() {
     Q=${1:-"Enter your choice : "}
     echo
-    read -p "${L_PAD}$(tput setaf 2)$Q$(tput sgr0)" ANSWER
+    _read "$Q" 6
     echo
 }
 
 press_enter() {
     echo
-    read -p "${L_PAD}$(tput setaf 4)Press Enter to continue...$(tput sgr0)"
+    _read "Press Enter to continue..." 5
     echo
 
     case ${1} in
@@ -150,17 +175,17 @@ progress() {
 }
 
 logo() {
-    tput clear
+    if [ -z ${TPUT} ]; then
+        tput clear
+    fi
 
     echo
     echo
-    tput setaf 3
-    print "  _  _____  ____  ____     ____ _   _ ___  "
-    print " | |/ / _ \|  _ \/ ___|   / ___| | | |_ _| "
-    print " | ' / | | | |_) \___ \  | |   | | | || |  "
-    print " | . \ |_| |  __/ ___) | | |___| |_| || |  "
-    print " |_|\_\___/|_|   |____/   \____|\___/|___| "
-    tput sgr0
+    _echo "  _  _____  ____  ____     ____ _   _ ___  " 3
+    _echo " | |/ / _ \|  _ \/ ___|   / ___| | | |_ _| " 3
+    _echo " | ' / | | | |_) \___ \  | |   | | | || |  " 3
+    _echo " | . \ |_| |  __/ ___) | | |___| |_| || |  " 3
+    _echo " |_|\_\___/|_|   |____/   \____|\___/|___| " 3
     echo
 }
 
@@ -169,11 +194,9 @@ title() {
 
     echo
     echo
-    tput setaf 3 && tput bold
-    print "KOPS CUI"
-    tput sgr0
+    _echo "KOPS CUI" 3
     echo
-    print "${KOPS_STATE_STORE} > ${KOPS_CLUSTER_NAME}"
+    _echo "${KOPS_STATE_STORE} > ${KOPS_CLUSTER_NAME}" 4
     echo
 }
 
@@ -233,21 +256,21 @@ cluster_menu() {
     title
 
     if [ "x${CLUSTER}" == "x0" ]; then
-        print "1. Create Cluster"
-        print "2. Update Tools"
+        _echo "1. Create Cluster"
+        _echo "2. Update Tools"
     else
-        print "1. Get Cluster"
-        print "2. Edit Cluster"
-        print "3. Update Cluster"
-        print "4. Rolling Update"
-        print "5. Validate Cluster"
-        print "6. Export Kube Config"
+        _echo "1. Get Cluster"
+        _echo "2. Edit Cluster"
+        _echo "3. Update Cluster"
+        _echo "4. Rolling Update"
+        _echo "5. Validate Cluster"
+        _echo "6. Export Kube Config"
         echo
-        print "9. Delete Cluster"
+        _echo "9. Delete Cluster"
         echo
-        print "11. Addons.."
+        _echo "11. Addons.."
         echo
-        print "x. Exit"
+        _echo "x. Exit"
     fi
 
     question
@@ -321,23 +344,23 @@ create_menu() {
     get_master_zones
     get_node_zones
 
-    print "   cloud=${cloud}"
-    print "   name=${KOPS_CLUSTER_NAME}"
-    print "   state=s3://${KOPS_STATE_STORE}"
-    print "1. master-size=${master_size}"
-    print "2. master-count=${master_count}"
-    print "   master-zones=${master_zones}"
-    print "3. node-size=${node_size}"
-    print "4. node-count=${node_count}"
-    print "   zones=${zones}"
-    print "5. network-cidr=${network_cidr}"
-    print "6. networking=${networking}"
-    print "7. topology=${topology}"
-    # print "8. dns-zone=${dns_zone}"
-    # print "9. vpc=${vpc}"
+    _echo "   cloud=${cloud}"
+    _echo "   name=${KOPS_CLUSTER_NAME}"
+    _echo "   state=s3://${KOPS_STATE_STORE}"
+    _echo "1. master-size=${master_size}"
+    _echo "2. master-count=${master_count}"
+    _echo "   master-zones=${master_zones}"
+    _echo "3. node-size=${node_size}"
+    _echo "4. node-count=${node_count}"
+    _echo "   zones=${zones}"
+    _echo "5. network-cidr=${network_cidr}"
+    _echo "6. networking=${networking}"
+    _echo "7. topology=${topology}"
+    # _echo "8. dns-zone=${dns_zone}"
+    # _echo "9. vpc=${vpc}"
     echo
-    print "c. create"
-    print "t. terraform"
+    _echo "c. create"
+    _echo "t. terraform"
 
     question
 
@@ -398,7 +421,7 @@ create_menu() {
                 --topology=${topology}
 
             echo
-            success "# Edit InstanceGroup for Cluster Autoscaler"
+            _result "Edit InstanceGroup for Cluster Autoscaler"
             echo
             echo "spec:"
             echo "  cloudLabels:"
@@ -450,20 +473,20 @@ create_menu() {
 addons_menu() {
     title
 
-    print "1. helm init"
+    _echo "1. helm init"
     echo
-    print "2. nginx-ingress"
-    print "3. kubernetes-dashboard"
-    print "4. heapster (deprecated)"
-    print "5. metrics-server"
-    print "6. cluster-autoscaler"
-    print "7. efs-provisioner"
+    _echo "2. nginx-ingress"
+    _echo "3. kubernetes-dashboard"
+    _echo "4. heapster (deprecated)"
+    _echo "5. metrics-server"
+    _echo "6. cluster-autoscaler"
+    _echo "7. efs-provisioner"
     echo
-    print "9. remove"
+    _echo "9. remove"
     echo
-    print "11. sample.."
-    print "12. monitor.."
-    # print "13. devops.."
+    _echo "11. sample.."
+    _echo "12. monitor.."
+    # _echo "13. devops.."
 
     question
 
@@ -496,7 +519,7 @@ addons_menu() {
         6)
             helm_apply cluster-autoscaler kube-system
             echo
-            success "# Edit InstanceGroup for AutoDiscovery"
+            _result "Edit InstanceGroup for AutoDiscovery"
             echo
             echo "spec:"
             echo "  cloudLabels:"
@@ -530,13 +553,13 @@ addons_menu() {
 sample_menu() {
     title
 
-    print "1. sample-redis"
+    _echo "1. sample-redis"
     echo
-    print "2. sample-web"
-    print "3. sample-node"
-    print "4. sample-spring"
-    print "5. sample-tomcat"
-    print "6. sample-webpack"
+    _echo "2. sample-web"
+    _echo "3. sample-node"
+    _echo "4. sample-spring"
+    _echo "5. sample-tomcat"
+    _echo "6. sample-webpack"
 
     question
 
@@ -574,8 +597,8 @@ sample_menu() {
 monitor_menu() {
     title
 
-    print "1. prometheus"
-    print "2. grafana"
+    _echo "1. prometheus"
+    _echo "2. grafana"
 
     question
 
@@ -597,11 +620,11 @@ monitor_menu() {
 devops_menu() {
     title
 
-    print "1. jenkins"
-    print "2. docker-registry"
-    print "3. chartmuseum"
-    print "4. sonarqube"
-    print "5. sonatype-nexus"
+    _echo "1. jenkins"
+    _echo "2. docker-registry"
+    _echo "3. chartmuseum"
+    _echo "4. sonarqube"
+    _echo "5. sonatype-nexus"
 
     question
 
@@ -747,14 +770,14 @@ read_cluster_list() {
 
         IDX=$(( ${IDX} + 1 ))
 
-        print "${IDX}. ${ARR[0]}"
+        _echo "${IDX}. ${ARR[0]}"
     done < ${CLUSTER_LIST}
 
     if [ "x${IDX}" == "x0" ]; then
         read_cluster_name
     else
         echo
-        print "0. new"
+        _echo "0. new"
 
         question "Enter cluster (0-${IDX})[1] : "
 
@@ -816,11 +839,11 @@ kops_edit() {
 
         IDX=$(( ${IDX} + 1 ))
 
-        print "${IDX}. ${ARR[0]}"
+        _echo "${IDX}. ${ARR[0]}"
     done < ${IG_LIST}
 
     echo
-    print "0. cluster"
+    _echo "0. cluster"
 
     question
 
@@ -904,7 +927,7 @@ get_elb_domain() {
 
     progress end
 
-    print ${ELB_DOMAIN}
+    _result ${ELB_DOMAIN}
 }
 
 get_ingress_elb_name() {
@@ -915,7 +938,7 @@ get_ingress_elb_name() {
 
     ELB_NAME=$(echo ${ELB_DOMAIN} | cut -d'-' -f1)
 
-    print ${ELB_NAME}
+    _result ${ELB_NAME}
 }
 
 get_ingress_nip_io() {
@@ -950,7 +973,7 @@ get_ingress_nip_io() {
 
     progress end
 
-    print ${BASE_DOMAIN}
+    _result ${BASE_DOMAIN}
 }
 
 read_root_domain() {
@@ -962,14 +985,14 @@ read_root_domain() {
     while read VAR; do
         IDX=$(( ${IDX} + 1 ))
 
-        print "${IDX}. $(echo ${VAR} | sed 's/.$//')"
+        _echo "${IDX}. $(echo ${VAR} | sed 's/.$//')"
     done < ${HOST_LIST}
 
     ROOT_DOMAIN=
 
     if [ "${IDX}" != "0" ]; then
         echo
-        print "0. nip.io"
+        _echo "0. nip.io"
 
         question "Enter root domain (0-${IDX})[0] : "
 
@@ -1005,7 +1028,7 @@ set_record_cname() {
     # request certificate
     SSL_CERT_ARN=$(aws acm request-certificate --domain-name "*.${BASE_DOMAIN}" --validation-method DNS | jq -r '.CertificateArn')
 
-    print "Request Certificate..."
+    _result "Request Certificate..."
 
     waiting 2
 
@@ -1089,10 +1112,10 @@ helm_nginx_ingress() {
             echo
         fi
         if [ -z ${SSL_CERT_ARN} ]; then
-            error "Certificate ARN does not exists. [*.${BASE_DOMAIN}][${REGION}]"
+            _error "Certificate ARN does not exists. [*.${BASE_DOMAIN}][${REGION}]"
         fi
 
-        print "CertificateArn: ${SSL_CERT_ARN}"
+        _result "CertificateArn: ${SSL_CERT_ARN}"
         echo
 
         sed -i -e "s@aws-load-balancer-ssl-cert:.*@aws-load-balancer-ssl-cert: ${SSL_CERT_ARN}@" ${CHART}
@@ -1107,7 +1130,7 @@ helm_nginx_ingress() {
     kubectl get pod,svc -n ${NAMESPACE}
     echo
 
-    print "Pending ELB..."
+    _result "Pending ELB..."
 
     if [ -z ${BASE_DOMAIN} ]; then
         get_ingress_nip_io
@@ -1182,14 +1205,14 @@ create_efs() {
     # get the security group id
     K8S_NODE_SG_ID=$(aws ec2 describe-security-groups --filters "Name=group-name,Values=nodes.${KOPS_CLUSTER_NAME}" | jq -r '.SecurityGroups[0].GroupId')
     if [ -z ${K8S_NODE_SG_ID} ]; then
-        error "Not found the security group for the nodes."
+        _error "Not found the security group for the nodes."
     fi
 
     # get vpc id & subent ids
     VPC_ID=$(aws ec2 describe-vpcs --filters "Name=tag:Name,Values=${KOPS_CLUSTER_NAME}" | jq -r '.Vpcs[0].VpcId')
     VPC_SUBNETS=$(aws ec2 describe-subnets --filters="Name=tag:KubernetesCluster,Values=${KOPS_CLUSTER_NAME}" | jq -r '(.Subnets[].SubnetId)')
     if [ -z ${VPC_ID} ]; then
-        error "Not found the VPC."
+        _error "Not found the VPC."
     fi
 
     echo "General conditions:"
@@ -1377,10 +1400,10 @@ helm_apply() {
             echo
             get_elb_domain ${APP_NAME} ${NAMESPACE}
             echo
-            success "${APP_NAME}: https://${ELB_DOMAIN}"
+            _result "${APP_NAME}: https://${ELB_DOMAIN}"
         else
             echo
-            success "${APP_NAME}: https://${DOMAIN}"
+            _result "${APP_NAME}: https://${DOMAIN}"
         fi
     fi
 }
@@ -1450,7 +1473,7 @@ create_service_account() {
 
     create_namespace ${NAMESPACE}
 
-    print "${NAMESPACE}:${ACCOUNT}"
+    _echo "${NAMESPACE}:${ACCOUNT}"
     echo
 
     CHECK=
@@ -1469,7 +1492,7 @@ create_cluster_role_binding() {
 
     create_service_account ${NAMESPACE} ${ACCOUNT}
 
-    print "${ROLL}:${NAMESPACE}:${ACCOUNT}"
+    _echo "${ROLL}:${NAMESPACE}:${ACCOUNT}"
     echo
 
     CHECK=
@@ -1517,10 +1540,10 @@ apply_sample() {
             get_elb_domain ${APP_NAME} ${NAMESPACE}
 
             echo
-            success "${APP_NAME}: https://${ELB_DOMAIN}"
+            _result "${APP_NAME}: https://${ELB_DOMAIN}"
         else
             echo
-            success "${APP_NAME}: https://${DOMAIN}"
+            _result "${APP_NAME}: https://${DOMAIN}"
         fi
     fi
 }
@@ -1533,7 +1556,7 @@ get_template() {
         curl -sL https://raw.githubusercontent.com/opsnow/kops-cui/master/${1} > ${2}
     fi
     if [ ! -f ${2} ]; then
-        error "Template does not exists. [${1}]"
+        _error "Template does not exists. [${1}]"
     fi
 }
 
@@ -1565,7 +1588,7 @@ install_tools() {
 
 kops_exit() {
     echo
-    print "See you soon!"
+    _result "See you soon!"
     echo
     exit 0
 }
