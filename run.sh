@@ -927,7 +927,7 @@ get_elb_domain() {
 
     progress end
 
-    _echo ${ELB_DOMAIN}
+    _result ${ELB_DOMAIN}
 }
 
 get_ingress_elb_name() {
@@ -938,7 +938,7 @@ get_ingress_elb_name() {
 
     ELB_NAME=$(echo ${ELB_DOMAIN} | cut -d'-' -f1)
 
-    _echo ${ELB_NAME}
+    _result ${ELB_NAME}
 }
 
 get_ingress_nip_io() {
@@ -973,7 +973,7 @@ get_ingress_nip_io() {
 
     progress end
 
-    _echo ${BASE_DOMAIN}
+    _result ${BASE_DOMAIN}
 }
 
 read_root_domain() {
@@ -1028,7 +1028,7 @@ set_record_cname() {
     # request certificate
     SSL_CERT_ARN=$(aws acm request-certificate --domain-name "*.${BASE_DOMAIN}" --validation-method DNS | jq -r '.CertificateArn')
 
-    _echo "Request Certificate..."
+    _result "Request Certificate..."
 
     waiting 2
 
@@ -1115,7 +1115,7 @@ helm_nginx_ingress() {
             _error "Certificate ARN does not exists. [*.${BASE_DOMAIN}][${REGION}]"
         fi
 
-        _echo "CertificateArn: ${SSL_CERT_ARN}"
+        _result "CertificateArn: ${SSL_CERT_ARN}"
         echo
 
         sed -i -e "s@aws-load-balancer-ssl-cert:.*@aws-load-balancer-ssl-cert: ${SSL_CERT_ARN}@" ${CHART}
@@ -1130,7 +1130,7 @@ helm_nginx_ingress() {
     kubectl get pod,svc -n ${NAMESPACE}
     echo
 
-    _echo "Pending ELB..."
+    _result "Pending ELB..."
 
     if [ -z ${BASE_DOMAIN} ]; then
         get_ingress_nip_io
@@ -1588,7 +1588,7 @@ install_tools() {
 
 kops_exit() {
     echo
-    _echo "See you soon!"
+    _result "See you soon!"
     echo
     exit 0
 }
