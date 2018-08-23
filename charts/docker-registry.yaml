@@ -14,4 +14,4 @@ ingress:
     ingress.kubernetes.io/proxy-body-size: 500m
 
 persistence:
-  enabled: false
+  enabled: true
