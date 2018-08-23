@@ -28,8 +28,8 @@ podTemplate(label: label, containers: [
           date
           whoami
           uname -a
-          toaster detect domain --namespace=devops
-          toaster detect source --name=sample --branch=master
+          toaster scan domain --namespace=devops
+          toaster scan source --name=sample --branch=master
           ls -al /home/jenkins
         """
       }

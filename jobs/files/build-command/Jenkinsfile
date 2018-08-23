@@ -12,7 +12,7 @@ podTemplate(label: label, containers: [
     stage("Prepare") {
       container("builder") {
         sh """
-          toaster detect domain --namespace=devops
+          toaster scan domain --namespace=devops
         """
       }
     }
@@ -29,7 +29,7 @@ podTemplate(label: label, containers: [
           throw e
         }
         sh """
-          toaster detect source --name=$IMAGE_NAME --branch=$BRANCH_NAME
+          toaster scan source --name=$IMAGE_NAME --branch=$BRANCH_NAME
         """
       }
     }

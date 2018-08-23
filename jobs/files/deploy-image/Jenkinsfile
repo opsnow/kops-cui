@@ -12,7 +12,7 @@ podTemplate(label: label, containers: [
     stage("Prepare") {
       container("builder") {
         sh """
-          toaster detect domain --namespace=devops
+          toaster scan domain --namespace=devops
         """
       }
     }
