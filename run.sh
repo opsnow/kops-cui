@@ -36,7 +36,6 @@ topology=private
 dns_zone=
 vpc=
 
-TPUT=
 command -v tput > /dev/null || TPUT=false
 
 _echo() {
