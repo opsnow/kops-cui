@@ -19,7 +19,7 @@ podTemplate(label: label, containers: [
     stage("Remove") {
       container("builder") {
         sh """
-          toaster helm remove --name=$IMAGE_NAME --namespace=$NAMESPACE --cluster=$CLUSTER
+          toaster helm delete --name=$IMAGE_NAME --namespace=$NAMESPACE --cluster=$CLUSTER
         """
       }
     }
