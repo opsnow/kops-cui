@@ -29,3 +29,4 @@ Master:
     - workflow-aggregator:latest
     - credentials-binding:latest
     - kubernetes-credentials-provider:latest
+    - pipeline-github-lib:latest
