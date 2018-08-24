@@ -356,7 +356,8 @@ create_menu() {
     _echo "6. networking=${networking}"
     _echo "7. topology=${topology}"
     # _echo "8. dns-zone=${dns_zone}"
-    # _echo "9. vpc=${vpc}"
+    _echo "8. vpc=${vpc}"
+
     echo
     _echo "c. create"
     _echo "t. terraform"
@@ -401,6 +402,12 @@ create_menu() {
             topology=${ANSWER:-${topology}}
             create_menu
             ;;
+        8)
+            question "Enter vpc [${vpc}] : "
+            vpc=${ANSWER:-${vpc}}
+            create_menu
+            ;;
+
         c)
             KOPS_TERRAFORM=
             save_kops_config
@@ -417,7 +424,9 @@ create_menu() {
                 --zones=${zones} \
                 --network-cidr=${network_cidr} \
                 --networking=${networking} \
-                --topology=${topology}
+                --topology=${topology} \
+                --vpc=${vpc}
+
 
             echo
             _result "Edit InstanceGroup for Cluster Autoscaler"
@@ -452,6 +461,7 @@ create_menu() {
                 --network-cidr=${network_cidr} \
                 --networking=${networking} \
                 --topology=${topology} \
+                --vpc=${vpc} \
                 --target=terraform \
                 --out=terraform-${KOPS_CLUSTER_NAME}
 
