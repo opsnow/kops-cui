@@ -1,3 +1,5 @@
+@Library('github.com/opsnow/pipeline@master')
+def pipeline = new com.opsnow.Pipeline()
 def label = "worker-${UUID.randomUUID().toString()}"
 properties([
   buildDiscarder(logRotator(daysToKeepStr: "60", numToKeepStr: "30"))
@@ -27,11 +29,10 @@ podTemplate(label: label, containers: [
           date
           whoami
           uname -a
-          toaster scan domain --namespace=devops
-          toaster scan source --name=sample --branch=master
-          ls -al /home/jenkins
         """
       }
+
+      pipeline.scan("sample")
     }
     stage("Run") {
       parallel(
@@ -55,16 +56,16 @@ podTemplate(label: label, containers: [
         },
         "Run helm": {
           container("builder") {
-            sh """
-              toaster helm init
-            """
+
+            pipeline.helm_init()
+
           }
         },
         "Run draft": {
           container("builder") {
-            sh """
-              toaster draft init
-            """
+
+            pipeline.draft_init()
+
           }
         }
       )
@@ -72,7 +73,6 @@ podTemplate(label: label, containers: [
     stage("End") {
       container("builder") {
         sh """
-          ls -al /home/jenkins
           ls -al
         """
       }

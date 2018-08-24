@@ -1,11 +1,11 @@
+@Library('github.com/opsnow/pipeline@master')
+def pipeline = new com.opsnow.Pipeline()
 def label = "worker-${UUID.randomUUID().toString()}"
 def VERSION = ""
 def SOURCE_LANG = ""
 def SOURCE_ROOT = ""
 def BASE_DOMAIN = ""
 def REGISTRY = ""
-def JENKINS = ""
-def PIPELINE = ""
 properties([
   buildDiscarder(logRotator(daysToKeepStr: "60", numToKeepStr: "30"))
 ])
@@ -19,17 +19,6 @@ podTemplate(label: label, containers: [
   hostPathVolume(mountPath: "/home/jenkins/.helm", hostPath: "/home/jenkins/.helm")
 ]) {
   node(label) {
-    stage("Prepare") {
-      container("builder") {
-        sh """
-          toaster scan domain --namespace=devops
-        """
-        BASE_DOMAIN = readFile "/home/jenkins/BASE_DOMAIN"
-        REGISTRY = readFile "/home/jenkins/REGISTRY"
-        JENKINS = readFile "/home/jenkins/JENKINS"
-        PIPELINE = "https://$JENKINS/blue/organizations/jenkins/$JOB_NAME/detail/$JOB_NAME/$BUILD_NUMBER/pipeline"
-      }
-    }
     stage("Checkout") {
       container("builder") {
         try {
@@ -39,15 +28,17 @@ podTemplate(label: label, containers: [
             git(url: REPOSITORY_URL, branch: BRANCH_NAME)
           }
         } catch (e) {
-          checkout_failure(IMAGE_NAME, PIPELINE)
+          checkout_failure(IMAGE_NAME, RUN_DISPLAY_URL)
           throw e
         }
-        sh """
-          toaster scan source --name=$IMAGE_NAME --branch=$BRANCH_NAME
-        """
-        VERSION = readFile "/home/jenkins/VERSION"
-        SOURCE_LANG = readFile "/home/jenkins/SOURCE_LANG"
-        SOURCE_ROOT = readFile "/home/jenkins/SOURCE_ROOT"
+
+        pipeline.scan(IMAGE_NAME, BRANCH_NAME)
+
+        VERSION = pipeline.version
+        REGISTRY = pipeline.registry
+        SOURCE_LANG = "nodejs" // pipeline.source_lang
+        SOURCE_ROOT = "src" // pipeline.source_root
+        BASE_DOMAIN = pipeline.base_domain
       }
     }
     stage("Build") {
@@ -58,9 +49,9 @@ podTemplate(label: label, containers: [
               cd $SOURCE_ROOT
               mvn package -s /home/jenkins/settings.xml
             """
-            build_success(IMAGE_NAME, VERSION, PIPELINE)
+            build_success(IMAGE_NAME, VERSION, RUN_DISPLAY_URL)
           } catch (e) {
-            build_failure(IMAGE_NAME, PIPELINE)
+            build_failure(IMAGE_NAME, RUN_DISPLAY_URL)
             throw e
           }
         }
@@ -72,9 +63,9 @@ podTemplate(label: label, containers: [
               cd $SOURCE_ROOT
               npm run build
             """
-            build_success(IMAGE_NAME, VERSION, PIPELINE)
+            build_success(IMAGE_NAME, VERSION, RUN_DISPLAY_URL)
           } catch (e) {
-            build_failure(IMAGE_NAME, PIPELINE)
+            build_failure(IMAGE_NAME, RUN_DISPLAY_URL)
             throw e
           }
         }
@@ -89,9 +80,9 @@ podTemplate(label: label, containers: [
       stage("Development") {
         container("builder") {
           def NAMESPACE = "development"
-          sh """
-            toaster draft up --namespace=$NAMESPACE
-          """
+
+          pipeline.draft_up(IMAGE_NAME, NAMESPACE, CLUSTER)
+
           deploy_success(IMAGE_NAME, VERSION, NAMESPACE, BASE_DOMAIN)
         }
       }
@@ -101,16 +92,16 @@ podTemplate(label: label, containers: [
         parallel(
           "Build Docker": {
             container("builder") {
-              sh """
-                toaster build image
-              """
+
+              pipeline.build_image(IMAGE_NAME, VERSION, REGISTRY)
+
             }
           },
           "Build Charts": {
             container("builder") {
-              sh """
-                toaster build chart
-              """
+
+              pipeline.build_chart(IMAGE_NAME, VERSION, REGISTRY, BASE_DOMAIN)
+
             }
           }
         )
@@ -118,16 +109,16 @@ podTemplate(label: label, containers: [
       stage("Staging") {
         container("builder") {
           def NAMESPACE = "staging"
-          sh """
-            toaster helm install --namespace=$NAMESPACE
-          """
+
+          pipeline.helm_install(IMAGE_NAME, VERSION, NAMESPACE, CLUSTER)
+
           deploy_success(IMAGE_NAME, VERSION, NAMESPACE, BASE_DOMAIN)
         }
       }
       stage("Confirm") {
         container("builder") {
           def NAMESPACE = "production"
-          deploy_confirm(IMAGE_NAME, VERSION, NAMESPACE, PIPELINE)
+          deploy_confirm(IMAGE_NAME, VERSION, NAMESPACE, RUN_DISPLAY_URL)
           timeout(time: 60, unit: "MINUTES") {
             input(message: "$IMAGE_NAME $VERSION to $NAMESPACE")
           }
@@ -136,26 +127,26 @@ podTemplate(label: label, containers: [
       stage("Production") {
         container("builder") {
           def NAMESPACE = "production"
-          sh """
-            toaster helm install --namespace=$NAMESPACE
-          """
+
+          pipeline.helm_install(IMAGE_NAME, VERSION, NAMESPACE, CLUSTER)
+
           deploy_success(IMAGE_NAME, VERSION, NAMESPACE, BASE_DOMAIN)
         }
       }
     }
   }
 }
-def checkout_failure(IMAGE_NAME, PIPELINE) {
-  notify("danger", "Checkout Failure", "`$IMAGE_NAME`", "$env.JOB_NAME <$PIPELINE|#$env.BUILD_NUMBER>")
+def checkout_failure(IMAGE_NAME, RUN_DISPLAY_URL) {
+  notify("danger", "Checkout Failure", "`$IMAGE_NAME`", "$env.JOB_NAME <$RUN_DISPLAY_URL|#$env.BUILD_NUMBER>")
 }
-def build_failure(IMAGE_NAME, PIPELINE) {
-  notify("danger", "Build Failure", "`$IMAGE_NAME`", "$env.JOB_NAME <$PIPELINE|#$env.BUILD_NUMBER>")
+def build_failure(IMAGE_NAME, RUN_DISPLAY_URL) {
+  notify("danger", "Build Failure", "`$IMAGE_NAME`", "$env.JOB_NAME <$RUN_DISPLAY_URL|#$env.BUILD_NUMBER>")
 }
-def build_success(IMAGE_NAME, VERSION, PIPELINE) {
-  notify("good", "Build Success", "`$IMAGE_NAME` `$VERSION` :heavy_check_mark:", "$env.JOB_NAME <$PIPELINE|#$env.BUILD_NUMBER>")
+def build_success(IMAGE_NAME, VERSION, RUN_DISPLAY_URL) {
+  notify("good", "Build Success", "`$IMAGE_NAME` `$VERSION` :heavy_check_mark:", "$env.JOB_NAME <$RUN_DISPLAY_URL|#$env.BUILD_NUMBER>")
 }
-def deploy_confirm(IMAGE_NAME, VERSION, STAGE, PIPELINE) {
-  notify("warning", "Deply Confirm", "`$IMAGE_NAME` `$VERSION` :rocket: `$STAGE`", "$env.JOB_NAME <$PIPELINE|#$env.BUILD_NUMBER>")
+def deploy_confirm(IMAGE_NAME, VERSION, STAGE, RUN_DISPLAY_URL) {
+  notify("warning", "Deply Confirm", "`$IMAGE_NAME` `$VERSION` :rocket: `$STAGE`", "$env.JOB_NAME <$RUN_DISPLAY_URL|#$env.BUILD_NUMBER>")
 }
 def deploy_success(IMAGE_NAME, VERSION, STAGE, BASE_DOMAIN) {
   def SEE="https://$IMAGE_NAME-$STAGE.$BASE_DOMAIN"

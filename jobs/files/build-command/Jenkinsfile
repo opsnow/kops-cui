@@ -1,3 +1,5 @@
+@Library('github.com/opsnow/pipeline@master')
+def pipeline = new com.opsnow.Pipeline()
 def label = "worker-${UUID.randomUUID().toString()}"
 properties([
   buildDiscarder(logRotator(daysToKeepStr: "60", numToKeepStr: "30"))
@@ -9,13 +11,6 @@ podTemplate(label: label, containers: [
   hostPathVolume(mountPath: "/home/jenkins/.helm", hostPath: "/home/jenkins/.helm")
 ]) {
   node(label) {
-    stage("Prepare") {
-      container("builder") {
-        sh """
-          toaster scan domain --namespace=devops
-        """
-      }
-    }
     stage("Checkout") {
       container("builder") {
         try {
@@ -28,9 +23,8 @@ podTemplate(label: label, containers: [
           checkout_failure(IMAGE_NAME, PIPELINE)
           throw e
         }
-        sh """
-          toaster scan source --name=$IMAGE_NAME --branch=$BRANCH_NAME
-        """
+
+        pipeline.scan(IMAGE_NAME)
       }
     }
     stage("Command") {
