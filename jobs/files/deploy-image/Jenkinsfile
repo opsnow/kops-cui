@@ -19,7 +19,7 @@ podTemplate(label: label, containers: [
     stage("Deploy") {
       container("builder") {
         sh """
-          toaster helm deploy --name=$IMAGE_NAME --version=$VERSION --namespace=$NAMESPACE --cluster=$CLUSTER
+          toaster helm install --name=$IMAGE_NAME --version=$VERSION --namespace=$NAMESPACE --cluster=$CLUSTER
         """
       }
     }
