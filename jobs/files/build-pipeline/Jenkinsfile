@@ -36,8 +36,8 @@ podTemplate(label: label, containers: [
 
         VERSION = pipeline.version
         REGISTRY = pipeline.registry
-        SOURCE_LANG = "nodejs" // pipeline.source_lang
-        SOURCE_ROOT = "src" // pipeline.source_root
+        SOURCE_LANG = pipeline.source_lang
+        SOURCE_ROOT = pipeline.source_root
         BASE_DOMAIN = pipeline.base_domain
       }
     }
