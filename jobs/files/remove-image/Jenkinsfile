@@ -1,5 +1,5 @@
-@Library('github.com/opsnow/pipeline@master')
-def pipeline = new com.opsnow.Pipeline()
+@Library('github.com/opspresso/pipeline@master')
+def pipeline = new com.opspresso.Pipeline()
 def label = "worker-${UUID.randomUUID().toString()}"
 properties([
   buildDiscarder(logRotator(daysToKeepStr: "60", numToKeepStr: "30"))
