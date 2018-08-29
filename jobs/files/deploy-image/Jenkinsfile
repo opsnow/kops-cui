@@ -1,3 +1,5 @@
+@Library('github.com/opspresso/pipeline@master')
+def pipeline = new com.opspresso.Pipeline()
 def label = "worker-${UUID.randomUUID().toString()}"
 properties([
   buildDiscarder(logRotator(daysToKeepStr: "60", numToKeepStr: "30"))
@@ -11,16 +13,16 @@ podTemplate(label: label, containers: [
   node(label) {
     stage("Prepare") {
       container("builder") {
-        sh """
-          toaster scan domain --namespace=devops
-        """
+
+        pipeline.scan(IMAGE_NAME)
+
       }
     }
     stage("Deploy") {
       container("builder") {
-        sh """
-          toaster helm install --name=$IMAGE_NAME --version=$VERSION --namespace=$NAMESPACE --cluster=$CLUSTER
-        """
+
+        pipeline.helm_install(IMAGE_NAME, VERSION, NAMESPACE, CLUSTER)
+
       }
     }
   }

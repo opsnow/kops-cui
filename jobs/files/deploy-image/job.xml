@@ -26,6 +26,11 @@
         <description></description>
         <defaultValue></defaultValue>
         </hudson.model.StringParameterDefinition>
+        <hudson.model.StringParameterDefinition>
+        <name>SLACK_TOKEN</name>
+        <description></description>
+        <defaultValue></defaultValue>
+        </hudson.model.StringParameterDefinition>
     </parameterDefinitions>
     </hudson.model.ParametersDefinitionProperty>
     <org.jenkinsci.plugins.workflow.job.properties.PipelineTriggersJobProperty>
@@ -36,7 +41,7 @@
     <script>// deploy-image
 REPLACE
     </script>
-    <sandbox>true</sandbox>
+    <sandbox>false</sandbox>
 </definition>
 <triggers/>
 <disabled>false</disabled>
