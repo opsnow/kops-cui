@@ -47,7 +47,7 @@ podTemplate(label: label, containers: [
           try {
             sh """
               cd $SOURCE_ROOT
-              mvn package
+              mvn package -s /home/jenkins/.m2/settings.xml
             """
             build_success(IMAGE_NAME, VERSION, RUN_DISPLAY_URL)
           } catch (e) {
