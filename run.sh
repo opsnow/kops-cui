@@ -287,17 +287,28 @@ cluster_menu() {
             ;;
         2)
             if [ "x${CLUSTER}" == "x0" ]; then
-                create_menu
-            else
-                kops_edit
-                press_enter cluster
+                cluster_menu
+                return
             fi
+
+            kops_edit
+            press_enter cluster
             ;;
         3)
+            if [ "x${CLUSTER}" == "x0" ]; then
+                cluster_menu
+                return
+            fi
+
             kops_update
             press_enter cluster
             ;;
         4)
+            if [ "x${CLUSTER}" == "x0" ]; then
+                cluster_menu
+                return
+            fi
+
             question "Are you sure? (YES/[no]) : "
 
             if [ "${ANSWER}" == "YES" ]; then
@@ -308,14 +319,29 @@ cluster_menu() {
             fi
             ;;
         5)
+            if [ "x${CLUSTER}" == "x0" ]; then
+                cluster_menu
+                return
+            fi
+
             kops_validate
             press_enter cluster
             ;;
         6)
+            if [ "x${CLUSTER}" == "x0" ]; then
+                cluster_menu
+                return
+            fi
+
             kops_export
             press_enter cluster
             ;;
         9)
+            if [ "x${CLUSTER}" == "x0" ]; then
+                cluster_menu
+                return
+            fi
+
             question "Are you sure? (YES/[no]) : "
 
             if [ "${ANSWER}" == "YES" ]; then
@@ -326,6 +352,11 @@ cluster_menu() {
             fi
             ;;
         11)
+            if [ "x${CLUSTER}" == "x0" ]; then
+                cluster_menu
+                return
+            fi
+
             addons_menu
             ;;
         21)
@@ -436,7 +467,6 @@ create_menu() {
                 --networking=${networking} \
                 --topology=${topology} \
                 --vpc=${vpc}
-
 
             echo
             _result "Edit InstanceGroup for Cluster Autoscaler"
