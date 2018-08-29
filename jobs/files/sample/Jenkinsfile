@@ -34,41 +34,37 @@ podTemplate(label: label, containers: [
 
       pipeline.scan("sample")
     }
-    stage("Run") {
-      parallel(
-        "Run docker": {
-          container("builder") {
-            sh """
-              docker version
-              docker images
-              docker ps
-            """
-          }
-        },
-        "Run kubectl": {
-          container("builder") {
-            sh """
-              kubectl version
-              kubectl cluster-info
-              kubectl get pod,svc,ing
-            """
-          }
-        },
-        "Run helm": {
-          container("builder") {
+    stage("Run docker") {
+      container("builder") {
+        sh """
+          docker version
+          docker images
+          docker ps
+        """
+      }
+    }
+    stage("Run kubectl") {
+      container("builder") {
+        sh """
+          kubectl version
+          kubectl cluster-info
+          kubectl get pod,svc,ing
+        """
+      }
+    }
+    stage("Run helm") {
+      container("builder") {
 
-            pipeline.helm_init()
+        pipeline.helm_init()
 
-          }
-        },
-        "Run draft": {
-          container("builder") {
+      }
+    }
+    stage("Run draft") {
+      container("builder") {
 
-            pipeline.draft_init()
+        pipeline.draft_init()
 
-          }
-        }
-      )
+      }
     }
     stage("End") {
       container("builder") {
