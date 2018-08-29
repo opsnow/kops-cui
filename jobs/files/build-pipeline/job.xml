@@ -46,7 +46,7 @@
     <script>// build-pipeline
 REPLACE
     </script>
-    <sandbox>true</sandbox>
+    <sandbox>false</sandbox>
 </definition>
 <triggers/>
 <disabled>false</disabled>
