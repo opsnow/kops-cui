@@ -93,14 +93,14 @@ podTemplate(label: label, containers: [
           "Build Docker": {
             container("builder") {
 
-              pipeline.build_image(IMAGE_NAME, VERSION, REGISTRY)
+              pipeline.build_image(IMAGE_NAME, VERSION)
 
             }
           },
           "Build Charts": {
             container("builder") {
 
-              pipeline.build_chart(IMAGE_NAME, VERSION, REGISTRY, BASE_DOMAIN)
+              pipeline.build_chart(IMAGE_NAME, VERSION)
 
             }
           }

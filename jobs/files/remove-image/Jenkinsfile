@@ -13,14 +13,16 @@ podTemplate(label: label, containers: [
   node(label) {
     stage("Prepare") {
       container("builder") {
+
         pipeline.scan(IMAGE_NAME)
+
       }
     }
     stage("Remove") {
       container("builder") {
-        sh """
-          toaster helm delete --name=$IMAGE_NAME --namespace=$NAMESPACE --cluster=$CLUSTER
-        """
+
+        pipeline.helm_delete(IMAGE_NAME, NAMESPACE, CLUSTER)
+
       }
     }
   }
