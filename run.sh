@@ -256,7 +256,6 @@ cluster_menu() {
 
     if [ "x${CLUSTER}" == "x0" ]; then
         _echo "1. Create Cluster"
-        _echo "2. Update Tools"
     else
         _echo "1. Get Cluster"
         _echo "2. Edit Cluster"
@@ -268,9 +267,12 @@ cluster_menu() {
         _echo "9. Delete Cluster"
         echo
         _echo "11. Addons.."
-        echo
-        _echo "x. Exit"
     fi
+    echo
+    _echo "21. update self"
+    _echo "22. update tools"
+    echo
+    _echo "x. Exit"
 
     question
 
@@ -285,11 +287,11 @@ cluster_menu() {
             ;;
         2)
             if [ "x${CLUSTER}" == "x0" ]; then
-                install_tools
+                create_menu
             else
                 kops_edit
+                press_enter cluster
             fi
-            press_enter cluster
             ;;
         3)
             kops_update
@@ -325,6 +327,14 @@ cluster_menu() {
             ;;
         11)
             addons_menu
+            ;;
+        21)
+            update_self
+            press_enter cluster
+            ;;
+        22)
+            update_tools
+            press_enter cluster
             ;;
         x)
             kops_exit
@@ -1593,13 +1603,19 @@ get_node_zones() {
     fi
 }
 
-install_tools() {
+update_self() {
+    pushd ${SHELL_DIR}
+    git pull
+    popd
+}
+
+update_tools() {
     ${SHELL_DIR}/helper/bastion.sh
 }
 
 kops_exit() {
     echo
-    _result "See you soon!"
+    _result "Good bye!"
     echo
     exit 0
 }
