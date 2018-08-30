@@ -1259,11 +1259,11 @@ create_efs() {
 
     # get vpc id & subent ids
     VPC_ID=$(aws ec2 describe-security-groups --filters "Name=group-name,Values=nodes.${KOPS_CLUSTER_NAME}" | jq -r '.SecurityGroups[0].VpcId')
-    VPC_PRIVATE_SUBNETS_LENGTH=$(aws ec2 describe-subnets --filters="Name=tag:KubernetesCluster,Values=${KOPS_CLUSTER_NAME},Name=tag:SubnetType,Values=Private" | jq '.Subnets | length')
+    VPC_PRIVATE_SUBNETS_LENGTH=$(aws ec2 describe-subnets --filters "Name=tag:KubernetesCluster,Values=${KOPS_CLUSTER_NAME}" "Name=tag:SubnetType,Values=Private" | jq '.Subnets | length')
     if [ ${VPC_PRIVATE_SUBNETS_LENGTH} -eq 2 ]; then
-        VPC_SUBNETS=$(aws ec2 describe-subnets --filters="Name=tag:KubernetesCluster,Values=${KOPS_CLUSTER_NAME},Name=tag:SubnetType,Values=Private" | jq -r '(.Subnets[].SubnetId)')
+        VPC_SUBNETS=$(aws ec2 describe-subnets --filters "Name=tag:KubernetesCluster,Values=${KOPS_CLUSTER_NAME}" "Name=tag:SubnetType,Values=Private" | jq -r '(.Subnets[].SubnetId)')
     else
-        VPC_SUBNETS=$(aws ec2 describe-subnets --filters="Name=tag:KubernetesCluster,Values=${KOPS_CLUSTER_NAME}" | jq -r '(.Subnets[].SubnetId)')
+        VPC_SUBNETS=$(aws ec2 describe-subnets --filters "Name=tag:KubernetesCluster,Values=${KOPS_CLUSTER_NAME}" | jq -r '(.Subnets[].SubnetId)')
     fi
     
     if [ -z ${VPC_ID} ]; then
