@@ -3,15 +3,15 @@
 rbac:
   install: true
 
+Persistence:
+  Enabled: true
+  #:EFS:StorageClass: "efs"
+
 # Agent:
 #   Enabled: true
 #   Image: quay.io/nalbam/jnlp-slave
 #   ImageTag: latest
 #   AlwaysPullImage: true
-
-#:EFS:Persistence:
-#:EFS:  Enabled: true
-#:EFS:  StorageClass: "efs"
 
 Master:
   # Image: quay.io/nalbam/jenkins

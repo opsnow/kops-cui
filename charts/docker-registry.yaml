@@ -15,5 +15,6 @@ ingress:
 
 persistence:
   enabled: true
+  accessMode: ReadWriteOnce
   size: 20Gi
   #:EFS:storageClass: "efs"
