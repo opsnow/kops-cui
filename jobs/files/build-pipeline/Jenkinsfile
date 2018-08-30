@@ -39,6 +39,10 @@ podTemplate(label: label, containers: [
         SOURCE_LANG = pipeline.source_lang
         SOURCE_ROOT = pipeline.source_root
         BASE_DOMAIN = pipeline.base_domain
+
+        if (!SLACK_TOKEN && pipeline.slack_token) {
+          SLACK_TOKEN = pipeline.slack_token
+        }
       }
     }
     stage("Build") {
