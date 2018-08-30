@@ -138,9 +138,7 @@ waitingfor() {
 
     IDX=0
     while true; do
-        $@ ${IDX}
-        DONE=$?
-        if [ ${DONE} -eq 0 ]; then
+        if $@ ${IDX}; then
             break
         fi
         IDX=$(( ${IDX} + 1 ))
@@ -1217,7 +1215,7 @@ isEFSAvailable() {
         fi
     fi
 
-    return -1;
+    return 1;
 }
 
 isMountTargetAvailable() {
@@ -1240,7 +1238,7 @@ isMountTargetAvailable() {
         fi
     fi
 
-    return -1;
+    return 1;
 }
 
 isMountTargetDeleted() {
@@ -1248,7 +1246,7 @@ isMountTargetDeleted() {
     if [ ${MOUNT_TARGET_LENGTH} == 0 ]; then
         return 0
     else
-        return -1
+        return 1
     fi
 }
 
