@@ -1083,6 +1083,10 @@ get_ssl_cert_arn() {
 }
 
 set_record_cname() {
+    if [ -z ${BASE_DOMAIN} ]; then
+        return
+    fi
+
     # request certificate
     SSL_CERT_ARN=$(aws acm request-certificate --domain-name "*.${BASE_DOMAIN}" --validation-method DNS | jq -r '.CertificateArn')
 
@@ -1114,6 +1118,10 @@ set_record_cname() {
 }
 
 set_record_alias() {
+    if [ -z ${BASE_DOMAIN} ]; then
+        return
+    fi
+
     # Route53 에서 해당 도메인의 Hosted Zone ID 를 획득
     ZONE_ID=$(aws route53 list-hosted-zones | ROOT_DOMAIN="${ROOT_DOMAIN}." jq -r '.HostedZones[] | select(.Name==env.ROOT_DOMAIN) | .Id' | cut -d'/' -f3)
 
@@ -1139,6 +1147,10 @@ set_record_alias() {
 }
 
 delete_record() {
+    if [ -z ${BASE_DOMAIN} ]; then
+        return
+    fi
+
     # Route53 에서 해당 도메인의 Hosted Zone ID 를 획득
     ZONE_ID=$(aws route53 list-hosted-zones | ROOT_DOMAIN="${ROOT_DOMAIN}." jq -r '.HostedZones[] | select(.Name==env.ROOT_DOMAIN) | .Id' | cut -d'/' -f3)
 
