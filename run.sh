@@ -726,6 +726,8 @@ read_kops_config() {
         aws s3 cp s3://${KOPS_STATE_STORE}/${KOPS_CLUSTER_NAME}.kops-cui ${CONFIG} --quiet
     fi
 
+    kops_export
+
     if [ -f ${CONFIG} ]; then
         . ${CONFIG}
     fi
@@ -1037,16 +1039,21 @@ read_root_domain() {
         _echo "${IDX}. $(echo ${VAR} | sed 's/.$//')"
     done < ${HOST_LIST}
 
-    ROOT_DOMAIN=
-
     if [ "${IDX}" != "0" ]; then
         echo
         _echo "0. nip.io"
 
         question "Enter root domain (0-${IDX})[0] : "
 
-        if [ ! -z ${ANSWER} ]; then
-            ROOT_DOMAIN=$(sed -n ${ANSWER}p ${HOST_LIST} | sed 's/.$//')
+        if [ "x${ANSWER}" == "x0" ]; then
+            ROOT_DOMAIN=
+        elif [ ! -z ${ANSWER} ]; then
+            TEST='^[0-9]+$'
+            if ! [[ ${ANSWER} =~ ${TEST} ]]; then
+                ROOT_DOMAIN=${ANSWER}
+            else
+                ROOT_DOMAIN=$(sed -n ${ANSWER}p ${HOST_LIST} | sed 's/.$//')
+            fi
         fi
     fi
 }
@@ -1085,9 +1092,6 @@ set_record_cname() {
     CERT_DNS_NAME=$(aws acm describe-certificate --certificate-arn ${SSL_CERT_ARN} | jq -r '.Certificate.DomainValidationOptions[].ResourceRecord | .Name')
     CERT_DNS_VALUE=$(aws acm describe-certificate --certificate-arn ${SSL_CERT_ARN} | jq -r '.Certificate.DomainValidationOptions[].ResourceRecord | .Value')
 
-    # Route53 에서 해당 도메인의 Hosted Zone ID 를 획득
-    ZONE_ID=$(aws route53 list-hosted-zones | ROOT_DOMAIN="${ROOT_DOMAIN}." jq -r '.HostedZones[] | select(.Name==env.ROOT_DOMAIN) | .Id' | cut -d'/' -f3)
-
     # record sets
     RECORD=/tmp/record-sets-cname.json
     get_template addons/record-sets-cname.json ${RECORD}
@@ -1098,8 +1102,13 @@ set_record_cname() {
 
     cat ${RECORD}
 
+    # Route53 에서 해당 도메인의 Hosted Zone ID 를 획득
+    ZONE_ID=$(aws route53 list-hosted-zones | ROOT_DOMAIN="${ROOT_DOMAIN}." jq -r '.HostedZones[] | select(.Name==env.ROOT_DOMAIN) | .Id' | cut -d'/' -f3)
+
     # Route53 의 Record Set 에 입력/수정
-    aws route53 change-resource-record-sets --hosted-zone-id ${ZONE_ID} --change-batch file://${RECORD}
+    if [ ! -z ${ZONE_ID} ]; then
+        aws route53 change-resource-record-sets --hosted-zone-id ${ZONE_ID} --change-batch file://${RECORD}
+    fi
 }
 
 set_record_alias() {
@@ -1137,9 +1146,10 @@ helm_nginx_ingress() {
 
     helm_check
 
-    read_root_domain
-
+    ROOT_DOMAIN=
     BASE_DOMAIN=
+
+    read_root_domain
 
     if [ ! -z ${ROOT_DOMAIN} ]; then
         WORD=$(echo ${KOPS_CLUSTER_NAME} | cut -d'.' -f1)
@@ -1265,7 +1275,7 @@ create_efs() {
     else
         VPC_SUBNETS=$(aws ec2 describe-subnets --filters "Name=tag:KubernetesCluster,Values=${KOPS_CLUSTER_NAME}" | jq -r '(.Subnets[].SubnetId)')
     fi
-    
+
     if [ -z ${VPC_ID} ]; then
         _error "Not found the VPC."
     fi
