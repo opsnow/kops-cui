@@ -1083,7 +1083,7 @@ get_ssl_cert_arn() {
 }
 
 set_record_cname() {
-    if [ ! -z ${BASE_DOMAIN} ]; then
+    if [ -z ${BASE_DOMAIN} ]; then
         return
     fi
 
@@ -1118,7 +1118,7 @@ set_record_cname() {
 }
 
 set_record_alias() {
-    if [ ! -z ${BASE_DOMAIN} ]; then
+    if [ -z ${BASE_DOMAIN} ]; then
         return
     fi
 
@@ -1147,7 +1147,7 @@ set_record_alias() {
 }
 
 delete_record() {
-    if [ ! -z ${BASE_DOMAIN} ]; then
+    if [ -z ${BASE_DOMAIN} ]; then
         return
     fi
 
