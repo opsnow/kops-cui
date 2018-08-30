@@ -16,3 +16,9 @@ ingress:
     kubernetes.io/ingress.class: nginx
     nginx.ingress.kubernetes.io/proxy-body-size: 500m
     ingress.kubernetes.io/proxy-body-size: 500m
+
+#:EFS:persistence:
+#:EFS:  enabled: false
+#:EFS:  accessMode: ReadWriteOnce
+#:EFS:  size: 8Gi
+#:EFS:  storageClass: "efs"
