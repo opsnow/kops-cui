@@ -726,7 +726,7 @@ read_kops_config() {
         aws s3 cp s3://${KOPS_STATE_STORE}/${KOPS_CLUSTER_NAME}.kops-cui ${CONFIG} --quiet
     fi
 
-    kops_export
+    # kops_export
 
     if [ -f ${CONFIG} ]; then
         . ${CONFIG}
