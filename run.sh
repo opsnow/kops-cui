@@ -941,6 +941,8 @@ kops_export() {
 kops_delete() {
     delete_efs
 
+    delete_record
+
     kops delete cluster --name=${KOPS_CLUSTER_NAME} --state=s3://${KOPS_STATE_STORE} --yes
 
     delete_kops_config
@@ -1088,6 +1090,9 @@ set_record_cname() {
 
     waiting 2
 
+    # Route53 에서 해당 도메인의 Hosted Zone ID 를 획득
+    ZONE_ID=$(aws route53 list-hosted-zones | ROOT_DOMAIN="${ROOT_DOMAIN}." jq -r '.HostedZones[] | select(.Name==env.ROOT_DOMAIN) | .Id' | cut -d'/' -f3)
+
     # domain validate
     CERT_DNS_NAME=$(aws acm describe-certificate --certificate-arn ${SSL_CERT_ARN} | jq -r '.Certificate.DomainValidationOptions[].ResourceRecord | .Name')
     CERT_DNS_VALUE=$(aws acm describe-certificate --certificate-arn ${SSL_CERT_ARN} | jq -r '.Certificate.DomainValidationOptions[].ResourceRecord | .Value')
@@ -1102,26 +1107,19 @@ set_record_cname() {
 
     cat ${RECORD}
 
-    # Route53 에서 해당 도메인의 Hosted Zone ID 를 획득
-    ZONE_ID=$(aws route53 list-hosted-zones | ROOT_DOMAIN="${ROOT_DOMAIN}." jq -r '.HostedZones[] | select(.Name==env.ROOT_DOMAIN) | .Id' | cut -d'/' -f3)
-
-    # Route53 의 Record Set 에 입력/수정
+    # update route53 record
     if [ ! -z ${ZONE_ID} ]; then
         aws route53 change-resource-record-sets --hosted-zone-id ${ZONE_ID} --change-batch file://${RECORD}
     fi
 }
 
 set_record_alias() {
-    # ELB 에서 Hosted Zone ID, DNS Name 을 획득
-    ELB_ZONE_ID=$(aws elb describe-load-balancers --load-balancer-name ${ELB_NAME} | jq -r '.LoadBalancerDescriptions[] | .CanonicalHostedZoneNameID')
-    ELB_DNS_NAME=$(aws elb describe-load-balancers --load-balancer-name ${ELB_NAME} | jq -r '.LoadBalancerDescriptions[] | .DNSName')
-
     # Route53 에서 해당 도메인의 Hosted Zone ID 를 획득
     ZONE_ID=$(aws route53 list-hosted-zones | ROOT_DOMAIN="${ROOT_DOMAIN}." jq -r '.HostedZones[] | select(.Name==env.ROOT_DOMAIN) | .Id' | cut -d'/' -f3)
 
-    if [ -z ${ZONE_ID} ]; then
-        return
-    fi
+    # ELB 에서 Hosted Zone ID, DNS Name 을 획득
+    ELB_ZONE_ID=$(aws elb describe-load-balancers --load-balancer-name ${ELB_NAME} | jq -r '.LoadBalancerDescriptions[] | .CanonicalHostedZoneNameID')
+    ELB_DNS_NAME=$(aws elb describe-load-balancers --load-balancer-name ${ELB_NAME} | jq -r '.LoadBalancerDescriptions[] | .DNSName')
 
     # record sets
     RECORD=/tmp/record-sets-alias.json
@@ -1134,8 +1132,29 @@ set_record_alias() {
 
     cat ${RECORD}
 
-    # Route53 의 Record Set 에 입력/수정
-    aws route53 change-resource-record-sets --hosted-zone-id ${ZONE_ID} --change-batch file://${RECORD}
+    # update route53 record
+    if [ ! -z ${ZONE_ID} ]; then
+        aws route53 change-resource-record-sets --hosted-zone-id ${ZONE_ID} --change-batch file://${RECORD}
+    fi
+}
+
+delete_record() {
+    # Route53 에서 해당 도메인의 Hosted Zone ID 를 획득
+    ZONE_ID=$(aws route53 list-hosted-zones | ROOT_DOMAIN="${ROOT_DOMAIN}." jq -r '.HostedZones[] | select(.Name==env.ROOT_DOMAIN) | .Id' | cut -d'/' -f3)
+
+    # record sets
+    RECORD=/tmp/record-sets-delete.json
+    get_template addons/record-sets-delete.json ${RECORD}
+
+    # replace
+    sed -i -e "s/DOMAIN/*.${BASE_DOMAIN}/g" ${RECORD}
+
+    cat ${RECORD}
+
+    # update route53 record
+    if [ ! -z ${ZONE_ID} ]; then
+        aws route53 change-resource-record-sets --hosted-zone-id ${ZONE_ID} --change-batch file://${RECORD}
+    fi
 }
 
 helm_nginx_ingress() {
