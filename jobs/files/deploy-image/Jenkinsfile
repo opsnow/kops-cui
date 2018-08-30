@@ -16,7 +16,9 @@ podTemplate(label: label, containers: [
 
         pipeline.scan(IMAGE_NAME)
 
-        BASE_DOMAIN = pipeline.base_domain
+        if (!BASE_DOMAIN) {
+          BASE_DOMAIN = pipeline.base_domain
+        }
 
         if (!SLACK_TOKEN && pipeline.slack_token) {
           SLACK_TOKEN = pipeline.slack_token
@@ -26,7 +28,7 @@ podTemplate(label: label, containers: [
     stage("Deploy") {
       container("builder") {
 
-        pipeline.helm_install(IMAGE_NAME, VERSION, NAMESPACE, CLUSTER)
+        pipeline.helm_install(IMAGE_NAME, VERSION, NAMESPACE, CLUSTER, BASE_DOMAIN)
 
         deploy_success(IMAGE_NAME, VERSION, NAMESPACE, BASE_DOMAIN)
       }

@@ -85,7 +85,7 @@ podTemplate(label: label, containers: [
         container("builder") {
           def NAMESPACE = "development"
 
-          pipeline.draft_up(IMAGE_NAME, NAMESPACE, CLUSTER)
+          pipeline.draft_up(IMAGE_NAME, NAMESPACE, CLUSTER, BASE_DOMAIN)
 
           deploy_success(IMAGE_NAME, VERSION, NAMESPACE, BASE_DOMAIN)
         }
@@ -114,7 +114,7 @@ podTemplate(label: label, containers: [
         container("builder") {
           def NAMESPACE = "staging"
 
-          pipeline.helm_install(IMAGE_NAME, VERSION, NAMESPACE, CLUSTER)
+          pipeline.helm_install(IMAGE_NAME, VERSION, NAMESPACE, CLUSTER, BASE_DOMAIN)
 
           deploy_success(IMAGE_NAME, VERSION, NAMESPACE, BASE_DOMAIN)
         }
