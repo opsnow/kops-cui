@@ -1,0 +1,8 @@
+{
+  "Changes": [
+    {
+      "Action": "DELETE",
+      "ResourceRecordSet": "DOMAIN"
+    }
+  ]
+}
