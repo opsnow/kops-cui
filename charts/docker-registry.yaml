@@ -16,3 +16,4 @@ ingress:
 persistence:
   enabled: true
   size: 20Gi
+  #:EFS:storageClass: "efs"
