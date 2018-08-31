@@ -4,8 +4,6 @@ def label = "worker-${UUID.randomUUID().toString()}"
 def VERSION = ""
 def SOURCE_LANG = ""
 def SOURCE_ROOT = ""
-def BASE_DOMAIN = ""
-def REGISTRY = ""
 properties([
   buildDiscarder(logRotator(daysToKeepStr: "60", numToKeepStr: "30"))
 ])
@@ -37,9 +35,10 @@ podTemplate(label: label, containers: [
         VERSION = pipeline.version
         SOURCE_LANG = pipeline.source_lang
         SOURCE_ROOT = pipeline.source_root
-        BASE_DOMAIN = pipeline.base_domain
-        REGISTRY = pipeline.registry
 
+        if (!BASE_DOMAIN) {
+          BASE_DOMAIN = pipeline.base_domain
+        }
         if (!SLACK_TOKEN) {
           SLACK_TOKEN = pipeline.slack_token
         }
@@ -103,24 +102,24 @@ podTemplate(label: label, containers: [
           }
         )
       }
-      stage("Staging") {
+      stage("Development") {
         container("builder") {
-          pipeline.helm_install(IMAGE_NAME, VERSION, "staging", CLUSTER, BASE_DOMAIN)
-          deploy_success(IMAGE_NAME, VERSION, "staging", BASE_DOMAIN)
+          pipeline.helm_install(IMAGE_NAME, VERSION, "development", CLUSTER, BASE_DOMAIN)
+          deploy_success(IMAGE_NAME, VERSION, "development", BASE_DOMAIN)
         }
       }
       stage("Confirm") {
         container("builder") {
-          deploy_confirm(IMAGE_NAME, VERSION, "production")
+          deploy_confirm(IMAGE_NAME, VERSION, "staging")
           timeout(time: 60, unit: "MINUTES") {
-            input(message: "$IMAGE_NAME $VERSION to production")
+            input(message: "$IMAGE_NAME $VERSION to staging")
           }
         }
       }
-      stage("Production") {
+      stage("Staging") {
         container("builder") {
-          pipeline.helm_install(IMAGE_NAME, VERSION, "production", CLUSTER, BASE_DOMAIN)
-          deploy_success(IMAGE_NAME, VERSION, "production", BASE_DOMAIN)
+          pipeline.helm_install(IMAGE_NAME, VERSION, "staging", CLUSTER, BASE_DOMAIN)
+          deploy_success(IMAGE_NAME, VERSION, "staging", BASE_DOMAIN)
         }
       }
     }
