@@ -29,7 +29,7 @@ podTemplate(label: label, containers: [
   }
 }
 def remove_success(name, namespace, cluster) {
-  notify("good", "Remove Success", "`$name` :boom: `$namespace` :earth_asia: `$cluster`", "$JOB_NAME <$RUN_DISPLAY_URL|#$BUILD_NUMBER>")
+  notify("warning", "Remove Success", "`$name` :boom: `$namespace` :earth_asia: `$cluster`", "$JOB_NAME <$RUN_DISPLAY_URL|#$BUILD_NUMBER>")
 }
 def notify(color, title, message, footer) {
   try {
