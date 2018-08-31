@@ -34,7 +34,7 @@ podTemplate(label: label, containers: [
 }
 def deploy_success(IMAGE_NAME, VERSION, NAMESPACE, CLUSTER, BASE_DOMAIN) {
   def LINK="https://$IMAGE_NAME-$NAMESPACE.$BASE_DOMAIN"
-  notify("good", "Deply Success", "`$IMAGE_NAME` `$VERSION` :satellite: `$NAMESPACE`", "see <$LINK|$IMAGE_NAME-$NAMESPACE-$CLUSTER>")
+  notify("good", "Deply Success", "`$IMAGE_NAME` `$VERSION` :satellite: `$NAMESPACE` :earth_asia: `$CLUSTER`", "see <$LINK|$IMAGE_NAME-$NAMESPACE>")
 }
 def notify(COLOR, TITLE, MESSAGE, FOOTER) {
   pipeline.notify(SLACK_TOKEN, COLOR, TITLE, MESSAGE, FOOTER)
