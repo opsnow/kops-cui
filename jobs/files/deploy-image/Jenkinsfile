@@ -13,7 +13,6 @@ podTemplate(label: label, containers: [
   node(label) {
     stage("Prepare") {
       container("builder") {
-
         pipeline.scan(IMAGE_NAME)
 
         if (!BASE_DOMAIN) {
@@ -32,10 +31,17 @@ podTemplate(label: label, containers: [
     }
   }
 }
-def deploy_success(IMAGE_NAME, VERSION, NAMESPACE, CLUSTER, BASE_DOMAIN) {
-  def LINK="https://$IMAGE_NAME-$NAMESPACE.$BASE_DOMAIN"
-  notify("good", "Deply Success", "`$IMAGE_NAME` `$VERSION` :satellite: `$NAMESPACE` :earth_asia: `$CLUSTER`", "see <$LINK|$IMAGE_NAME-$NAMESPACE>")
+def deploy_success(name, version, namespace, cluster, base_domain) {
+  def link = "https://$name-$namespace.$base_domain"
+  notify("good", "Deply Success", "`$name` `$version` :satellite: `$namespace` :earth_asia: `$cluster`", "$JOB_NAME <$RUN_DISPLAY_URL|#$BUILD_NUMBER> :: <$link|$name-$namespace>")
 }
-def notify(COLOR, TITLE, MESSAGE, FOOTER) {
-  pipeline.notify(SLACK_TOKEN, COLOR, TITLE, MESSAGE, FOOTER)
+def notify(color, title, message, footer) {
+  try {
+    // pipeline.slack(SLACK_TOKEN, color, title, message, footer)
+    sh """
+      curl -sL toast.sh/helper/slack.sh | bash -s -- --token='$SLACK_TOKEN' \
+      --color='$color' --title='$title' --footer='$footer' '$message'
+    """
+  } catch (ignored) {
+  }
 }

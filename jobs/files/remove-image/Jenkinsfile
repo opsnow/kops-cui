@@ -13,17 +13,31 @@ podTemplate(label: label, containers: [
   node(label) {
     stage("Prepare") {
       container("builder") {
-
         pipeline.scan(IMAGE_NAME)
 
+        if (!SLACK_TOKEN) {
+          SLACK_TOKEN = pipeline.slack_token
+        }
       }
     }
     stage("Remove") {
       container("builder") {
-
         pipeline.helm_delete(IMAGE_NAME, NAMESPACE, CLUSTER)
-
+        remove_success(IMAGE_NAME, NAMESPACE, CLUSTER)
       }
     }
+  }
+}
+def remove_success(name, namespace, cluster) {
+  notify("good", "Remove Success", "`$name` :boom: `$namespace` :earth_asia: `$cluster`", "$JOB_NAME <$RUN_DISPLAY_URL|#$BUILD_NUMBER>")
+}
+def notify(color, title, message, footer) {
+  try {
+    // pipeline.slack(SLACK_TOKEN, color, title, message, footer)
+    sh """
+      curl -sL toast.sh/helper/slack.sh | bash -s -- --token='$SLACK_TOKEN' \
+      --color='$color' --title='$title' --footer='$footer' '$message'
+    """
+  } catch (ignored) {
   }
 }
