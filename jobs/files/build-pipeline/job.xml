@@ -7,9 +7,14 @@
     <hudson.model.ParametersDefinitionProperty>
     <parameterDefinitions>
         <hudson.model.StringParameterDefinition>
+        <name>IMAGE_NAME</name>
+        <description></description>
+        <defaultValue>sample-node</defaultValue>
+        </hudson.model.StringParameterDefinition>
+        <hudson.model.StringParameterDefinition>
         <name>REPOSITORY_URL</name>
         <description></description>
-        <defaultValue>https://github.com/nalbam/sample-node.git</defaultValue>
+        <defaultValue>https://github.com/nalbam/sample-node</defaultValue>
         </hudson.model.StringParameterDefinition>
         <hudson.model.StringParameterDefinition>
         <name>REPOSITORY_SECRET</name>
@@ -22,17 +27,12 @@
         <defaultValue>master</defaultValue>
         </hudson.model.StringParameterDefinition>
         <hudson.model.StringParameterDefinition>
-        <name>IMAGE_NAME</name>
-        <description></description>
-        <defaultValue>sample-node</defaultValue>
-        </hudson.model.StringParameterDefinition>
-        <hudson.model.StringParameterDefinition>
-        <name>CLUSTER</name>
+        <name>BASE_DOMAIN</name>
         <description></description>
         <defaultValue></defaultValue>
         </hudson.model.StringParameterDefinition>
         <hudson.model.StringParameterDefinition>
-        <name>BASE_DOMAIN</name>
+        <name>CLUSTER</name>
         <description></description>
         <defaultValue></defaultValue>
         </hudson.model.StringParameterDefinition>
