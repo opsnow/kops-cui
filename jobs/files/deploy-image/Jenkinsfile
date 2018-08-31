@@ -33,7 +33,7 @@ podTemplate(label: label, containers: [
 }
 def deploy_success(name, version, namespace, cluster, base_domain) {
   def link = "https://$name-$namespace.$base_domain"
-  notify("good", "Depoly Success", "`$name` `$version` :satellite: `$namespace` :earth_asia: `$cluster`", "$JOB_NAME <$RUN_DISPLAY_URL|#$BUILD_NUMBER> :: <$link|$name-$namespace>")
+  notify("good", "Deploy Success", "`$name` `$version` :satellite: `$namespace` :earth_asia: `$cluster`", "$JOB_NAME <$RUN_DISPLAY_URL|#$BUILD_NUMBER> :: <$link|$name-$namespace>")
 }
 def notify(color, title, message, footer) {
   try {
