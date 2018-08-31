@@ -32,6 +32,11 @@
         <defaultValue></defaultValue>
         </hudson.model.StringParameterDefinition>
         <hudson.model.StringParameterDefinition>
+        <name>BASE_DOMAIN</name>
+        <description></description>
+        <defaultValue></defaultValue>
+        </hudson.model.StringParameterDefinition>
+        <hudson.model.StringParameterDefinition>
         <name>SLACK_TOKEN</name>
         <description></description>
         <defaultValue></defaultValue>
