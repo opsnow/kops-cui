@@ -1,9 +1,9 @@
 nameOverride: kubernetes-dashboard
 
-extraArgs:
-  - --enable-insecure-login=true
-  - --insecure-bind-address=0.0.0.0
-  - --insecure-port=9090
+# extraArgs:
+#   - --enable-insecure-login=true
+#   - --insecure-bind-address=0.0.0.0
+#   - --insecure-port=9090
 
 service:
   type: SERVICE_TYPE
