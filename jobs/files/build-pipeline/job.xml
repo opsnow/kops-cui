@@ -27,12 +27,12 @@
         <defaultValue>master</defaultValue>
         </hudson.model.StringParameterDefinition>
         <hudson.model.StringParameterDefinition>
-        <name>BASE_DOMAIN</name>
+        <name>CLUSTER</name>
         <description></description>
         <defaultValue></defaultValue>
         </hudson.model.StringParameterDefinition>
         <hudson.model.StringParameterDefinition>
-        <name>CLUSTER</name>
+        <name>BASE_DOMAIN</name>
         <description></description>
         <defaultValue></defaultValue>
         </hudson.model.StringParameterDefinition>

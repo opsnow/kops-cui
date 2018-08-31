@@ -4,8 +4,6 @@ def label = "worker-${UUID.randomUUID().toString()}"
 def VERSION = ""
 def SOURCE_LANG = ""
 def SOURCE_ROOT = ""
-def BASE_DOMAIN = ""
-def REGISTRY = ""
 properties([
   buildDiscarder(logRotator(daysToKeepStr: "60", numToKeepStr: "30"))
 ])
@@ -37,7 +35,6 @@ podTemplate(label: label, containers: [
         VERSION = pipeline.version
         SOURCE_LANG = pipeline.source_lang
         SOURCE_ROOT = pipeline.source_root
-        REGISTRY = pipeline.registry
 
         if (!BASE_DOMAIN) {
           BASE_DOMAIN = pipeline.base_domain
