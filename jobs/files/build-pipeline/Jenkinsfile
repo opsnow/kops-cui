@@ -35,10 +35,10 @@ podTemplate(label: label, containers: [
         pipeline.scan(IMAGE_NAME, BRANCH_NAME)
 
         VERSION = pipeline.version
-        REGISTRY = pipeline.registry
         SOURCE_LANG = pipeline.source_lang
         SOURCE_ROOT = pipeline.source_root
         BASE_DOMAIN = pipeline.base_domain
+        REGISTRY = pipeline.registry
 
         if (!SLACK_TOKEN) {
           SLACK_TOKEN = pipeline.slack_token
@@ -83,11 +83,8 @@ podTemplate(label: label, containers: [
     if (BRANCH_NAME != "master") {
       stage("Development") {
         container("builder") {
-          def NAMESPACE = "development"
-
-          pipeline.draft_up(IMAGE_NAME, NAMESPACE, CLUSTER, BASE_DOMAIN)
-
-          deploy_success(IMAGE_NAME, VERSION, NAMESPACE, BASE_DOMAIN)
+          pipeline.draft_up(IMAGE_NAME, "development", CLUSTER, BASE_DOMAIN)
+          deploy_success(IMAGE_NAME, VERSION, "development", BASE_DOMAIN)
         }
       }
     }
@@ -96,74 +93,55 @@ podTemplate(label: label, containers: [
         parallel(
           "Build Docker": {
             container("builder") {
-
               pipeline.build_image(IMAGE_NAME, VERSION)
-
             }
           },
           "Build Charts": {
             container("builder") {
-
               pipeline.build_chart(IMAGE_NAME, VERSION)
-
             }
           }
         )
       }
       stage("Staging") {
         container("builder") {
-          def NAMESPACE = "staging"
-
-          pipeline.helm_install(IMAGE_NAME, VERSION, NAMESPACE, CLUSTER, BASE_DOMAIN)
-
-          deploy_success(IMAGE_NAME, VERSION, NAMESPACE, BASE_DOMAIN)
+          pipeline.helm_install(IMAGE_NAME, VERSION, "staging", CLUSTER, BASE_DOMAIN)
+          deploy_success(IMAGE_NAME, VERSION, "staging", BASE_DOMAIN)
         }
       }
       stage("Confirm") {
         container("builder") {
-          def NAMESPACE = "production"
-          deploy_confirm(IMAGE_NAME, VERSION, NAMESPACE, RUN_DISPLAY_URL)
+          deploy_confirm(IMAGE_NAME, VERSION, "production", RUN_DISPLAY_URL)
           timeout(time: 60, unit: "MINUTES") {
-            input(message: "$IMAGE_NAME $VERSION to $NAMESPACE")
+            input(message: "$IMAGE_NAME $VERSION to production")
           }
         }
       }
       stage("Production") {
         container("builder") {
-          def NAMESPACE = "production"
-
-          pipeline.helm_install(IMAGE_NAME, VERSION, NAMESPACE, CLUSTER)
-
-          deploy_success(IMAGE_NAME, VERSION, NAMESPACE, BASE_DOMAIN)
+          pipeline.helm_install(IMAGE_NAME, VERSION, "production", CLUSTER, BASE_DOMAIN)
+          deploy_success(IMAGE_NAME, VERSION, "production", BASE_DOMAIN)
         }
       }
     }
   }
 }
 def checkout_failure(IMAGE_NAME, RUN_DISPLAY_URL) {
-  notify("danger", "Checkout Failure", "`$IMAGE_NAME`", "$env.JOB_NAME <$RUN_DISPLAY_URL|#$env.BUILD_NUMBER>")
+  notify("danger", "Checkout Failure", "`$IMAGE_NAME`", "$JOB_NAME <$RUN_DISPLAY_URL|#$BUILD_NUMBER>")
 }
 def build_failure(IMAGE_NAME, RUN_DISPLAY_URL) {
-  notify("danger", "Build Failure", "`$IMAGE_NAME`", "$env.JOB_NAME <$RUN_DISPLAY_URL|#$env.BUILD_NUMBER>")
+  notify("danger", "Build Failure", "`$IMAGE_NAME`", "$JOB_NAME <$RUN_DISPLAY_URL|#$BUILD_NUMBER>")
 }
 def build_success(IMAGE_NAME, VERSION, RUN_DISPLAY_URL) {
-  notify("good", "Build Success", "`$IMAGE_NAME` `$VERSION` :heavy_check_mark:", "$env.JOB_NAME <$RUN_DISPLAY_URL|#$env.BUILD_NUMBER>")
+  notify("good", "Build Success", "`$IMAGE_NAME` `$VERSION` :heavy_check_mark:", "$JOB_NAME <$RUN_DISPLAY_URL|#$BUILD_NUMBER>")
 }
-def deploy_confirm(IMAGE_NAME, VERSION, STAGE, RUN_DISPLAY_URL) {
-  notify("warning", "Deply Confirm", "`$IMAGE_NAME` `$VERSION` :rocket: `$STAGE`", "$env.JOB_NAME <$RUN_DISPLAY_URL|#$env.BUILD_NUMBER>")
+def deploy_confirm(IMAGE_NAME, VERSION, NAMESPACE, RUN_DISPLAY_URL) {
+  notify("warning", "Deply Confirm", "`$IMAGE_NAME` `$VERSION` :rocket: `$NAMESPACE`", "$JOB_NAME <$RUN_DISPLAY_URL|#$BUILD_NUMBER>")
 }
-def deploy_success(IMAGE_NAME, VERSION, STAGE, BASE_DOMAIN) {
-  def SEE="https://$IMAGE_NAME-$STAGE.$BASE_DOMAIN"
-  notify("good", "Deply Success", "`$IMAGE_NAME` `$VERSION` :satellite: `$STAGE`", "see <$SEE|$env.IMAGE_NAME-$STAGE>")
+def deploy_success(IMAGE_NAME, VERSION, NAMESPACE, BASE_DOMAIN) {
+  def LINK="https://$IMAGE_NAME-$NAMESPACE.$BASE_DOMAIN"
+  notify("good", "Deply Success", "`$IMAGE_NAME` `$VERSION` :satellite: `$NAMESPACE`", "see <$LINK|$IMAGE_NAME-$NAMESPACE>")
 }
 def notify(COLOR, TITLE, MESSAGE, FOOTER) {
-  try {
-    if (SLACK_TOKEN) {
-      sh """
-        curl -sL toast.sh/helper/slack.sh | bash -s -- --token='$SLACK_TOKEN' \
-             --color='$COLOR' --title='$TITLE' --footer='$FOOTER' '$MESSAGE'
-      """
-    }
-  } catch (ignored) {
-  }
+  pipeline.notify(SLACK_TOKEN, COLOR, TITLE, MESSAGE, FOOTER)
 }

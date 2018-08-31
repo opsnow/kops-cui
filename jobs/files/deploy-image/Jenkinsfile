@@ -19,7 +19,6 @@ podTemplate(label: label, containers: [
         if (!BASE_DOMAIN) {
           BASE_DOMAIN = pipeline.base_domain
         }
-
         if (!SLACK_TOKEN) {
           SLACK_TOKEN = pipeline.slack_token
         }
@@ -27,26 +26,16 @@ podTemplate(label: label, containers: [
     }
     stage("Deploy") {
       container("builder") {
-
         pipeline.helm_install(IMAGE_NAME, VERSION, NAMESPACE, CLUSTER, BASE_DOMAIN)
-
-        deploy_success(IMAGE_NAME, VERSION, NAMESPACE, BASE_DOMAIN)
+        deploy_success(IMAGE_NAME, VERSION, NAMESPACE, CLUSTER, BASE_DOMAIN)
       }
     }
   }
 }
-def deploy_success(IMAGE_NAME, VERSION, STAGE, BASE_DOMAIN) {
-  def SEE="https://$IMAGE_NAME-$STAGE.$BASE_DOMAIN"
-  notify("good", "Deply Success", "`$IMAGE_NAME` `$VERSION` :satellite: `$STAGE`", "see <$SEE|$env.IMAGE_NAME-$STAGE>")
+def deploy_success(IMAGE_NAME, VERSION, NAMESPACE, CLUSTER, BASE_DOMAIN) {
+  def LINK="https://$IMAGE_NAME-$NAMESPACE.$BASE_DOMAIN"
+  notify("good", "Deply Success", "`$IMAGE_NAME` `$VERSION` :satellite: `$NAMESPACE`", "see <$LINK|$IMAGE_NAME-$NAMESPACE-$CLUSTER>")
 }
 def notify(COLOR, TITLE, MESSAGE, FOOTER) {
-  try {
-    if (SLACK_TOKEN) {
-      sh """
-        curl -sL toast.sh/helper/slack.sh | bash -s -- --token='$SLACK_TOKEN' \
-             --color='$COLOR' --title='$TITLE' --footer='$FOOTER' '$MESSAGE'
-      """
-    }
-  } catch (ignored) {
-  }
+  pipeline.notify(SLACK_TOKEN, COLOR, TITLE, MESSAGE, FOOTER)
 }
