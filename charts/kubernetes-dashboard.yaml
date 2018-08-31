@@ -6,16 +6,16 @@ nameOverride: kubernetes-dashboard
 #   - --insecure-port=9090
 
 service:
-  type: LoadBalancer
+  type: SERVICE_TYPE
   externalPort: 443
 
-# ingress:
-#   enabled: INGRESS_ENABLED
-#   annotations:
-#     kubernetes.io/ingress.class: nginx
-#   path: /
-#   hosts:
-#     - ingress.domain.com
+ingress:
+  enabled: INGRESS_ENABLED
+  annotations:
+    kubernetes.io/ingress.class: nginx
+  path: /
+  hosts:
+    - INGRESS_DOMAIN
 
 rbac:
   create: true
