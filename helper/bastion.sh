@@ -36,7 +36,6 @@ KUBECTL=
 KOPS=
 HELM=
 DRAFT=
-SKAFFOLD=
 ISTIOCTL=
 
 mkdir -p ~/.kops-cui
@@ -179,52 +178,31 @@ title "# install draft..."
 
 draft version --short
 
-# skaffold
-echo "================================================================================"
-title "# install skaffold..."
+# # istioctl
+# echo "================================================================================"
+# title "# install istioctl..."
 
-#if [ "${OS_TYPE}" == "brew" ]; then
-#    command -v skaffold > /dev/null || brew install skaffold
-#else
-    VERSION=$(curl -s https://api.github.com/repos/GoogleContainerTools/skaffold/releases/latest | jq -r '.tag_name')
+# # if [ "${OS_TYPE}" == "brew" ]; then
+# #     command -v istioctl > /dev/null || brew install istioctl
+# # else
+#     VERSION=$(curl -s https://api.github.com/repos/istio/istio/releases/latest | jq -r '.tag_name')
 
-    if [ "${SKAFFOLD}" != "${VERSION}" ]; then
-        title " ${SKAFFOLD} >> ${VERSION}"
+#     if [ "${ISTIOCTL}" != "${VERSION}" ]; then
+#         title " ${ISTIOCTL} >> ${VERSION}"
 
-        curl -LO https://storage.googleapis.com/skaffold/releases/${VERSION}/skaffold-${OS_NAME}-amd64
-        chmod +x skaffold-${OS_NAME}-amd64 && sudo mv skaffold-${OS_NAME}-amd64 /usr/local/bin/skaffold
+#         if [ "${OS_NAME}" == "darwin" ]; then
+#             ISTIO_OS="osx"
+#         else
+#             ISTIO_OS="${OS_NAME}"
+#         fi
+#         curl -L https://github.com/istio/istio/releases/download/${VERSION}/istio-${VERSION}-${ISTIO_OS}.tar.gz | tar xz
+#         sudo mv istio-${VERSION}/bin/istioctl /usr/local/bin/istioctl && rm -rf istio-${VERSION}
 
-        SKAFFOLD="${VERSION}"
-    fi
-#fi
+#         ISTIOCTL="${VERSION}"
+#     fi
+# # fi
 
-skaffold version
-
-# istioctl
-echo "================================================================================"
-title "# install istioctl..."
-
-# if [ "${OS_TYPE}" == "brew" ]; then
-#     command -v istioctl > /dev/null || brew install istioctl
-# else
-    VERSION=$(curl -s https://api.github.com/repos/istio/istio/releases/latest | jq -r '.tag_name')
-
-    if [ "${ISTIOCTL}" != "${VERSION}" ]; then
-        title " ${ISTIOCTL} >> ${VERSION}"
-
-        if [ "${OS_NAME}" == "darwin" ]; then
-            ISTIO_OS="osx"
-        else
-            ISTIO_OS="${OS_NAME}"
-        fi
-        curl -L https://github.com/istio/istio/releases/download/${VERSION}/istio-${VERSION}-${ISTIO_OS}.tar.gz | tar xz
-        sudo mv istio-${VERSION}/bin/istioctl /usr/local/bin/istioctl && rm -rf istio-${VERSION}
-
-        ISTIOCTL="${VERSION}"
-    fi
-# fi
-
-istioctl version --short
+# istioctl version --short
 
 echo "================================================================================"
 title "# clean all..."
@@ -246,7 +224,6 @@ echo "KUBECTL=\"${KUBECTL}\"" >> ${CONFIG}
 echo "KOPS=\"${KOPS}\"" >> ${CONFIG}
 echo "HELM=\"${HELM}\"" >> ${CONFIG}
 echo "DRAFT=\"${DRAFT}\"" >> ${CONFIG}
-echo "SKAFFOLD=\"${SKAFFOLD}\"" >> ${CONFIG}
 echo "ISTIOCTL=\"${ISTIOCTL}\"" >> ${CONFIG}
 
 title "# Done."
