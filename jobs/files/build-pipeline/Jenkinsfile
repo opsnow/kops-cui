@@ -124,7 +124,7 @@ podTemplate(label: label, containers: [
       stage("Deploy STAGE") {
         container("builder") {
           pipeline.helm_install(IMAGE_NAME, VERSION, "stage", BASE_DOMAIN, CLUSTER)
-          deploy_success(SLACK_TOKEN, "Deploy STAGE", IMAGE_NAME, VERSION, "stage", BASE_DOMAIN)
+          success(SLACK_TOKEN, "Deploy STAGE", IMAGE_NAME, VERSION, "stage", BASE_DOMAIN)
         }
       }
     }
