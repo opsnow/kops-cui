@@ -13,7 +13,7 @@ podTemplate(label: label, containers: [
   node(label) {
     stage("Prepare") {
       container("builder") {
-        pipeline.scan(IMAGE_NAME)
+        pipeline.prepare()
 
         if (!SLACK_TOKEN) {
           SLACK_TOKEN = pipeline.slack_token
@@ -23,19 +23,35 @@ podTemplate(label: label, containers: [
     stage("Remove") {
       container("builder") {
         pipeline.helm_delete(IMAGE_NAME, NAMESPACE, CLUSTER)
-        remove_success(IMAGE_NAME, NAMESPACE, CLUSTER)
+        success(IMAGE_NAME, NAMESPACE, CLUSTER)
       }
     }
   }
 }
-def remove_success(name, namespace, cluster) {
-  notify("warning", "Remove Success", "`$name` :boom: `$namespace` :earth_asia: `$cluster`", "$JOB_NAME <$RUN_DISPLAY_URL|#$BUILD_NUMBER>")
+def failure(token = "", type = "", name = "") {
+  slack("$token", "danger", "$type Failure", "`$name`", "$JOB_NAME <$RUN_DISPLAY_URL|#$BUILD_NUMBER>")
 }
-def notify(color, title, message, footer) {
+def success(token = "", type = "", name = "", version = "", namespace = "", base_domain = "", cluster = "") {
+  if (cluster) {
+    def link = "https://$name-$namespace.$base_domain"
+    slack("$token", "good", "$type Success", "`$name` `$version` :satellite: `$namespace` :earth_asia: `$cluster`", "$JOB_NAME <$RUN_DISPLAY_URL|#$BUILD_NUMBER> : <$link|$name-$namespace>")
+  } else if (base_domain) {
+    def link = "https://$name-$namespace.$base_domain"
+    slack("$token", "good", "$type Success", "`$name` `$version` :satellite: `$namespace`", "$JOB_NAME <$RUN_DISPLAY_URL|#$BUILD_NUMBER> : <$link|$name-$namespace>")
+  } else if (namespace) {
+    slack("$token", "good", "$type Success", "`$name` `$version` :rocket: `$namespace`", "$JOB_NAME <$RUN_DISPLAY_URL|#$BUILD_NUMBER>")
+  } else {
+    slack("$token", "good", "$type Success", "`$name` `$version` :heavy_check_mark:", "$JOB_NAME <$RUN_DISPLAY_URL|#$BUILD_NUMBER>")
+  }
+}
+def proceed(token = "", type = "", name = "", version = "", namespace = "") {
+  slack("$token", "warning", "$type Proceed?", "`$name` `$version` :rocket: `$namespace`", "$JOB_NAME <$RUN_DISPLAY_URL|#$BUILD_NUMBER>")
+}
+def slack(token = "", color = "", title = "", message = "", footer = "") {
   try {
-    // pipeline.slack(SLACK_TOKEN, color, title, message, footer)
+    // pipeline.slack("$token", "$color", "$title", "$message", "$footer")
     sh """
-      curl -sL toast.sh/helper/slack.sh | bash -s -- --token='$SLACK_TOKEN' \
+      curl -sL toast.sh/helper/slack.sh | bash -s -- --token='$token' \
       --color='$color' --title='$title' --footer='$footer' '$message'
     """
   } catch (ignored) {
