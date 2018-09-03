@@ -187,7 +187,9 @@ logo() {
 }
 
 title() {
-    tput clear
+    if [ -z ${TPUT} ]; then
+        tput clear
+    fi
 
     echo
     echo
