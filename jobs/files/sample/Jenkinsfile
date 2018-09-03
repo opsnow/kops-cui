@@ -54,16 +54,12 @@ podTemplate(label: label, containers: [
     }
     stage("Run helm") {
       container("builder") {
-
         pipeline.helm_init()
-
       }
     }
     stage("Run draft") {
       container("builder") {
-
         pipeline.draft_init()
-
       }
     }
     stage("End") {
