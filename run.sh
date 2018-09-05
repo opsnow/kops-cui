@@ -1420,7 +1420,7 @@ helm_nginx_ingress() {
     fi
 
     # chart version
-    CHART_VERSION=$(cat ${CHART} | | grep chart-version | awk '{print $3}')
+    CHART_VERSION=$(cat ${CHART} | grep chart-version | awk '{print $3}')
 
     # helm install
     if [ -z ${CHART_VERSION} ]; then
@@ -1496,7 +1496,7 @@ helm_apply() {
     fi
 
     # chart version
-    CHART_VERSION=$(cat ${CHART} | | grep chart-version | awk '{print $3}')
+    CHART_VERSION=$(cat ${CHART} | grep chart-version | awk '{print $3}')
 
     # helm install
     if [ -z ${CHART_VERSION} ]; then
