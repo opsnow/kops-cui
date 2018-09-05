@@ -5,6 +5,8 @@ rbac:
 
 Persistence:
   Enabled: true
+  AccessMode: ReadWriteOnce
+  Size: 8Gi
   #:EFS:StorageClass: "efs"
 
 # Agent:
@@ -29,4 +31,4 @@ Master:
     - credentials-binding:latest
     - kubernetes-credentials-provider:latest
     - pipeline-github-lib:latest
-    - git:latest
+    - script-security:1.44

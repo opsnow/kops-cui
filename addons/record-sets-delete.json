@@ -2,7 +2,10 @@
   "Changes": [
     {
       "Action": "DELETE",
-      "ResourceRecordSet": "DOMAIN"
+      "ResourceRecordSet": {
+        "Name": "DOMAIN",
+        "Type": "CNAME"
+      }
     }
   ]
 }
