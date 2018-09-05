@@ -1167,73 +1167,6 @@ delete_record() {
     fi
 }
 
-helm_nginx_ingress() {
-    APP_NAME="nginx-ingress"
-    NAMESPACE=${1:-kube-ingress}
-
-    create_namespace ${NAMESPACE}
-
-    helm_check
-
-    ROOT_DOMAIN=
-    BASE_DOMAIN=
-
-    read_root_domain
-
-    if [ ! -z ${ROOT_DOMAIN} ]; then
-        WORD=$(echo ${KOPS_CLUSTER_NAME} | cut -d'.' -f1)
-
-        DEFAULT="${WORD}.${ROOT_DOMAIN}"
-        question "Enter your ingress domain [${DEFAULT}] : "
-
-        BASE_DOMAIN=${ANSWER:-${DEFAULT}}
-    fi
-
-    CHART=$(mktemp /tmp/kops-cui-${APP_NAME}.XXXXXX)
-    get_template charts/${APP_NAME}.yaml ${CHART}
-
-    if [ ! -z ${BASE_DOMAIN} ]; then
-        get_ssl_cert_arn
-
-        if [ -z ${SSL_CERT_ARN} ]; then
-            set_record_cname
-            echo
-        fi
-        if [ -z ${SSL_CERT_ARN} ]; then
-            _error "Certificate ARN does not exists. [*.${BASE_DOMAIN}][${REGION}]"
-        fi
-
-        _result "CertificateArn: ${SSL_CERT_ARN}"
-        echo
-
-        sed -i -e "s@aws-load-balancer-ssl-cert:.*@aws-load-balancer-ssl-cert: ${SSL_CERT_ARN}@" ${CHART}
-    fi
-
-    helm upgrade --install ${APP_NAME} stable/${APP_NAME} --namespace ${NAMESPACE} -f ${CHART}
-
-    waiting 2
-
-    helm history ${APP_NAME}
-    echo
-    kubectl get pod,svc -n ${NAMESPACE}
-    echo
-
-    _result "Pending ELB..."
-
-    if [ -z ${BASE_DOMAIN} ]; then
-        get_ingress_nip_io
-        echo
-    else
-        get_ingress_elb_name
-        echo
-
-        set_record_alias
-        echo
-    fi
-
-    save_kops_config
-}
-
 isEFSAvailable() {
     FILE_SYSTEMS=$(aws efs describe-file-systems --creation-token ${KOPS_CLUSTER_NAME} --region ${REGION})
     FILE_SYSTEM_LENGH=$(echo ${FILE_SYSTEMS} | jq -r '.FileSystems | length')
@@ -1442,6 +1375,85 @@ helm_efs_provisioner() {
     save_kops_config
 }
 
+helm_nginx_ingress() {
+    APP_NAME="nginx-ingress"
+    NAMESPACE=${1:-kube-ingress}
+
+    create_namespace ${NAMESPACE}
+
+    helm_check
+
+    ROOT_DOMAIN=
+    BASE_DOMAIN=
+
+    read_root_domain
+
+    # ingress domain
+    if [ ! -z ${ROOT_DOMAIN} ]; then
+        WORD=$(echo ${KOPS_CLUSTER_NAME} | cut -d'.' -f1)
+
+        DEFAULT="${WORD}.${ROOT_DOMAIN}"
+        question "Enter your ingress domain [${DEFAULT}] : "
+
+        BASE_DOMAIN=${ANSWER:-${DEFAULT}}
+    fi
+
+    CHART=$(mktemp /tmp/kops-cui-${APP_NAME}.XXXXXX)
+    get_template charts/${APP_NAME}.yaml ${CHART}
+
+    # certificate
+    if [ ! -z ${BASE_DOMAIN} ]; then
+        get_ssl_cert_arn
+
+        if [ -z ${SSL_CERT_ARN} ]; then
+            set_record_cname
+            echo
+        fi
+        if [ -z ${SSL_CERT_ARN} ]; then
+            _error "Certificate ARN does not exists. [*.${BASE_DOMAIN}][${REGION}]"
+        fi
+
+        _result "CertificateArn: ${SSL_CERT_ARN}"
+        echo
+
+        sed -i -e "s@aws-load-balancer-ssl-cert:.*@aws-load-balancer-ssl-cert: ${SSL_CERT_ARN}@" ${CHART}
+    fi
+
+    # chart version
+    CHART_VERSION=$(cat ${CHART} | | grep chart-version | awk '{print $3}')
+
+    # helm install
+    if [ -z ${CHART_VERSION} ]; then
+        helm upgrade --install ${APP_NAME} stable/${APP_NAME} --namespace ${NAMESPACE} \
+                     --values ${CHART}
+    else
+        helm upgrade --install ${APP_NAME} stable/${APP_NAME} --namespace ${NAMESPACE} \
+                     --values ${CHART} --version ${CHART_VERSION}
+    fi
+
+    waiting 2
+
+    helm history ${APP_NAME}
+    echo
+    kubectl get pod,svc -n ${NAMESPACE}
+    echo
+
+    _result "Pending ELB..."
+
+    if [ -z ${BASE_DOMAIN} ]; then
+        get_ingress_nip_io
+        echo
+    else
+        get_ingress_elb_name
+        echo
+
+        set_record_alias
+        echo
+    fi
+
+    save_kops_config
+}
+
 helm_apply() {
     APP_NAME=${1}
     NAMESPACE=${2:-default}
@@ -1464,6 +1476,7 @@ helm_apply() {
     sed -i -e "s/CLUSTER_NAME/${KOPS_CLUSTER_NAME}/" ${CHART}
     sed -i -e "s/AWS_REGION/${REGION}/" ${CHART}
 
+    # ingress
     if [ ! -z ${INGRESS} ]; then
         if [ -z ${BASE_DOMAIN} ] || [ "${INGRESS}" == "false" ]; then
             sed -i -e "s/SERVICE_TYPE/LoadBalancer/" ${CHART}
@@ -1477,6 +1490,7 @@ helm_apply() {
         fi
     fi
 
+    # efs
     if [ ! -z ${EFS_FILE_SYSTEM_ID} ]; then
         sed -i -e "s/#:EFS://" ${CHART}
     fi
@@ -1484,6 +1498,7 @@ helm_apply() {
     # chart version
     CHART_VERSION=$(cat ${CHART} | | grep chart-version | awk '{print $3}')
 
+    # helm install
     if [ -z ${CHART_VERSION} ]; then
         helm upgrade --install ${APP_NAME} stable/${APP_NAME} --namespace ${NAMESPACE} \
                      --values ${CHART}
