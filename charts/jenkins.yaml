@@ -29,4 +29,3 @@ Master:
     - credentials-binding:latest
     - kubernetes-credentials-provider:latest
     - pipeline-github-lib:latest
-    - git:latest
