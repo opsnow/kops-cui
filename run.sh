@@ -1100,7 +1100,7 @@ set_record_cname() {
     CERT_DNS_VALUE=$(aws acm describe-certificate --certificate-arn ${SSL_CERT_ARN} | jq -r '.Certificate.DomainValidationOptions[].ResourceRecord | .Value')
 
     # record sets
-    RECORD=/tmp/record-sets-cname.json
+    RECORD=$(mktemp /tmp/kops-cui-record-sets-cname.XXXXXX.json)
     get_template addons/record-sets-cname.json ${RECORD}
 
     # replace
@@ -1128,7 +1128,7 @@ set_record_alias() {
     ELB_DNS_NAME=$(aws elb describe-load-balancers --load-balancer-name ${ELB_NAME} | jq -r '.LoadBalancerDescriptions[] | .DNSName')
 
     # record sets
-    RECORD=$(mktemp /tmp/kops-cui-record-sets-alias.XXXXXX)
+    RECORD=$(mktemp /tmp/kops-cui-record-sets-alias.XXXXXX.json)
     get_template addons/record-sets-alias.json ${RECORD}
 
     # replace
@@ -1153,7 +1153,7 @@ delete_record() {
     ZONE_ID=$(aws route53 list-hosted-zones | ROOT_DOMAIN="${ROOT_DOMAIN}." jq -r '.HostedZones[] | select(.Name==env.ROOT_DOMAIN) | .Id' | cut -d'/' -f3)
 
     # record sets
-    RECORD=$(mktemp /tmp/kops-cui-record-sets-delete.XXXXXX)
+    RECORD=$(mktemp /tmp/kops-cui-record-sets-delete.XXXXXX.json)
     get_template addons/record-sets-delete.json ${RECORD}
 
     # replace
@@ -1356,7 +1356,7 @@ helm_efs_provisioner() {
     APP_NAME="efs-provisioner"
     NAMESPACE="kube-system"
 
-    CHART=$(mktemp /tmp/kops-cui-${APP_NAME}.XXXXXX)
+    CHART=$(mktemp /tmp/kops-cui-${APP_NAME}.XXXXXX.yaml)
     get_template charts/${APP_NAME}.yaml ${CHART}
 
     sed -i -e "s/CLUSTER_NAME/${KOPS_CLUSTER_NAME}/" ${CHART}
@@ -1398,7 +1398,7 @@ helm_nginx_ingress() {
         BASE_DOMAIN=${ANSWER:-${DEFAULT}}
     fi
 
-    CHART=$(mktemp /tmp/kops-cui-${APP_NAME}.XXXXXX)
+    CHART=$(mktemp /tmp/kops-cui-${APP_NAME}.XXXXXX.yaml)
     get_template charts/${APP_NAME}.yaml ${CHART}
 
     # certificate
@@ -1464,7 +1464,7 @@ helm_apply() {
 
     helm_check
 
-    CHART=$(mktemp /tmp/kops-cui-${APP_NAME}.XXXXXX)
+    CHART=$(mktemp /tmp/kops-cui-${APP_NAME}.XXXXXX.yaml)
     get_template charts/${APP_NAME}.yaml ${CHART}
 
     # for jenkins jobs
@@ -1511,7 +1511,7 @@ helm_apply() {
 
     helm history ${APP_NAME}
     echo
-    kubectl get pod,svc,ing -n ${NAMESPACE}
+    kubectl get pod,svc,ing,pvc -n ${NAMESPACE}
 
     if [ ! -z ${INGRESS} ]; then
         if [ -z ${BASE_DOMAIN} ] || [ "${INGRESS}" == "false" ]; then
@@ -1633,8 +1633,8 @@ apply_sample() {
         fi
     fi
 
-    SAMPLE=$(mktemp /tmp/kops-cui-${APP_NAME}.XXXXXX)
-    get_template sample/${APP_NAME}.yml ${SAMPLE}
+    SAMPLE=$(mktemp /tmp/kops-cui-${APP_NAME}.XXXXXX.yaml)
+    get_template sample/${APP_NAME}.yaml ${SAMPLE}
 
     if [ ! -z ${INGRESS} ]; then
         if [ -z ${BASE_DOMAIN} ]; then

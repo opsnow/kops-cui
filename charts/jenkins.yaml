@@ -1,4 +1,4 @@
-# chart-version: 0.16.21
+# chart-version: 0.16.20
 
 # nameOverride: jenkins
 
@@ -7,6 +7,8 @@ rbac:
 
 Persistence:
   Enabled: true
+  AccessMode: ReadWriteOnce
+  Size: 8Gi
   #:EFS:StorageClass: "efs"
 
 # Agent:
@@ -31,3 +33,4 @@ Master:
     - credentials-binding:latest
     - kubernetes-credentials-provider:latest
     - pipeline-github-lib:latest
+    - script-security:1.44
