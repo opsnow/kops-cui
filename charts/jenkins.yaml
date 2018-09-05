@@ -23,10 +23,10 @@ Master:
   HostName: INGRESS_DOMAIN
   InstallPlugins:
     - blueocean:latest
-    - ghprb:latest
     - kubernetes:latest
     - workflow-job:latest
     - workflow-aggregator:latest
     - credentials-binding:latest
     - kubernetes-credentials-provider:latest
     - pipeline-github-lib:latest
+    - git:latest
