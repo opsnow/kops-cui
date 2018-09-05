@@ -23,6 +23,13 @@ Master:
   JavaOpts: "-Dorg.apache.commons.jelly.tags.fmt.timeZone=Asia/Seoul"
   ServiceType: SERVICE_TYPE
   HostName: INGRESS_DOMAIN
+  # Ingress:
+  #   ApiVersion: extensions/v1beta1
+  #   kubernetes.io/ingress.class: nginx
+  #   TLS:
+  #   - secretName: INGRESS_DOMAIN
+  #     hosts:
+  #       - INGRESS_DOMAIN
   InstallPlugins:
     - blueocean:latest
     - kubernetes:latest
@@ -32,3 +39,4 @@ Master:
     - kubernetes-credentials-provider:latest
     - pipeline-github-lib:latest
     - script-security:1.44
+  # Jobs: -- auto generate -- see: jobs/replace.sh

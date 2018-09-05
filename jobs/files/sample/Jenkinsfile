@@ -30,6 +30,7 @@ podTemplate(label: label, containers: [
           whoami
           uname -a
         """
+        pipeline.prepare()
       }
 
       pipeline.scan("sample")

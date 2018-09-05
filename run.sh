@@ -2,6 +2,8 @@
 
 SHELL_DIR=$(dirname $0)
 
+THIS_VERSION=v0.0.0
+
 OS_NAME="$(uname | awk '{print tolower($0)}')"
 
 L_PAD="$(printf %3s)"
@@ -1525,7 +1527,7 @@ helm_apply() {
 }
 
 helm_remove() {
-    helm ls
+    helm ls --all
 
     question "Enter chart name : "
 
