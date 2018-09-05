@@ -1,3 +1,5 @@
+# chart-version: 0.16.21
+
 # nameOverride: jenkins
 
 rbac:

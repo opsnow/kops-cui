@@ -1481,7 +1481,16 @@ helm_apply() {
         sed -i -e "s/#:EFS://" ${CHART}
     fi
 
-    helm upgrade --install ${APP_NAME} stable/${APP_NAME} --namespace ${NAMESPACE} -f ${CHART}
+    # chart version
+    CHART_VERSION=$(cat ${CHART} | | grep chart-version | awk '{print $3}')
+
+    if [ -z ${CHART_VERSION} ]; then
+        helm upgrade --install ${APP_NAME} stable/${APP_NAME} --namespace ${NAMESPACE} \
+                     --values ${CHART}
+    else
+        helm upgrade --install ${APP_NAME} stable/${APP_NAME} --namespace ${NAMESPACE} \
+                     --values ${CHART} --version ${CHART_VERSION}
+    fi
 
     waiting 2
 
