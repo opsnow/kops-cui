@@ -396,8 +396,8 @@ create_menu() {
     _echo "5. network-cidr=${network_cidr}"
     _echo "6. networking=${networking}"
     _echo "7. topology=${topology}"
-    # _echo "8. dns-zone=${dns_zone}"
-    _echo "8. vpc=${vpc}"
+    _echo "8. dns-zone=${dns_zone}"
+    _echo "9. vpc=${vpc}"
 
     echo
     _echo "c. create"
@@ -444,11 +444,15 @@ create_menu() {
             create_menu
             ;;
         8)
+            question "Enter dns-zone [${dns_zone}] : "
+            dns_zone=${ANSWER:-${dns_zone}}
+            create_menu
+            ;;
+        9)
             question "Enter vpc [${vpc}] : "
             vpc=${ANSWER:-${vpc}}
             create_menu
             ;;
-
         c)
             KOPS_TERRAFORM=
 
@@ -865,6 +869,7 @@ kops_create() {
     [ -z ${zones} ]        || echo "    --zones=${zones} "               >> ${KOPS_CREATE}
     [ -z ${networking} ]   || echo "    --networking=${networking} "     >> ${KOPS_CREATE}
     [ -z ${topology} ]     || echo "    --topology=${topology} "         >> ${KOPS_CREATE}
+    [ -z ${dns_zone} ]     || echo "    --dns-zone=${dns_zone} "         >> ${KOPS_CREATE}
 
     if [ ! -z ${vpc} ]; then
         echo "    --vpc=${vpc} " >> ${KOPS_CREATE}
