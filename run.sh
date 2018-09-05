@@ -1527,7 +1527,7 @@ helm_apply() {
 }
 
 helm_remove() {
-    helm ls
+    helm ls --all
 
     question "Enter chart name : "
 
