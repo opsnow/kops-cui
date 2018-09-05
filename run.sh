@@ -455,7 +455,6 @@ create_menu() {
             ;;
         c)
             KOPS_TERRAFORM=
-
             save_kops_config
 
             kops_create
@@ -476,9 +475,6 @@ create_menu() {
             ;;
         t)
             KOPS_TERRAFORM=true
-
-            mkdir -p ${KOPS_CLUSTER_NAME}
-
             save_kops_config
 
             kops_create
@@ -688,9 +684,11 @@ get_kops_cluster() {
 }
 
 get_kops_config() {
-    mkdir -p ~/.kops-cui
+    CONFIG_PATH="~/.kops-cui"
 
-    CONFIG=~/.kops-cui/config
+    mkdir -p ${CONFIG_PATH}
+
+    CONFIG=${CONFIG_PATH}/config
 
     if [ -f ${CONFIG} ]; then
         . ${CONFIG}
@@ -700,13 +698,9 @@ get_kops_config() {
 read_kops_config() {
     COUNT=$(aws s3 ls s3://${KOPS_STATE_STORE} | grep ${KOPS_CLUSTER_NAME}.kops-cui | wc -l | xargs)
 
-    if [ "x${COUNT}" == "x0" ]; then
-        save_kops_config
-    else
+    if [ "x${COUNT}" != "x0" ]; then
         aws s3 cp s3://${KOPS_STATE_STORE}/${KOPS_CLUSTER_NAME}.kops-cui ${CONFIG} --quiet
     fi
-
-    # kops_export
 
     if [ -f ${CONFIG} ]; then
         . ${CONFIG}
@@ -722,6 +716,8 @@ save_kops_config() {
     echo "BASE_DOMAIN=${BASE_DOMAIN}" >> ${CONFIG}
     echo "EFS_FILE_SYSTEM_ID=${EFS_FILE_SYSTEM_ID}" >> ${CONFIG}
 
+    . ${CONFIG}
+
     if [ ! -z ${KOPS_CLUSTER_NAME} ]; then
         aws s3 cp ${CONFIG} s3://${KOPS_STATE_STORE}/${KOPS_CLUSTER_NAME}.kops-cui --quiet
     fi
@@ -736,8 +732,6 @@ clear_kops_config() {
     export EFS_FILE_SYSTEM_ID=
 
     save_kops_config
-
-    . ${CONFIG}
 }
 
 delete_kops_config() {
@@ -878,8 +872,12 @@ kops_create() {
     fi
 
     if [ ! -z ${KOPS_TERRAFORM} ]; then
-        echo "    --target=terraform "                   >> ${KOPS_CREATE}
-        echo "    --out=terraform-${KOPS_CLUSTER_NAME} " >> ${KOPS_CREATE}
+        OUT_PATH="terraform-${KOPS_CLUSTER_NAME}"
+
+        mkdir -p ${OUT_PATH}
+
+        echo "    --target=terraform " >> ${KOPS_CREATE}
+        echo "    --out=${OUT_PATH} "  >> ${KOPS_CREATE}
     fi
 
     cat ${KOPS_CREATE}
@@ -956,7 +954,7 @@ kops_export() {
 kops_delete() {
     delete_efs
 
-    delete_record
+    # delete_record
 
     kops delete cluster --name=${KOPS_CLUSTER_NAME} --state=s3://${KOPS_STATE_STORE} --yes
 
