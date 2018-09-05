@@ -134,7 +134,7 @@ else
     fi
 fi
 
-kops version | xargs | awk '{print $2}'
+kops version 2>&1 | grep Version | xargs | awk '{print $2}'
 
 # helm
 echo "================================================================================"
