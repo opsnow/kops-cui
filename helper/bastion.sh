@@ -113,7 +113,7 @@ else
     fi
 fi
 
-kubectl version --client --short
+kubectl version --client --short | xargs | awk '{print $3}'
 
 # kops
 echo "================================================================================"
@@ -134,7 +134,7 @@ else
     fi
 fi
 
-kops version
+kops version | xargs | awk '{print $2}'
 
 # helm
 echo "================================================================================"
@@ -155,7 +155,7 @@ else
     fi
 fi
 
-helm version --client --short
+helm version --client --short | xargs | awk '{print $2}'
 
 # draft
 echo "================================================================================"
@@ -176,7 +176,7 @@ title "# install draft..."
     fi
 #fi
 
-draft version --short
+draft version --short | xargs
 
 # # istioctl
 # echo "================================================================================"
@@ -202,7 +202,7 @@ draft version --short
 #     fi
 # # fi
 
-# istioctl version --short
+# istioctl version | grep "Version" | xargs | awk '{print $2}'
 
 echo "================================================================================"
 title "# clean all..."

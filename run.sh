@@ -1676,17 +1676,24 @@ get_node_zones() {
     fi
 }
 
-update_self() {
-    pushd ${SHELL_DIR}
-    git pull
-    popd
-}
-
 update_tools() {
     ${SHELL_DIR}/helper/bastion.sh
 }
 
+update_self() {
+    pushd ${SHELL_DIR}
+    git pull
+    popd
+
+    echo
+    _result "Please restart!"
+    echo
+    exit 0
+}
+
 kops_exit() {
+    rm -rf /tmp/kops-cui-*
+
     echo
     _result "Good bye!"
     echo
