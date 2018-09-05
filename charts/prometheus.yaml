@@ -9,3 +9,17 @@ server:
       kubernetes.io/ingress.class: nginx
     hosts:
       - INGRESS_DOMAIN
+  persistentVolume:
+    enabled: true
+    accessModes:
+      - ReadWriteOnce
+    size: 8Gi
+    #:EFS:storageClass: "efs"
+
+alertmanager:
+  persistentVolume:
+    enabled: true
+    accessModes:
+      - ReadWriteOnce
+    size: 2Gi
+    #:EFS:storageClass: "efs"

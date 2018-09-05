@@ -18,6 +18,7 @@ persistence:
   accessModes:
     - ReadWriteOnce
   size: 5Gi
+  #:EFS:storageClass: "efs"
 
 datasources:
   datasources.yaml:
