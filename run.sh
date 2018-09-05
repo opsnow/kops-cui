@@ -396,8 +396,8 @@ create_menu() {
     _echo "5. network-cidr=${network_cidr}"
     _echo "6. networking=${networking}"
     _echo "7. topology=${topology}"
-    # _echo "8. dns-zone=${dns_zone}"
-    _echo "8. vpc=${vpc}"
+    _echo "8. dns-zone=${dns_zone}"
+    _echo "9. vpc=${vpc}"
 
     echo
     _echo "c. create"
@@ -444,29 +444,21 @@ create_menu() {
             create_menu
             ;;
         8)
+            question "Enter dns-zone [${dns_zone}] : "
+            dns_zone=${ANSWER:-${dns_zone}}
+            create_menu
+            ;;
+        9)
             question "Enter vpc [${vpc}] : "
             vpc=${ANSWER:-${vpc}}
             create_menu
             ;;
-
         c)
             KOPS_TERRAFORM=
+
             save_kops_config
 
-            kops create cluster \
-                --cloud=${cloud} \
-                --name=${KOPS_CLUSTER_NAME} \
-                --state=s3://${KOPS_STATE_STORE} \
-                --master-size=${master_size} \
-                --master-count=${master_count} \
-                --master-zones=${master_zones} \
-                --node-size=${node_size} \
-                --node-count=${node_count} \
-                --zones=${zones} \
-                --network-cidr=${network_cidr} \
-                --networking=${networking} \
-                --topology=${topology} \
-                --vpc=${vpc}
+            kops_create
 
             echo
             _result "Edit InstanceGroup for Cluster Autoscaler"
@@ -484,26 +476,12 @@ create_menu() {
             ;;
         t)
             KOPS_TERRAFORM=true
-            save_kops_config
 
             mkdir -p ${KOPS_CLUSTER_NAME}
 
-            kops create cluster \
-                --cloud=${cloud} \
-                --name=${KOPS_CLUSTER_NAME} \
-                --state=s3://${KOPS_STATE_STORE} \
-                --master-size=${master_size} \
-                --master-count=${master_count} \
-                --master-zones=${master_zones} \
-                --node-size=${node_size} \
-                --node-count=${node_count} \
-                --zones=${zones} \
-                --network-cidr=${network_cidr} \
-                --networking=${networking} \
-                --topology=${topology} \
-                --vpc=${vpc} \
-                --target=terraform \
-                --out=terraform-${KOPS_CLUSTER_NAME}
+            save_kops_config
+
+            kops_create
 
             press_enter
 
@@ -807,7 +785,7 @@ read_state_store() {
 }
 
 read_cluster_list() {
-    CLUSTER_LIST=/tmp/kops-cluster-list
+    CLUSTER_LIST=$(mktemp /tmp/kops-cui-kops-cluster-list.XXXXXX)
 
     kops get cluster --state=s3://${KOPS_STATE_STORE} > ${CLUSTER_LIST}
 
@@ -875,8 +853,43 @@ kops_get() {
     kops get --name=${KOPS_CLUSTER_NAME} --state=s3://${KOPS_STATE_STORE}
 }
 
+kops_create() {
+    KOPS_CREATE=$(mktemp /tmp/kops-cui-kops-create.XXXXXX)
+
+    echo "kops create cluster "                  >  ${KOPS_CREATE}
+    echo "    --cloud=${cloud} "                 >> ${KOPS_CREATE}
+    echo "    --name=${KOPS_CLUSTER_NAME} "      >> ${KOPS_CREATE}
+    echo "    --state=s3://${KOPS_STATE_STORE} " >> ${KOPS_CREATE}
+
+    [ -z ${master_size} ]  || echo "    --master-size=${master_size} "   >> ${KOPS_CREATE}
+    [ -z ${master_count} ] || echo "    --master-count=${master_count} " >> ${KOPS_CREATE}
+    [ -z ${master_zones} ] || echo "    --master-zones=${master_zones} " >> ${KOPS_CREATE}
+    [ -z ${node_size} ]    || echo "    --node-size=${node_size} "       >> ${KOPS_CREATE}
+    [ -z ${node_count} ]   || echo "    --node-count=${node_count} "     >> ${KOPS_CREATE}
+    [ -z ${zones} ]        || echo "    --zones=${zones} "               >> ${KOPS_CREATE}
+    [ -z ${networking} ]   || echo "    --networking=${networking} "     >> ${KOPS_CREATE}
+    [ -z ${topology} ]     || echo "    --topology=${topology} "         >> ${KOPS_CREATE}
+    [ -z ${dns_zone} ]     || echo "    --dns-zone=${dns_zone} "         >> ${KOPS_CREATE}
+
+    if [ ! -z ${vpc} ]; then
+        echo "    --vpc=${vpc} " >> ${KOPS_CREATE}
+    else
+        [ -z ${network_cidr} ] || echo "    --network-cidr=${network_cidr} " >> ${KOPS_CREATE}
+    fi
+
+    if [ ! -z ${KOPS_TERRAFORM} ]; then
+        echo "    --target=terraform "                   >> ${KOPS_CREATE}
+        echo "    --out=terraform-${KOPS_CLUSTER_NAME} " >> ${KOPS_CREATE}
+    fi
+
+    cat ${KOPS_CREATE}
+    echo
+
+    $(cat ${KOPS_CREATE})
+}
+
 kops_edit() {
-    IG_LIST=/tmp/kops-ig-list
+    IG_LIST=$(mktemp /tmp/kops-cui-kops-ig-list.XXXXXX)
 
     kops get ig --name=${KOPS_CLUSTER_NAME} --state=s3://${KOPS_STATE_STORE} > ${IG_LIST}
 
@@ -1032,7 +1045,7 @@ get_ingress_nip_io() {
 }
 
 read_root_domain() {
-    HOST_LIST=/tmp/hosted-zones
+    HOST_LIST=$(mktemp /tmp/kops-cui-hosted-zones.XXXXXX)
 
     aws route53 list-hosted-zones | jq -r '.HostedZones[] | .Name' > ${HOST_LIST}
 
@@ -1060,23 +1073,6 @@ read_root_domain() {
             fi
         fi
     fi
-}
-
-git_checkout() {
-    GIT_USER=$1
-    GIT_NAME=$2
-
-    if [ ! -d /tmp/${GIT_USER}/${GIT_NAME} ]; then
-        mkdir -p /tmp/${GIT_USER}
-        git clone https://github.com/${GIT_USER}/${GIT_NAME} /tmp/${GIT_USER}/${GIT_NAME}
-    fi
-
-    pushd /tmp/${GIT_USER}/${GIT_NAME}
-    if [ ! -z $3 ]; then
-        git checkout $3
-    fi
-    git pull
-    popd
 }
 
 get_ssl_cert_arn() {
@@ -1132,7 +1128,7 @@ set_record_alias() {
     ELB_DNS_NAME=$(aws elb describe-load-balancers --load-balancer-name ${ELB_NAME} | jq -r '.LoadBalancerDescriptions[] | .DNSName')
 
     # record sets
-    RECORD=/tmp/record-sets-alias.json
+    RECORD=$(mktemp /tmp/kops-cui-record-sets-alias.XXXXXX)
     get_template addons/record-sets-alias.json ${RECORD}
 
     # replace
@@ -1157,7 +1153,7 @@ delete_record() {
     ZONE_ID=$(aws route53 list-hosted-zones | ROOT_DOMAIN="${ROOT_DOMAIN}." jq -r '.HostedZones[] | select(.Name==env.ROOT_DOMAIN) | .Id' | cut -d'/' -f3)
 
     # record sets
-    RECORD=/tmp/record-sets-delete.json
+    RECORD=$(mktemp /tmp/kops-cui-record-sets-delete.XXXXXX)
     get_template addons/record-sets-delete.json ${RECORD}
 
     # replace
@@ -1193,7 +1189,7 @@ helm_nginx_ingress() {
         BASE_DOMAIN=${ANSWER:-${DEFAULT}}
     fi
 
-    CHART=/tmp/${APP_NAME}.yaml
+    CHART=$(mktemp /tmp/kops-cui-${APP_NAME}.XXXXXX)
     get_template charts/${APP_NAME}.yaml ${CHART}
 
     if [ ! -z ${BASE_DOMAIN} ]; then
@@ -1427,7 +1423,7 @@ helm_efs_provisioner() {
     APP_NAME="efs-provisioner"
     NAMESPACE="kube-system"
 
-    CHART=/tmp/${APP_NAME}.yaml
+    CHART=$(mktemp /tmp/kops-cui-${APP_NAME}.XXXXXX)
     get_template charts/${APP_NAME}.yaml ${CHART}
 
     sed -i -e "s/CLUSTER_NAME/${KOPS_CLUSTER_NAME}/" ${CHART}
@@ -1456,7 +1452,7 @@ helm_apply() {
 
     helm_check
 
-    CHART=/tmp/${APP_NAME}.yaml
+    CHART=$(mktemp /tmp/kops-cui-${APP_NAME}.XXXXXX)
     get_template charts/${APP_NAME}.yaml ${CHART}
 
     # for jenkins jobs
@@ -1613,7 +1609,7 @@ apply_sample() {
         fi
     fi
 
-    SAMPLE=/tmp/${APP_NAME}.yml
+    SAMPLE=$(mktemp /tmp/kops-cui-${APP_NAME}.XXXXXX)
     get_template sample/${APP_NAME}.yml ${SAMPLE}
 
     if [ ! -z ${INGRESS} ]; then
