@@ -1,0 +1,40 @@
+#
+# CircleCI 2.0
+#
+version: 2
+jobs:
+  build:
+    docker:
+      - image: circleci/python
+    working_directory: /tmp/workspace
+    steps:
+      - checkout
+      - run:
+          name: "Build"
+          command: |
+            ./package.sh ${CIRCLE_PROJECT_USERNAME} ${CIRCLE_PROJECT_REPONAME}
+      - persist_to_workspace:
+          root: /tmp/workspace
+          paths:
+            - target/*
+  release:
+    docker:
+      - image: circleci/golang
+    steps:
+      - attach_workspace:
+          at: workspace
+      - run:
+          name: "Release"
+          command: |
+            go get github.com/tcnksm/ghr
+            VERSION=$(cat workspace/target/VERSION)
+            ghr -t ${GITHUB_TOKEN} -u ${CIRCLE_PROJECT_USERNAME} -r ${CIRCLE_PROJECT_REPONAME} -c ${CIRCLE_SHA1} -delete ${VERSION} workspace/target/
+
+workflows:
+  version: 2
+  apply:
+    jobs:
+      - build
+      - release:
+          requires:
+            - build
