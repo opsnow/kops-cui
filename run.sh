@@ -1,12 +1,12 @@
 #!/bin/bash
 
-SHELL_DIR=$(dirname $0)
+OS_NAME="$(uname | awk '{print tolower($0)}')"
 
-DEBUG_MODE=$1
+SHELL_DIR=$(dirname $0)
 
 THIS_VERSION=v0.0.0
 
-OS_NAME="$(uname | awk '{print tolower($0)}')"
+DEBUG_MODE=$1
 
 L_PAD="$(printf %3s)"
 
@@ -215,6 +215,7 @@ run() {
     mkdir -p ~/.aws
 
     if [ ! -f ~/.ssh/id_rsa ]; then
+        _command "ssh-keygen -q -f ~/.ssh/id_rsa -N ''"
         ssh-keygen -q -f ~/.ssh/id_rsa -N ''
     fi
 
@@ -256,6 +257,15 @@ state_store() {
     save_kops_config
 
     get_kops_cluster
+
+    if [ "x${CLUSTER}" != "x0" ]; then
+        _command "kubectl config current-context"
+        KUBE_CLUSTER_NAME=$(kubectl config current-context)
+
+        if [ "${KOPS_CLUSTER_NAME}" != "${KUBE_CLUSTER_NAME}" ]; then
+            kops_export
+        fi
+    fi
 
     cluster_menu
 }
@@ -691,14 +701,6 @@ devops_menu() {
 get_kops_cluster() {
     _command "kops get --name=${KOPS_CLUSTER_NAME} --state=s3://${KOPS_STATE_STORE} | wc -l | xargs"
     CLUSTER=$(kops get --name=${KOPS_CLUSTER_NAME} --state=s3://${KOPS_STATE_STORE} | wc -l | xargs)
-
-    if [ "x${CLUSTER}" != "x0" ]; then
-        KUBE_CLUSTER_NAME=$(kubectl config current-context)
-
-        if [ "${KOPS_CLUSTER_NAME}" != "${KUBE_CLUSTER_NAME}" ]; then
-            kops_export
-        fi
-    fi
 }
 
 get_kops_config() {
@@ -765,7 +767,7 @@ clear_kops_config() {
 delete_kops_config() {
     if [ ! -z ${KOPS_CLUSTER_NAME} ]; then
         _command "aws s3 rm s3://${KOPS_STATE_STORE}/${KOPS_CLUSTER_NAME}.kops-cui"
-        aws s3 rm s3://${KOPS_STATE_STORE}/${KOPS_CLUSTER_NAME}.kops-cui
+        aws s3 rm s3://${KOPS_STATE_STORE}/${KOPS_CLUSTER_NAME}.kops-cui --quiet
     fi
 
     clear_kops_config
@@ -875,6 +877,7 @@ read_cluster_name() {
 }
 
 kops_get() {
+    _command "kops get --name=${KOPS_CLUSTER_NAME} --state=s3://${KOPS_STATE_STORE}"
     kops get --name=${KOPS_CLUSTER_NAME} --state=s3://${KOPS_STATE_STORE}
 }
 
@@ -920,6 +923,7 @@ kops_create() {
 kops_edit() {
     IG_LIST=$(mktemp /tmp/kops-cui-kops-ig-list.XXXXXX)
 
+    _command "kops get ig --name=${KOPS_CLUSTER_NAME} --state=s3://${KOPS_STATE_STORE}"
     kops get ig --name=${KOPS_CLUSTER_NAME} --state=s3://${KOPS_STATE_STORE} > ${IG_LIST}
 
     IDX=0
@@ -973,10 +977,13 @@ kops_rolling_update() {
 kops_validate() {
     _command "kops validate cluster --name=${KOPS_CLUSTER_NAME} --state=s3://${KOPS_STATE_STORE}"
     kops validate cluster --name=${KOPS_CLUSTER_NAME} --state=s3://${KOPS_STATE_STORE}
-
     echo
+
+    _command "kubectl get node -o wide"
     kubectl get node -o wide
     echo
+
+    _command "kubectl get pod -n kube-system"
     kubectl get pod -n kube-system
 }
 
@@ -992,6 +999,7 @@ kops_delete() {
 
     _command "kops delete cluster --name=${KOPS_CLUSTER_NAME} --state=s3://${KOPS_STATE_STORE} --yes"
     kops delete cluster --name=${KOPS_CLUSTER_NAME} --state=s3://${KOPS_STATE_STORE} --yes
+    echo
 
     # delete_record
 
@@ -1009,8 +1017,10 @@ get_elb_domain() {
     while [ 1 ]; do
         # ELB Domain 을 획득
         if [ -z $2 ]; then
+            _command "kubectl get svc --all-namespaces -o wide | grep LoadBalancer | grep $1 | awk '{print $5}' | head -1"
             ELB_DOMAIN=$(kubectl get svc --all-namespaces -o wide | grep LoadBalancer | grep $1 | awk '{print $5}' | head -1)
         else
+            _command "kubectl get svc -n $2 -o wide | grep LoadBalancer | grep $1 | awk '{print $4}' | head -1"
             ELB_DOMAIN=$(kubectl get svc -n $2 -o wide | grep LoadBalancer | grep $1 | awk '{print $4}' | head -1)
         fi
 
@@ -1039,6 +1049,7 @@ get_ingress_elb_name() {
     get_elb_domain "nginx-ingress"
     echo
 
+    _command "echo ${ELB_DOMAIN} | cut -d'-' -f1"
     ELB_NAME=$(echo ${ELB_DOMAIN} | cut -d'-' -f1)
 
     _result ${ELB_NAME}
@@ -1057,6 +1068,7 @@ get_ingress_nip_io() {
 
     IDX=0
     while [ 1 ]; do
+        _command "dig +short ${ELB_DOMAIN} | head -n 1"
         ELB_IP=$(dig +short ${ELB_DOMAIN} | head -n 1)
 
         if [ ! -z ${ELB_IP} ]; then
@@ -1082,6 +1094,7 @@ get_ingress_nip_io() {
 read_root_domain() {
     HOST_LIST=$(mktemp /tmp/kops-cui-hosted-zones.XXXXXX)
 
+    _command "aws route53 list-hosted-zones | jq -r '.HostedZones[] | .Name'"
     aws route53 list-hosted-zones | jq -r '.HostedZones[] | .Name' > ${HOST_LIST}
 
     IDX=0
@@ -1112,6 +1125,7 @@ read_root_domain() {
 
 get_ssl_cert_arn() {
     # get certificate arn
+    _command "aws acm list-certificates | DOMAIN="*.${BASE_DOMAIN}" jq -r '.CertificateSummaryList[] | select(.DomainName==env.DOMAIN) | .CertificateArn'"
     SSL_CERT_ARN=$(aws acm list-certificates | DOMAIN="*.${BASE_DOMAIN}" jq -r '.CertificateSummaryList[] | select(.DomainName==env.DOMAIN) | .CertificateArn')
 }
 
@@ -1121,6 +1135,7 @@ set_record_cname() {
     fi
 
     # request certificate
+    _command "aws acm request-certificate --domain-name "*.${BASE_DOMAIN}" --validation-method DNS | jq -r '.CertificateArn'"
     SSL_CERT_ARN=$(aws acm request-certificate --domain-name "*.${BASE_DOMAIN}" --validation-method DNS | jq -r '.CertificateArn')
 
     _result "Request Certificate..."
@@ -1128,10 +1143,15 @@ set_record_cname() {
     waiting 2
 
     # Route53 에서 해당 도메인의 Hosted Zone ID 를 획득
+    _command "aws route53 list-hosted-zones | ROOT_DOMAIN="${ROOT_DOMAIN}." jq -r '.HostedZones[] | select(.Name==env.ROOT_DOMAIN) | .Id' | cut -d'/' -f3"
     ZONE_ID=$(aws route53 list-hosted-zones | ROOT_DOMAIN="${ROOT_DOMAIN}." jq -r '.HostedZones[] | select(.Name==env.ROOT_DOMAIN) | .Id' | cut -d'/' -f3)
 
-    # domain validate
+    # domain validate name
+    _command "aws acm describe-certificate --certificate-arn ${SSL_CERT_ARN} | jq -r '.Certificate.DomainValidationOptions[].ResourceRecord | .Name'"
     CERT_DNS_NAME=$(aws acm describe-certificate --certificate-arn ${SSL_CERT_ARN} | jq -r '.Certificate.DomainValidationOptions[].ResourceRecord | .Name')
+
+    # domain validate value
+    _command "aws acm describe-certificate --certificate-arn ${SSL_CERT_ARN} | jq -r '.Certificate.DomainValidationOptions[].ResourceRecord | .Value'"
     CERT_DNS_VALUE=$(aws acm describe-certificate --certificate-arn ${SSL_CERT_ARN} | jq -r '.Certificate.DomainValidationOptions[].ResourceRecord | .Value')
 
     # record sets
@@ -1146,6 +1166,7 @@ set_record_cname() {
 
     # update route53 record
     if [ ! -z ${ZONE_ID} ]; then
+        _command "aws route53 change-resource-record-sets --hosted-zone-id ${ZONE_ID} --change-batch file://${RECORD}"
         aws route53 change-resource-record-sets --hosted-zone-id ${ZONE_ID} --change-batch file://${RECORD}
     fi
 }
@@ -1156,10 +1177,15 @@ set_record_alias() {
     fi
 
     # Route53 에서 해당 도메인의 Hosted Zone ID 를 획득
+    _command "aws route53 list-hosted-zones | ROOT_DOMAIN="${ROOT_DOMAIN}." jq -r '.HostedZones[] | select(.Name==env.ROOT_DOMAIN) | .Id' | cut -d'/' -f3"
     ZONE_ID=$(aws route53 list-hosted-zones | ROOT_DOMAIN="${ROOT_DOMAIN}." jq -r '.HostedZones[] | select(.Name==env.ROOT_DOMAIN) | .Id' | cut -d'/' -f3)
 
-    # ELB 에서 Hosted Zone ID, DNS Name 을 획득
+    # ELB 에서 Hosted Zone ID 를 획득
+    _command "aws elb describe-load-balancers --load-balancer-name ${ELB_NAME} | jq -r '.LoadBalancerDescriptions[] | .CanonicalHostedZoneNameID'"
     ELB_ZONE_ID=$(aws elb describe-load-balancers --load-balancer-name ${ELB_NAME} | jq -r '.LoadBalancerDescriptions[] | .CanonicalHostedZoneNameID')
+
+    # ELB 에서 DNS Name 을 획득
+    _command "aws elb describe-load-balancers --load-balancer-name ${ELB_NAME} | jq -r '.LoadBalancerDescriptions[] | .DNSName'"
     ELB_DNS_NAME=$(aws elb describe-load-balancers --load-balancer-name ${ELB_NAME} | jq -r '.LoadBalancerDescriptions[] | .DNSName')
 
     # record sets
@@ -1175,6 +1201,7 @@ set_record_alias() {
 
     # update route53 record
     if [ ! -z ${ZONE_ID} ]; then
+        _command "aws route53 change-resource-record-sets --hosted-zone-id ${ZONE_ID} --change-batch file://${RECORD}"
         aws route53 change-resource-record-sets --hosted-zone-id ${ZONE_ID} --change-batch file://${RECORD}
     fi
 }
@@ -1185,6 +1212,7 @@ delete_record() {
     fi
 
     # Route53 에서 해당 도메인의 Hosted Zone ID 를 획득
+    _command "aws route53 list-hosted-zones | ROOT_DOMAIN="${ROOT_DOMAIN}." jq -r '.HostedZones[] | select(.Name==env.ROOT_DOMAIN) | .Id' | cut -d'/' -f3"
     ZONE_ID=$(aws route53 list-hosted-zones | ROOT_DOMAIN="${ROOT_DOMAIN}." jq -r '.HostedZones[] | select(.Name==env.ROOT_DOMAIN) | .Id' | cut -d'/' -f3)
 
     # record sets
@@ -1198,6 +1226,7 @@ delete_record() {
 
     # update route53 record
     if [ ! -z ${ZONE_ID} ]; then
+        _command "aws route53 change-resource-record-sets --hosted-zone-id ${ZONE_ID} --change-batch file://${RECORD}"
         aws route53 change-resource-record-sets --hosted-zone-id ${ZONE_ID} --change-batch file://${RECORD}
     fi
 }
@@ -1451,6 +1480,7 @@ helm_nginx_ingress() {
         _result "CertificateArn: ${SSL_CERT_ARN}"
         echo
 
+        _command "sed -i -e s@aws-load-balancer-ssl-cert:.*@aws-load-balancer-ssl-cert: ${SSL_CERT_ARN}@ ${CHART}"
         sed -i -e "s@aws-load-balancer-ssl-cert:.*@aws-load-balancer-ssl-cert: ${SSL_CERT_ARN}@" ${CHART}
     fi
 
@@ -1459,17 +1489,20 @@ helm_nginx_ingress() {
 
     # helm install
     if [ -z ${CHART_VERSION} ]; then
-        helm upgrade --install ${APP_NAME} stable/${APP_NAME} --namespace ${NAMESPACE} \
-                     --values ${CHART}
+        _command "helm upgrade --install ${APP_NAME} stable/${APP_NAME} --namespace ${NAMESPACE} --values ${CHART}"
+        helm upgrade --install ${APP_NAME} stable/${APP_NAME} --namespace ${NAMESPACE} --values ${CHART}
     else
-        helm upgrade --install ${APP_NAME} stable/${APP_NAME} --namespace ${NAMESPACE} \
-                     --values ${CHART} --version ${CHART_VERSION}
+        _command "helm upgrade --install ${APP_NAME} stable/${APP_NAME} --namespace ${NAMESPACE} --values ${CHART} --version ${CHART_VERSION}"
+        helm upgrade --install ${APP_NAME} stable/${APP_NAME} --namespace ${NAMESPACE} --values ${CHART} --version ${CHART_VERSION}
     fi
 
     waiting 2
 
+    _command "helm history ${APP_NAME}"
     helm history ${APP_NAME}
     echo
+
+    _command "kubectl get pod,svc -n ${NAMESPACE}"
     kubectl get pod,svc -n ${NAMESPACE}
     echo
 
@@ -1535,17 +1568,20 @@ helm_apply() {
 
     # helm install
     if [ -z ${CHART_VERSION} ]; then
-        helm upgrade --install ${APP_NAME} stable/${APP_NAME} --namespace ${NAMESPACE} \
-                     --values ${CHART}
+        _command "helm upgrade --install ${APP_NAME} stable/${APP_NAME} --namespace ${NAMESPACE} --values ${CHART}"
+        helm upgrade --install ${APP_NAME} stable/${APP_NAME} --namespace ${NAMESPACE} --values ${CHART}
     else
-        helm upgrade --install ${APP_NAME} stable/${APP_NAME} --namespace ${NAMESPACE} \
-                     --values ${CHART} --version ${CHART_VERSION}
+        _command "helm upgrade --install ${APP_NAME} stable/${APP_NAME} --namespace ${NAMESPACE} --values ${CHART} --version ${CHART_VERSION}"
+        helm upgrade --install ${APP_NAME} stable/${APP_NAME} --namespace ${NAMESPACE} --values ${CHART} --version ${CHART_VERSION}
     fi
 
     waiting 2
 
+    _command "helm history ${APP_NAME}"
     helm history ${APP_NAME}
     echo
+
+    _command "kubectl get pod,svc,ing,pvc -n ${NAMESPACE}"
     kubectl get pod,svc,ing,pvc -n ${NAMESPACE}
 
     if [ ! -z ${INGRESS} ]; then
@@ -1562,16 +1598,19 @@ helm_apply() {
 }
 
 helm_remove() {
+    _command "helm ls --all"
     helm ls --all
 
     question "Enter chart name : "
 
     if [ ! -z ${ANSWER} ]; then
+        _command "helm delete --purge ${ANSWER}"
         helm delete --purge ${ANSWER}
     fi
 }
 
 helm_check() {
+    _command "kubectl get pod -n kube-system | grep tiller-deploy | wc -l | xargs"
     COUNT=$(kubectl get pod -n kube-system | grep tiller-deploy | wc -l | xargs)
 
     if [ "x${COUNT}" == "x0" ] || [ ! -d ~/.helm ]; then
@@ -1586,14 +1625,20 @@ helm_init() {
 
     create_cluster_role_binding cluster-admin ${NAMESPACE} ${ACCOUNT}
 
+    _command "helm init --upgrade --service-account=${ACCOUNT}"
     helm init --upgrade --service-account=${ACCOUNT}
 
     waiting 5
 
+    _command "kubectl get pod,svc -n ${NAMESPACE}"
     kubectl get pod,svc -n ${NAMESPACE}
     echo
+
+    _command "helm repo update"
     helm repo update
     echo
+
+    _command "helm ls"
     helm ls
 }
 
@@ -1601,10 +1646,15 @@ helm_uninit() {
     NAMESPACE="kube-system"
     ACCOUNT="tiller"
 
+    _command "kubectl delete deployment tiller-deploy -n ${NAMESPACE}"
     kubectl delete deployment tiller-deploy -n ${NAMESPACE}
     echo
+
+    _command "kubectl delete clusterrolebinding cluster-admin:${NAMESPACE}:${ACCOUNT}"
     kubectl delete clusterrolebinding cluster-admin:${NAMESPACE}:${ACCOUNT}
     echo
+
+    _command "kubectl delete serviceaccount ${ACCOUNT} -n ${NAMESPACE}"
     kubectl delete serviceaccount ${ACCOUNT} -n ${NAMESPACE}
 }
 
@@ -1612,9 +1662,12 @@ create_namespace() {
     NAMESPACE=$1
 
     CHECK=
+
+    _command "kubectl get ns ${NAMESPACE}"
     kubectl get ns ${NAMESPACE} > /dev/null 2>&1 || export CHECK=CREATE
 
     if [ "${CHECK}" == "CREATE" ]; then
+        _command "kubectl create ns ${NAMESPACE}"
         kubectl create ns ${NAMESPACE}
         echo
     fi
@@ -1630,9 +1683,12 @@ create_service_account() {
     echo
 
     CHECK=
+
+    _command "kubectl get sa ${ACCOUNT} -n ${NAMESPACE}"
     kubectl get sa ${ACCOUNT} -n ${NAMESPACE} > /dev/null 2>&1 || export CHECK=CREATE
 
     if [ "${CHECK}" == "CREATE" ]; then
+        _command "kubectl create sa ${ACCOUNT} -n ${NAMESPACE}"
         kubectl create sa ${ACCOUNT} -n ${NAMESPACE}
         echo
     fi
@@ -1649,9 +1705,12 @@ create_cluster_role_binding() {
     echo
 
     CHECK=
+
+    _command "kubectl get clusterrolebinding ${ROLL}:${NAMESPACE}:${ACCOUNT}"
     kubectl get clusterrolebinding ${ROLL}:${NAMESPACE}:${ACCOUNT} > /dev/null 2>&1 || export CHECK=CREATE
 
     if [ "${CHECK}" == "CREATE" ]; then
+        _command "kubectl create clusterrolebinding ${ROLL}:${NAMESPACE}:${ACCOUNT} --clusterrole=${ROLL} --serviceaccount=${NAMESPACE}:${ACCOUNT}"
         kubectl create clusterrolebinding ${ROLL}:${NAMESPACE}:${ACCOUNT} --clusterrole=${ROLL} --serviceaccount=${NAMESPACE}:${ACCOUNT}
         echo
     fi
@@ -1682,10 +1741,12 @@ apply_sample() {
         fi
     fi
 
+    _command "kubectl apply -f ${SAMPLE}"
     kubectl apply -f ${SAMPLE}
 
     waiting 2
 
+    _command "kubectl get pod,svc,ing -n ${NAMESPACE}"
     kubectl get pod,svc,ing -n ${NAMESPACE}
 
     if [ ! -z ${INGRESS} ]; then
