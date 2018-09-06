@@ -1,3 +1,5 @@
+# chart-version: latest
+
 controller:
   replicaCount: 2
   # autoscaling:

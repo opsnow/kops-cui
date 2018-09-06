@@ -1492,7 +1492,7 @@ helm_nginx_ingress() {
     CHART_VERSION=$(cat ${CHART} | grep chart-version | awk '{print $3}')
 
     # helm install
-    if [ -z ${CHART_VERSION} ]; then
+    if [ -z ${CHART_VERSION} ] || [ "${CHART_VERSION}" == "latest" ]; then
         _command "helm upgrade --install ${APP_NAME} stable/${APP_NAME} --namespace ${NAMESPACE} --values ${CHART}"
         helm upgrade --install ${APP_NAME} stable/${APP_NAME} --namespace ${NAMESPACE} --values ${CHART}
     else
@@ -1571,7 +1571,7 @@ helm_apply() {
     CHART_VERSION=$(cat ${CHART} | grep chart-version | awk '{print $3}')
 
     # helm install
-    if [ -z ${CHART_VERSION} ]; then
+    if [ -z ${CHART_VERSION} ] || [ "${CHART_VERSION}" == "latest" ]; then
         _command "helm upgrade --install ${APP_NAME} stable/${APP_NAME} --namespace ${NAMESPACE} --values ${CHART}"
         helm upgrade --install ${APP_NAME} stable/${APP_NAME} --namespace ${NAMESPACE} --values ${CHART}
     else
