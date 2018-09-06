@@ -686,7 +686,7 @@ get_kops_cluster() {
 }
 
 get_kops_config() {
-    CONFIG_PATH="~/.kops-cui"
+    CONFIG_PATH=~/.kops-cui
 
     mkdir -p ${CONFIG_PATH}
 
