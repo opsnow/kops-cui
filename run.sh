@@ -1485,7 +1485,6 @@ helm_nginx_ingress() {
         _result "CertificateArn: ${SSL_CERT_ARN}"
         echo
 
-        _command "sed -i -e s@aws-load-balancer-ssl-cert:.*@aws-load-balancer-ssl-cert: ${SSL_CERT_ARN}@ ${CHART}"
         sed -i -e "s@aws-load-balancer-ssl-cert:.*@aws-load-balancer-ssl-cert: ${SSL_CERT_ARN}@" ${CHART}
     fi
 
