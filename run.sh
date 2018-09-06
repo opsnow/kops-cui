@@ -990,12 +990,12 @@ kops_export() {
 kops_delete() {
     delete_efs
 
+    _command "kops delete cluster --name=${KOPS_CLUSTER_NAME} --state=s3://${KOPS_STATE_STORE} --yes"
+    kops delete cluster --name=${KOPS_CLUSTER_NAME} --state=s3://${KOPS_STATE_STORE} --yes
+
     # delete_record
 
     delete_kops_config
-
-    _command "kops delete cluster --name=${KOPS_CLUSTER_NAME} --state=s3://${KOPS_STATE_STORE} --yes"
-    kops delete cluster --name=${KOPS_CLUSTER_NAME} --state=s3://${KOPS_STATE_STORE} --yes
 
     rm -rf ~/.kube ~/.helm ~/.draft
 }
