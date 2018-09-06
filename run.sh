@@ -1,12 +1,12 @@
 #!/bin/bash
 
-SHELL_DIR=$(dirname $0)
+OS_NAME="$(uname | awk '{print tolower($0)}')"
 
-DEBUG_MODE=$1
+SHELL_DIR=$(dirname $0)
 
 THIS_VERSION=v0.0.0
 
-OS_NAME="$(uname | awk '{print tolower($0)}')"
+DEBUG_MODE=true
 
 L_PAD="$(printf %3s)"
 
@@ -215,6 +215,7 @@ run() {
     mkdir -p ~/.aws
 
     if [ ! -f ~/.ssh/id_rsa ]; then
+        _command "ssh-keygen -q -f ~/.ssh/id_rsa -N ''"
         ssh-keygen -q -f ~/.ssh/id_rsa -N ''
     fi
 
@@ -256,6 +257,15 @@ state_store() {
     save_kops_config
 
     get_kops_cluster
+
+    if [ "x${CLUSTER}" != "x0" ]; then
+        _command "kubectl config current-context"
+        KUBE_CLUSTER_NAME=$(kubectl config current-context)
+
+        if [ "${KOPS_CLUSTER_NAME}" != "${KUBE_CLUSTER_NAME}" ]; then
+            kops_export
+        fi
+    fi
 
     cluster_menu
 }
@@ -691,14 +701,6 @@ devops_menu() {
 get_kops_cluster() {
     _command "kops get --name=${KOPS_CLUSTER_NAME} --state=s3://${KOPS_STATE_STORE} | wc -l | xargs"
     CLUSTER=$(kops get --name=${KOPS_CLUSTER_NAME} --state=s3://${KOPS_STATE_STORE} | wc -l | xargs)
-
-    if [ "x${CLUSTER}" != "x0" ]; then
-        KUBE_CLUSTER_NAME=$(kubectl config current-context)
-
-        if [ "${KOPS_CLUSTER_NAME}" != "${KUBE_CLUSTER_NAME}" ]; then
-            kops_export
-        fi
-    fi
 }
 
 get_kops_config() {
@@ -765,7 +767,7 @@ clear_kops_config() {
 delete_kops_config() {
     if [ ! -z ${KOPS_CLUSTER_NAME} ]; then
         _command "aws s3 rm s3://${KOPS_STATE_STORE}/${KOPS_CLUSTER_NAME}.kops-cui"
-        aws s3 rm s3://${KOPS_STATE_STORE}/${KOPS_CLUSTER_NAME}.kops-cui
+        aws s3 rm s3://${KOPS_STATE_STORE}/${KOPS_CLUSTER_NAME}.kops-cui --quiet
     fi
 
     clear_kops_config
@@ -997,6 +999,7 @@ kops_delete() {
 
     _command "kops delete cluster --name=${KOPS_CLUSTER_NAME} --state=s3://${KOPS_STATE_STORE} --yes"
     kops delete cluster --name=${KOPS_CLUSTER_NAME} --state=s3://${KOPS_STATE_STORE} --yes
+    echo
 
     # delete_record
 
