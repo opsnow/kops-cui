@@ -6,7 +6,7 @@ SHELL_DIR=$(dirname $0)
 
 THIS_VERSION=v0.0.0
 
-DEBUG_MODE=$1
+DEBUG_MODE=true
 
 L_PAD="$(printf %3s)"
 
