@@ -139,7 +139,7 @@ waiting() {
     echo
 }
 
-waitingfor() {
+waiting_for() {
     echo
     progress start
 
@@ -1011,16 +1011,20 @@ kops_delete() {
 get_elb_domain() {
     ELB_DOMAIN=
 
+    if [ -z $2 ]; then
+        _command "kubectl get svc --all-namespaces -o wide | grep LoadBalancer | grep $1 | awk '{print $5}' | head -1"
+    else
+        _command "kubectl get svc -n $2 -o wide | grep LoadBalancer | grep $1 | awk '{print $4}' | head -1"
+    fi
+
     progress start
 
     IDX=0
     while [ 1 ]; do
         # ELB Domain 을 획득
         if [ -z $2 ]; then
-            _command "kubectl get svc --all-namespaces -o wide | grep LoadBalancer | grep $1 | awk '{print $5}' | head -1"
             ELB_DOMAIN=$(kubectl get svc --all-namespaces -o wide | grep LoadBalancer | grep $1 | awk '{print $5}' | head -1)
         else
-            _command "kubectl get svc -n $2 -o wide | grep LoadBalancer | grep $1 | awk '{print $4}' | head -1"
             ELB_DOMAIN=$(kubectl get svc -n $2 -o wide | grep LoadBalancer | grep $1 | awk '{print $4}' | head -1)
         fi
 
@@ -1064,11 +1068,12 @@ get_ingress_nip_io() {
         return
     fi
 
+    _command "dig +short ${ELB_DOMAIN} | head -n 1"
+
     progress start
 
     IDX=0
     while [ 1 ]; do
-        _command "dig +short ${ELB_DOMAIN} | head -n 1"
         ELB_IP=$(dig +short ${ELB_DOMAIN} | head -n 1)
 
         if [ ! -z ${ELB_IP} ]; then
@@ -1354,7 +1359,7 @@ create_efs() {
     echo "EFS:"
     echo "   EFS_FILE_SYSTEM_ID=${EFS_FILE_SYSTEM_ID}"
     echo 'Waiting for the state of the EFS to be available.'
-    waitingfor isEFSAvailable
+    waiting_for isEFSAvailable
 
     # create mount targets
     EFS_MOUNT_TARGET_LENGTH=$(aws efs describe-mount-targets --file-system-id ${EFS_FILE_SYSTEM_ID} --region ${REGION} | jq -r '.MountTargets | length')
@@ -1378,7 +1383,7 @@ create_efs() {
     echo "   EFS_MOUNT_TARGET_IDS=${EFS_MOUNT_TARGET_IDS[@]}"
 
     echo 'Waiting for the state of the EFS mount targets to be available.'
-    waitingfor isMountTargetAvailable
+    waiting_for isMountTargetAvailable
 
     echo
 }
@@ -1396,7 +1401,7 @@ delete_efs() {
     done
 
     echo 'Waiting for the EFS mount targets to be deleted.'
-    waitingfor isMountTargetDeleted
+    waiting_for isMountTargetDeleted
 
     # delete security group for efs mount targets
     EFS_SG_ID=$(aws ec2 describe-security-groups --filters "Name=group-name,Values=efs-sg.${KOPS_CLUSTER_NAME}" | jq -r '.SecurityGroups[0].GroupId')
