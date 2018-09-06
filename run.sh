@@ -2,6 +2,8 @@
 
 SHELL_DIR=$(dirname $0)
 
+DEBUG_MODE=$1
+
 THIS_VERSION=v0.0.0
 
 OS_NAME="$(uname | awk '{print tolower($0)}')"
@@ -61,7 +63,10 @@ _result() {
 }
 
 _command() {
-    _echo "$ $@" 3
+    if [ ! -z ${DEBUG_MODE} ]; then
+        _echo "$ $@" 3
+        echo
+    fi
 }
 
 _success() {
@@ -247,6 +252,8 @@ state_store() {
     read_cluster_list
 
     read_kops_config
+
+    save_kops_config
 
     get_kops_cluster
 
@@ -457,7 +464,7 @@ create_menu() {
             ;;
         c)
             KOPS_TERRAFORM=
-            save_kops_config
+            save_kops_config true
 
             kops_create
 
@@ -477,7 +484,7 @@ create_menu() {
             ;;
         t)
             KOPS_TERRAFORM=true
-            save_kops_config
+            save_kops_config true
 
             kops_create
 
@@ -682,7 +689,16 @@ devops_menu() {
 }
 
 get_kops_cluster() {
+    _command "kops get --name=${KOPS_CLUSTER_NAME} --state=s3://${KOPS_STATE_STORE} | wc -l | xargs"
     CLUSTER=$(kops get --name=${KOPS_CLUSTER_NAME} --state=s3://${KOPS_STATE_STORE} | wc -l | xargs)
+
+    if [ "x${CLUSTER}" != "x0" ]; then
+        KUBE_CLUSTER_NAME=$(kubectl config current-context)
+
+        if [ "${KOPS_CLUSTER_NAME}" != "${KUBE_CLUSTER_NAME}" ]; then
+            kops_export
+        fi
+    fi
 }
 
 get_kops_config() {
@@ -696,18 +712,24 @@ get_kops_config() {
 }
 
 read_kops_config() {
-    COUNT=$(aws s3 ls s3://${KOPS_STATE_STORE} | grep ${KOPS_CLUSTER_NAME}.kops-cui | wc -l | xargs)
+    if [ ! -z ${KOPS_CLUSTER_NAME} ]; then
+        _command "aws s3 ls s3://${KOPS_STATE_STORE} | grep ${KOPS_CLUSTER_NAME}.kops-cui | wc -l | xargs"
+        COUNT=$(aws s3 ls s3://${KOPS_STATE_STORE} | grep ${KOPS_CLUSTER_NAME}.kops-cui | wc -l | xargs)
 
-    if [ "x${COUNT}" != "x0" ]; then
-        aws s3 cp s3://${KOPS_STATE_STORE}/${KOPS_CLUSTER_NAME}.kops-cui ${CONFIG} --quiet
-    fi
+        if [ "x${COUNT}" != "x0" ]; then
+            _command "aws s3 cp s3://${KOPS_STATE_STORE}/${KOPS_CLUSTER_NAME}.kops-cui ${CONFIG}"
+            aws s3 cp s3://${KOPS_STATE_STORE}/${KOPS_CLUSTER_NAME}.kops-cui ${CONFIG} --quiet
 
-    if [ -f ${CONFIG} ]; then
-        . ${CONFIG}
+            if [ -f ${CONFIG} ]; then
+                . ${CONFIG}
+            fi
+        fi
     fi
 }
 
 save_kops_config() {
+    S3_SYNC=$1
+
     echo "# kops config" > ${CONFIG}
     echo "KOPS_STATE_STORE=${KOPS_STATE_STORE}" >> ${CONFIG}
     echo "KOPS_CLUSTER_NAME=${KOPS_CLUSTER_NAME}" >> ${CONFIG}
@@ -718,7 +740,13 @@ save_kops_config() {
 
     . ${CONFIG}
 
-    if [ ! -z ${KOPS_CLUSTER_NAME} ]; then
+    if [ ! -z ${DEBUG_MODE} ]; then
+        cat ${CONFIG}
+        echo
+    fi
+
+    if [ ! -z ${S3_SYNC} ] && [ ! -z ${KOPS_CLUSTER_NAME} ]; then
+        _command "aws s3 cp ${CONFIG} s3://${KOPS_STATE_STORE}/${KOPS_CLUSTER_NAME}.kops-cui"
         aws s3 cp ${CONFIG} s3://${KOPS_STATE_STORE}/${KOPS_CLUSTER_NAME}.kops-cui --quiet
     fi
 }
@@ -736,6 +764,7 @@ clear_kops_config() {
 
 delete_kops_config() {
     if [ ! -z ${KOPS_CLUSTER_NAME} ]; then
+        _command "aws s3 rm s3://${KOPS_STATE_STORE}/${KOPS_CLUSTER_NAME}.kops-cui"
         aws s3 rm s3://${KOPS_STATE_STORE}/${KOPS_CLUSTER_NAME}.kops-cui
     fi
 
@@ -766,6 +795,7 @@ read_state_store() {
     # S3 Bucket
     BUCKET=$(aws s3api get-bucket-acl --bucket ${KOPS_STATE_STORE} | jq -r '.Owner.ID')
     if [ -z ${BUCKET} ]; then
+        _command "aws s3 mb s3://${KOPS_STATE_STORE} --region ${REGION}"
         aws s3 mb s3://${KOPS_STATE_STORE} --region ${REGION}
 
         waiting 2
@@ -781,6 +811,7 @@ read_state_store() {
 read_cluster_list() {
     CLUSTER_LIST=$(mktemp /tmp/kops-cui-kops-cluster-list.XXXXXX)
 
+    _command "kops get cluster --state=s3://${KOPS_STATE_STORE}"
     kops get cluster --state=s3://${KOPS_STATE_STORE} > ${CLUSTER_LIST}
 
     IDX=0
@@ -919,24 +950,28 @@ kops_edit() {
     fi
 
     if [ "${SELECTED}" != "" ]; then
+        _command "kops edit ${SELECTED} --name=${KOPS_CLUSTER_NAME} --state=s3://${KOPS_STATE_STORE}"
         kops edit ${SELECTED} --name=${KOPS_CLUSTER_NAME} --state=s3://${KOPS_STATE_STORE}
     fi
 }
 
 kops_update() {
     if [ -z ${KOPS_TERRAFORM} ]; then
+        _command "kops update cluster --name=${KOPS_CLUSTER_NAME} --state=s3://${KOPS_STATE_STORE} --yes"
         kops update cluster --name=${KOPS_CLUSTER_NAME} --state=s3://${KOPS_STATE_STORE} --yes
     else
-        kops update cluster --name=${KOPS_CLUSTER_NAME} --state=s3://${KOPS_STATE_STORE} --yes \
-                            --target=terraform --out=terraform-${KOPS_CLUSTER_NAME}
+        _command "kops update cluster --name=${KOPS_CLUSTER_NAME} --state=s3://${KOPS_STATE_STORE} --yes --target=terraform --out=terraform-${KOPS_CLUSTER_NAME}"
+        kops update cluster --name=${KOPS_CLUSTER_NAME} --state=s3://${KOPS_STATE_STORE} --yes --target=terraform --out=terraform-${KOPS_CLUSTER_NAME}
     fi
 }
 
 kops_rolling_update() {
+    _command "kops rolling-update cluster --name=${KOPS_CLUSTER_NAME} --state=s3://${KOPS_STATE_STORE} --yes"
     kops rolling-update cluster --name=${KOPS_CLUSTER_NAME} --state=s3://${KOPS_STATE_STORE} --yes
 }
 
 kops_validate() {
+    _command "kops validate cluster --name=${KOPS_CLUSTER_NAME} --state=s3://${KOPS_STATE_STORE}"
     kops validate cluster --name=${KOPS_CLUSTER_NAME} --state=s3://${KOPS_STATE_STORE}
 
     echo
@@ -948,6 +983,7 @@ kops_validate() {
 kops_export() {
     rm -rf ~/.kube
 
+    _command "kops export kubecfg --name ${KOPS_CLUSTER_NAME} --state=s3://${KOPS_STATE_STORE}"
     kops export kubecfg --name ${KOPS_CLUSTER_NAME} --state=s3://${KOPS_STATE_STORE}
 }
 
@@ -956,9 +992,10 @@ kops_delete() {
 
     # delete_record
 
-    kops delete cluster --name=${KOPS_CLUSTER_NAME} --state=s3://${KOPS_STATE_STORE} --yes
-
     delete_kops_config
+
+    _command "kops delete cluster --name=${KOPS_CLUSTER_NAME} --state=s3://${KOPS_STATE_STORE} --yes"
+    kops delete cluster --name=${KOPS_CLUSTER_NAME} --state=s3://${KOPS_STATE_STORE} --yes
 
     rm -rf ~/.kube ~/.helm ~/.draft
 }
@@ -1370,7 +1407,7 @@ helm_efs_provisioner() {
     kubectl get pod,svc -n ${NAMESPACE}
     echo
 
-    save_kops_config
+    save_kops_config true
 }
 
 helm_nginx_ingress() {
@@ -1449,7 +1486,7 @@ helm_nginx_ingress() {
         echo
     fi
 
-    save_kops_config
+    save_kops_config true
 }
 
 helm_apply() {
