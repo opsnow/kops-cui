@@ -1,3 +1,5 @@
+# chart-version: latest
+
 nameOverride: heapster
 
 image:

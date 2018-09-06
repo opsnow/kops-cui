@@ -1,3 +1,5 @@
+# chart-version: latest
+
 # nameOverride: jenkins
 
 rbac:
@@ -31,12 +33,15 @@ Master:
   #     hosts:
   #       - INGRESS_DOMAIN
   InstallPlugins:
-    - blueocean:latest
+    # https://github.com/helm/charts/blob/master/stable/jenkins/values.yaml
     - kubernetes:latest
     - workflow-job:latest
     - workflow-aggregator:latest
     - credentials-binding:latest
+    # https://plugins.jenkins.io/blueocean
+    - blueocean:latest
+    # https://plugins.jenkins.io/kubernetes-credentials-provider
     - kubernetes-credentials-provider:latest
+    # https://plugins.jenkins.io/pipeline-github-lib
     - pipeline-github-lib:latest
-    - script-security:1.44
   # Jobs: -- auto generate -- see: jobs/replace.sh
