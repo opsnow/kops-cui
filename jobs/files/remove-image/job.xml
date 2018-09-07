@@ -19,7 +19,7 @@
         <hudson.model.StringParameterDefinition>
         <name>CLUSTER</name>
         <description></description>
-        <defaultValue></defaultValue>
+        <defaultValue>dev</defaultValue>
         </hudson.model.StringParameterDefinition>
         <hudson.model.StringParameterDefinition>
         <name>SLACK_TOKEN</name>
