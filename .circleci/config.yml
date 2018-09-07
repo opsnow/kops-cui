@@ -12,7 +12,7 @@ jobs:
       - run:
           name: "Build"
           command: |
-            ./package.sh ${CIRCLE_PROJECT_USERNAME} ${CIRCLE_PROJECT_REPONAME}
+            ./version.sh ${CIRCLE_PROJECT_USERNAME} ${CIRCLE_PROJECT_REPONAME}
       - persist_to_workspace:
           root: /tmp/workspace
           paths:
