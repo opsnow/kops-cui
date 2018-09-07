@@ -46,6 +46,9 @@ spec:
         env:
         - name: REDIS_URL
           value: "redis://sample-redis:6379"
+        # envFrom:
+        # - configMapRef:
+        #     name: sample-configmap
 
 ---
 # ------------------- Service ------------------- #
