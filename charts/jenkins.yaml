@@ -44,4 +44,8 @@ Master:
     - kubernetes-credentials-provider:latest
     # https://plugins.jenkins.io/pipeline-github-lib
     - pipeline-github-lib:latest
+    # https://plugins.jenkins.io/active-directory
+    - active-directory:latest
+    # https://plugins.jenkins.io/role-strategy
+    - role-strategy:latest
   # Jobs: -- auto generate -- see: jobs/replace.sh
