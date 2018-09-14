@@ -1,5 +1,5 @@
-@Library("github.com/opspresso/pipeline")
-def pipeline = new com.opspresso.Pipeline()
+@Library("github.com/opsnow-tools/valve-pump")
+def pump = new com.opsnow.valve.Pump()
 def label = "worker-${UUID.randomUUID().toString()}"
 properties([
   buildDiscarder(logRotator(daysToKeepStr: "60", numToKeepStr: "30"))
@@ -30,10 +30,10 @@ podTemplate(label: label, containers: [
           whoami
           uname -a
         """
-        pipeline.prepare()
+        pump.prepare()
       }
 
-      pipeline.scan("sample")
+      pump.scan("sample")
     }
     stage("Run docker") {
       container("builder") {
@@ -55,12 +55,12 @@ podTemplate(label: label, containers: [
     }
     stage("Run helm") {
       container("builder") {
-        pipeline.helm_init()
+        pump.helm_init()
       }
     }
     stage("Run draft") {
       container("builder") {
-        pipeline.draft_init()
+        pump.draft_init()
       }
     }
     stage("End") {
