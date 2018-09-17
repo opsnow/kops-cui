@@ -1,5 +1,5 @@
-@Library("github.com/opsnow-tools/valve-pump")
-def pump = new com.opsnow.valve.Pump()
+@Library("github.com/opsnow-tools/valve-butler")
+def pump = new com.opsnow.valve.Butler()
 def label = "worker-${UUID.randomUUID().toString()}"
 properties([
   buildDiscarder(logRotator(daysToKeepStr: "60", numToKeepStr: "30"))
