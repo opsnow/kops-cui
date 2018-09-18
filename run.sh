@@ -1616,7 +1616,7 @@ helm_remove() {
 }
 
 helm_check() {
-    _command "kubectl get pod -n kube-system | grep tiller-deploy | wc -l | xargs"
+    _command "kubectl get pod -n kube-system | grep tiller-deploy"
     COUNT=$(kubectl get pod -n kube-system | grep tiller-deploy | wc -l | xargs)
 
     if [ "x${COUNT}" == "x0" ] || [ ! -d ~/.helm ]; then

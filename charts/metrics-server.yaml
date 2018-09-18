@@ -2,5 +2,8 @@
 
 nameOverride: metrics-server
 
-# image:
-#   tag: v0.2.1
+args:
+  - --logtostderr
+# enable this if you have self-signed certificates
+# see: https://github.com/kubernetes-incubator/metrics-server
+  - --kubelet-insecure-tls
