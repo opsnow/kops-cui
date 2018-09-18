@@ -5,14 +5,14 @@ nexus:
   # imageTag: 3.13.0
   serviceType: SERVICE_TYPE
   livenessProbe:
-    initialDelaySeconds: 120
+    initialDelaySeconds: 300
     periodSeconds: 60
-    failureThreshold: 6
+    failureThreshold: 12
     path: /
   readinessProbe:
-    initialDelaySeconds: 120
+    initialDelaySeconds: 300
     periodSeconds: 60
-    failureThreshold: 6
+    failureThreshold: 12
     path: /
 
 nexusProxy:
