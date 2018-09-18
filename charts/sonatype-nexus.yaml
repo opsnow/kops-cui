@@ -1,13 +1,23 @@
 # chart-version: latest
 
 nexus:
-  imageName: quay.io/travelaudience/docker-nexus
-  imageTag: 3.13.0
+  # imageName: quay.io/travelaudience/docker-nexus
+  # imageTag: 3.13.0
   serviceType: SERVICE_TYPE
+  livenessProbe:
+    initialDelaySeconds: 60
+    periodSeconds: 30
+    failureThreshold: 6
+    path: /
+  readinessProbe:
+    initialDelaySeconds: 60
+    periodSeconds: 30
+    failureThreshold: 6
+    path: /
 
 nexusProxy:
-  imageName: quay.io/travelaudience/docker-nexus-proxy
-  imageTag: 2.3.0
+  # imageName: quay.io/travelaudience/docker-nexus-proxy
+  # imageTag: 2.3.0
   env:
     nexusHttpHost: INGRESS_DOMAIN
     nexusDockerHost: docker-INGRESS_DOMAIN
