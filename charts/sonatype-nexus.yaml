@@ -1,7 +1,7 @@
 # chart-version: latest
 
-nexus:
-  serviceType: SERVICE_TYPE
+# nexus:
+#   serviceType: SERVICE_TYPE
 
 nexusProxy:
   env:
