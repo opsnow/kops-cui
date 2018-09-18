@@ -2,8 +2,8 @@
 
 nameOverride: sonarqube
 
-service:
-  type: SERVICE_TYPE
+# service:
+#   type: SERVICE_TYPE
 
 ingress:
   enabled: INGRESS_ENABLED

@@ -2,5 +2,5 @@
 
 nameOverride: heapster
 
-image:
-  tag: v1.4.0
+# image:
+#   tag: v1.4.0
