@@ -1,9 +1,9 @@
-# chart-version: latest
+# chart-version: 1.1.0
 
 nameOverride: metrics-server
 
-args:
-  - --logtostderr
-# enable this if you have self-signed certificates
-# see: https://github.com/kubernetes-incubator/metrics-server
-  - --kubelet-insecure-tls
+# args:
+#   - --logtostderr
+# # enable this if you have self-signed certificates
+# # see: https://github.com/kubernetes-incubator/metrics-server
+#   - --kubelet-insecure-tls
