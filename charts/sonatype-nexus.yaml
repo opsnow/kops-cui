@@ -1,4 +1,4 @@
-# chart-version: latest
+# chart-version: 1.3.1
 
 # nexus:
 #   serviceType: SERVICE_TYPE
