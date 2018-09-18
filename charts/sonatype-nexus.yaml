@@ -6,12 +6,12 @@ nexus:
   serviceType: SERVICE_TYPE
   livenessProbe:
     initialDelaySeconds: 120
-    periodSeconds: 30
+    periodSeconds: 60
     failureThreshold: 6
     path: /
   readinessProbe:
     initialDelaySeconds: 120
-    periodSeconds: 30
+    periodSeconds: 60
     failureThreshold: 6
     path: /
 
