@@ -236,7 +236,7 @@ run() {
         ANSWER=${ANSWER:-Y}
 
         if [ "${ANSWER}" == "Y" ]; then
-            ${SHELL_DIR}/helper/bastion.sh
+            ${SHELL_DIR}/bastion.sh
         else
             error
         fi
@@ -1803,7 +1803,7 @@ get_node_zones() {
 }
 
 update_tools() {
-    ${SHELL_DIR}/helper/bastion.sh
+    ${SHELL_DIR}/bastion.sh
 }
 
 update_self() {
