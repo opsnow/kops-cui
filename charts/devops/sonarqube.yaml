@@ -12,6 +12,14 @@ ingress:
   hosts:
     - INGRESS_DOMAIN
 
+readinessProbe:
+  initialDelaySeconds: 300
+  periodSeconds: 30
+  failureThreshold: 6
+livenessProbe:
+  initialDelaySeconds: 300
+  periodSeconds: 30
+
 persistence:
   enabled: true
   accessMode: ReadWriteOnce
