@@ -5,4 +5,4 @@ metadata:
   namespace: default
 data:
   PROFILE: dev
-  REDIS_URL: redis://sample-redis.default:6379
+  REDIS_URL: redis://redis.default:6379
