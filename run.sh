@@ -1301,11 +1301,10 @@ create_efs() {
         _error "Not found the VPC."
     fi
 
-    echo "General conditions:"
     _result "K8S_NODE_SG_ID=${K8S_NODE_SG_ID}"
     _result "VPC_ID=${VPC_ID}"
     _result "VPC_SUBNETS="
-    _result "${VPC_SUBNETS}"
+    echo "${VPC_SUBNETS}"
     echo
 
     # create a security group for efs mount targets
@@ -1347,7 +1346,6 @@ create_efs() {
         EFS_FILE_SYSTEM_ID=$(aws efs describe-file-systems --creation-token ${KOPS_CLUSTER_NAME} --region ${REGION} | jq -r '.FileSystems[].FileSystemId')
     fi
 
-    echo "EFS:"
     _result "EFS_FILE_SYSTEM_ID=${EFS_FILE_SYSTEM_ID}"
     echo
 
@@ -1371,14 +1369,12 @@ create_efs() {
         EFS_MOUNT_TARGET_IDS=$(aws efs describe-mount-targets --file-system-id ${EFS_FILE_SYSTEM_ID} --region ${REGION} | jq -r '.MountTargets[].MountTargetId')
     fi
 
-    echo "Mount targets:"
-    _result "EFS_MOUNT_TARGET_IDS=${EFS_MOUNT_TARGET_IDS[@]}"
+    _result "EFS_MOUNT_TARGET_IDS="
+    echo "${EFS_MOUNT_TARGET_IDS[@]}"
     echo
 
     echo "Waiting for the state of the EFS mount targets to be available."
     waiting_for isMountTargetAvailable
-
-    echo
 
     save_kops_config true
 }
