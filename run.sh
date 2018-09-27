@@ -1675,6 +1675,9 @@ create_namespace() {
     kubectl get ns ${NAMESPACE} > /dev/null 2>&1 || export CHECK=CREATE
 
     if [ "${CHECK}" == "CREATE" ]; then
+        _echo "${NAMESPACE}"
+        echo
+
         _command "kubectl create ns ${NAMESPACE}"
         kubectl create ns ${NAMESPACE}
         echo
@@ -1687,15 +1690,15 @@ create_service_account() {
 
     create_namespace ${NAMESPACE}
 
-    _echo "${NAMESPACE}:${ACCOUNT}"
-    echo
-
     CHECK=
 
     _command "kubectl get sa ${ACCOUNT} -n ${NAMESPACE}"
     kubectl get sa ${ACCOUNT} -n ${NAMESPACE} > /dev/null 2>&1 || export CHECK=CREATE
 
     if [ "${CHECK}" == "CREATE" ]; then
+        _echo "${NAMESPACE}:${ACCOUNT}"
+        echo
+
         _command "kubectl create sa ${ACCOUNT} -n ${NAMESPACE}"
         kubectl create sa ${ACCOUNT} -n ${NAMESPACE}
         echo
@@ -1709,15 +1712,15 @@ create_cluster_role_binding() {
 
     create_service_account ${NAMESPACE} ${ACCOUNT}
 
-    _echo "${ROLL}:${NAMESPACE}:${ACCOUNT}"
-    echo
-
     CHECK=
 
     _command "kubectl get clusterrolebinding ${ROLL}:${NAMESPACE}:${ACCOUNT}"
     kubectl get clusterrolebinding ${ROLL}:${NAMESPACE}:${ACCOUNT} > /dev/null 2>&1 || export CHECK=CREATE
 
     if [ "${CHECK}" == "CREATE" ]; then
+        _echo "${ROLL}:${NAMESPACE}:${ACCOUNT}"
+        echo
+
         _command "kubectl create clusterrolebinding ${ROLL}:${NAMESPACE}:${ACCOUNT} --clusterrole=${ROLL} --serviceaccount=${NAMESPACE}:${ACCOUNT}"
         kubectl create clusterrolebinding ${ROLL}:${NAMESPACE}:${ACCOUNT} --clusterrole=${ROLL} --serviceaccount=${NAMESPACE}:${ACCOUNT}
         echo
