@@ -601,14 +601,7 @@ addons_menu() {
     esac
 }
 
-sample_menu() {
-    title
-
-    LIST=$(mktemp /tmp/kops-cui-sample-list.XXXXXX)
-
-    # find sample
-    ls ${SHELL_DIR}/sample | sort | sed 's/.yaml//' > ${LIST}
-
+select_one() {
     IDX=0
     while read VAL; do
         IDX=$(( ${IDX} + 1 ))
@@ -621,15 +614,26 @@ sample_menu() {
     # answer
     SELECTED=
     if [ -z ${ANSWER} ]; then
-        addons_menu
         return
     fi
     TEST='^[0-9]+$'
     if ! [[ ${ANSWER} =~ ${TEST} ]]; then
-        addons_menu
         return
     fi
     SELECTED=$(sed -n ${ANSWER}p ${LIST})
+}
+
+sample_menu() {
+    title
+
+    LIST=$(mktemp /tmp/kops-cui-sample-list.XXXXXX)
+
+    # find sample
+    ls ${SHELL_DIR}/sample | sort | sed 's/.yaml//' > ${LIST}
+
+    # select
+    select_one
+
     if [ -z ${SELECTED} ]; then
         addons_menu
         return
@@ -655,27 +659,9 @@ charts_menu () {
     # find chart
     ls ${SHELL_DIR}/charts/${NAMESPACE} | sort | sed 's/.yaml//' > ${LIST}
 
-    IDX=0
-    while read VAL; do
-        IDX=$(( ${IDX} + 1 ))
-        printf "%4s. %s\n" "$IDX" "${VAL}";
-    done < ${LIST}
-
     # select
-    question
+    select_one
 
-    # answer
-    SELECTED=
-    if [ -z ${ANSWER} ]; then
-        addons_menu
-        return
-    fi
-    TEST='^[0-9]+$'
-    if ! [[ ${ANSWER} =~ ${TEST} ]]; then
-        addons_menu
-        return
-    fi
-    SELECTED=$(sed -n ${ANSWER}p ${LIST})
     if [ -z ${SELECTED} ]; then
         addons_menu
         return
@@ -685,6 +671,7 @@ charts_menu () {
 
     # helm install
     helm_apply ${SELECTED} ${NAMESPACE} true
+
     press_enter ${NAMESPACE}
 }
 
