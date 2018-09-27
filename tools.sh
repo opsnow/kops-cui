@@ -246,12 +246,13 @@ fi
 
 echo "================================================================================"
 
-echo "# bastion" > ${CONFIG}
-echo "DATE=\"${DATE}\"" >> ${CONFIG}
-echo "KUBECTL=\"${KUBECTL}\"" >> ${CONFIG}
-echo "KOPS=\"${KOPS}\"" >> ${CONFIG}
-echo "HELM=\"${HELM}\"" >> ${CONFIG}
-echo "DRAFT=\"${DRAFT}\"" >> ${CONFIG}
-echo "ISTIOCTL=\"${ISTIOCTL}\"" >> ${CONFIG}
+cat << EOF > ${CONFIG}
+# version
+DATE="${DATE}"
+KUBECTL="${KUBECTL}"
+KOPS="${KOPS}"
+HELM="${HELM}"
+ISTIOCTL="${ISTIOCTL}"
+EOF
 
 _success "done."
