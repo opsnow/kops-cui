@@ -1547,8 +1547,8 @@ helm_apply() {
     helm history ${NAME}
     echo
 
-    _command "kubectl get deploy,pod,svc,ing,pvc -n ${NAMESPACE}"
-    kubectl get deploy,pod,svc,ing,pvc -n ${NAMESPACE}
+    _command "kubectl get deploy,pod,svc,ing,pv -n ${NAMESPACE}"
+    kubectl get deploy,pod,svc,ing,pv -n ${NAMESPACE}
 
     if [ ! -z ${INGRESS} ]; then
         if [ -z ${BASE_DOMAIN} ] || [ "${INGRESS}" == "false" ]; then
