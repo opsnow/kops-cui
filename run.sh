@@ -604,45 +604,45 @@ addons_menu() {
 sample_menu() {
     title
 
-    _echo "1. sample-redis"
-    echo
-    _echo "2. sample-web"
-    _echo "3. sample-node"
-    _echo "4. sample-spring"
-    _echo "5. sample-tomcat"
-    _echo "6. sample-webpack"
+    LIST=$(mktemp /tmp/kops-cui-sample-list.XXXXXX)
 
+    # find sample
+    ls ${SHELL_DIR}/sample | sort | sed 's/.yaml//' > ${LIST}
+
+    IDX=0
+    while read VAL; do
+        IDX=$(( ${IDX} + 1 ))
+        printf "%4s. %s\n" "$IDX" "${VAL}";
+    done < ${LIST}
+
+    # select
     question
 
-    case ${ANSWER} in
-        1)
-            apply_sample sample-redis default
-            press_enter sample
-            ;;
-        2)
-            apply_sample sample-web default true
-            press_enter sample
-            ;;
-        3)
-            apply_sample sample-node default true
-            press_enter sample
-            ;;
-        4)
-            apply_sample sample-spring default true
-            press_enter sample
-            ;;
-        5)
-            apply_sample sample-tomcat default true
-            press_enter sample
-            ;;
-        6)
-            apply_sample sample-webpack default true
-            press_enter sample
-            ;;
-        *)
-            addons_menu
-            ;;
-    esac
+    # answer
+    SELECTED=
+    if [ -z ${ANSWER} ]; then
+        addons_menu
+        return
+    fi
+    TEST='^[0-9]+$'
+    if ! [[ ${ANSWER} =~ ${TEST} ]]; then
+        addons_menu
+        return
+    fi
+    SELECTED=$(sed -n ${ANSWER}p ${LIST})
+    if [ -z ${SELECTED} ]; then
+        addons_menu
+        return
+    fi
+
+    # sample install
+    if [ "${SELECTED}" == "configmap" ] || [ "${SELECTED}" == "redis" ]; then
+        apply_sample ${SELECTED} default
+    else
+        apply_sample ${SELECTED} default true
+    fi
+
+    press_enter sample
 }
 
 charts_menu () {
@@ -664,6 +664,7 @@ charts_menu () {
     # select
     question
 
+    # answer
     SELECTED=
     if [ -z ${ANSWER} ]; then
         addons_menu
@@ -1703,7 +1704,7 @@ create_cluster_role_binding() {
 
 apply_sample() {
     NAME=${1}
-    NAMESPACE=${2:-default}
+    NAMESPACE=${2}
     INGRESS=${3}
 
     if [ ! -z ${INGRESS} ]; then

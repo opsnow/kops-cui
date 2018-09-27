@@ -1,19 +1,19 @@
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: sample-redis
+  name: redis
   namespace: default
   labels:
-    app: sample-redis
+    app: redis
 spec:
   selector:
     matchLabels:
-      app: sample-redis
+      app: redis
   replicas: 1
   template:
     metadata:
       labels:
-        app: sample-redis
+        app: redis
     spec:
       containers:
       - name: master
@@ -33,13 +33,13 @@ spec:
 apiVersion: v1
 kind: Service
 metadata:
-  name: sample-redis
+  name: redis
   namespace: default
   labels:
-    app: sample-redis
+    app: redis
 spec:
   ports:
   - port: 6379
     targetPort: 6379
   selector:
-    app: sample-redis
+    app: redis
