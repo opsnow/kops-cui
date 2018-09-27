@@ -1,5 +1,20 @@
 #!/bin/bash
 
+# version
+DATE=
+KUBECTL=
+KOPS=
+HELM=
+DRAFT=
+GUARD=
+
+mkdir -p ~/.kops-cui
+
+CONFIG=~/.kops-cui/tools
+touch ${CONFIG} && . ${CONFIG}
+
+################################################################################
+
 command -v tput > /dev/null || TPUT=false
 
 _echo() {
@@ -69,19 +84,6 @@ if [ "${OS_TYPE}" == "apt" ]; then
     export LC_ALL=C
 fi
 
-# version
-DATE=
-KUBECTL=
-KOPS=
-HELM=
-DRAFT=
-ISTIOCTL=
-
-mkdir -p ~/.kops-cui
-
-CONFIG=~/.kops-cui/tools
-touch ${CONFIG} && . ${CONFIG}
-
 # update
 echo "================================================================================"
 _result "update..."
@@ -130,7 +132,7 @@ if [ "${OS_TYPE}" == "brew" ]; then
 else
     VERSION=$(curl -s https://storage.googleapis.com/kubernetes-release/release/stable.txt)
 
-    if [ "${KUBECTL}" != "${VERSION}" ]; then
+    if [ "${KUBECTL}" != "${VERSION}" ] || [ "$(command -v kubectl)" == "" ]; then
         _result " ${KUBECTL} >> ${VERSION}"
 
         curl -LO https://storage.googleapis.com/kubernetes-release/release/${VERSION}/bin/${OS_NAME}/amd64/kubectl
@@ -151,7 +153,7 @@ if [ "${OS_TYPE}" == "brew" ]; then
 else
     VERSION=$(curl -s https://api.github.com/repos/kubernetes/kops/releases/latest | jq -r '.tag_name')
 
-    if [ "${KOPS}" != "${VERSION}" ]; then
+    if [ "${KOPS}" != "${VERSION}" ] || [ "$(command -v kops)" == "" ]; then
         _result " ${KOPS} >> ${VERSION}"
 
         curl -LO https://github.com/kubernetes/kops/releases/download/${VERSION}/kops-${OS_NAME}-amd64
@@ -172,7 +174,7 @@ if [ "${OS_TYPE}" == "brew" ]; then
 else
     VERSION=$(curl -s https://api.github.com/repos/helm/helm/releases/latest | jq -r '.tag_name')
 
-    if [ "${HELM}" != "${VERSION}" ]; then
+    if [ "${HELM}" != "${VERSION}" ] || [ "$(command -v helm)" == "" ]; then
         _result " ${HELM} >> ${VERSION}"
 
         curl -L https://storage.googleapis.com/kubernetes-helm/helm-${VERSION}-${OS_NAME}-amd64.tar.gz | tar xz
@@ -193,7 +195,7 @@ _result "install draft..."
 #else
     VERSION=$(curl -s https://api.github.com/repos/Azure/draft/releases/latest | jq -r '.tag_name')
 
-    if [ "${DRAFT}" != "${VERSION}" ]; then
+    if [ "${DRAFT}" != "${VERSION}" ] || [ "$(command -v draft)" == "" ]; then
         _result " ${DRAFT} >> ${VERSION}"
 
         curl -L https://azuredraft.blob.core.windows.net/draft/draft-${VERSION}-${OS_NAME}-amd64.tar.gz | tar xz
@@ -205,31 +207,23 @@ _result "install draft..."
 
 draft version --short | xargs
 
-# # istioctl
-# echo "================================================================================"
-# _result "install istioctl..."
+# guard
+echo "================================================================================"
+_result "install guard..."
 
-# # if [ "${OS_TYPE}" == "brew" ]; then
-# #     command -v istioctl > /dev/null || brew install istioctl
-# # else
-#     VERSION=$(curl -s https://api.github.com/repos/istio/istio/releases/latest | jq -r '.tag_name')
+# VERSION=$(curl -s https://api.github.com/repos/appscode/guard/releases/latest | jq -r '.tag_name')
+VERSION=0.1.2
 
-#     if [ "${ISTIOCTL}" != "${VERSION}" ]; then
-#         _result " ${ISTIOCTL} >> ${VERSION}"
+if [ "${GUARD}" != "${VERSION}" ]; then
+    _result " ${GUARD} >> ${VERSION}"
 
-#         if [ "${OS_NAME}" == "darwin" ]; then
-#             ISTIO_OS="osx"
-#         else
-#             ISTIO_OS="${OS_NAME}"
-#         fi
-#         curl -L https://github.com/istio/istio/releases/download/${VERSION}/istio-${VERSION}-${ISTIO_OS}.tar.gz | tar xz
-#         sudo mv istio-${VERSION}/bin/istioctl /usr/local/bin/istioctl && rm -rf istio-${VERSION}
+    curl -LO https://github.com/appscode/guard/releases/download/${VERSION}/guard-${OS_NAME}-amd64
+    chmod +x guard-${OS_NAME}-amd64 && sudo mv guard-${OS_NAME}-amd64 /usr/local/bin/guard
 
-#         ISTIOCTL="${VERSION}"
-#     fi
-# # fi
+    GUARD="${VERSION}"
+fi
 
-# istioctl version | grep "Version" | xargs | awk '{print $2}'
+guard version 2>&1 | grep 'Version ' | xargs | awk '{print $3}'
 
 # clean
 echo "================================================================================"
@@ -252,7 +246,8 @@ DATE="${DATE}"
 KUBECTL="${KUBECTL}"
 KOPS="${KOPS}"
 HELM="${HELM}"
-ISTIOCTL="${ISTIOCTL}"
+DRAFT="${DRAFT}"
+GUARD="${GUARD}"
 EOF
 
 _success "done."
