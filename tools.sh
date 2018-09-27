@@ -1,8 +1,34 @@
 #!/bin/bash
 
-title() {
-    echo -e "$(tput setaf 3)$@$(tput sgr0)"
+command -v tput > /dev/null || TPUT=false
+
+_echo() {
+    if [ -z ${TPUT} ] && [ ! -z $2 ]; then
+        echo -e "$(tput setaf $2)$1$(tput sgr0)"
+    else
+        echo -e "$1"
+    fi
 }
+
+_result() {
+    _echo "# $@" 4
+}
+
+_command() {
+    _echo "$ $@" 3
+}
+
+_success() {
+    _echo "+ $@" 2
+    exit 0
+}
+
+_error() {
+    _echo "- $@" 1
+    exit 1
+}
+
+DATE=$(date '+%Y-%m-%d %H:%M:%S')
 
 OS_NAME="$(uname | awk '{print tolower($0)}')"
 OS_FULL="$(uname -a)"
@@ -26,23 +52,11 @@ elif [ "${OS_NAME}" == "darwin" ]; then
     OS_TYPE="brew"
 fi
 
+_result "${OS_FULL}"
+_result "${DATE}"
+
 if [ "${OS_TYPE}" == "" ]; then
-    error "Not supported OS. [${OS_FULL}]"
-fi
-
-# version
-DATE=
-KUBECTL=
-KOPS=
-HELM=
-DRAFT=
-ISTIOCTL=
-
-mkdir -p ~/.kops-cui
-
-CONFIG=~/.kops-cui/bastion
-if [ -f ${CONFIG} ]; then
-  . ${CONFIG}
+    _error "Not supported OS. [${OS_NAME}]"
 fi
 
 # brew for mac
@@ -55,31 +69,44 @@ if [ "${OS_TYPE}" == "apt" ]; then
     export LC_ALL=C
 fi
 
+# version
+DATE=
+KUBECTL=
+KOPS=
+HELM=
+DRAFT=
+ISTIOCTL=
+
+mkdir -p ~/.kops-cui
+
+CONFIG=~/.kops-cui/tools
+touch ${CONFIG} && . ${CONFIG}
+
 # update
 echo "================================================================================"
-title "# update..."
-
-DATE=$(date '+%Y-%m-%d %H:%M:%S')
+_result "update..."
 
 if [ "${OS_TYPE}" == "apt" ]; then
     sudo apt update && sudo apt upgrade -y
-    command -v jq > /dev/null   || sudo apt install -y jq
-    command -v git > /dev/null  || sudo apt install -y git
-    command -v pip > /dev/null  || sudo apt install -y python-pip
+    command -v jq > /dev/null || sudo apt install -y jq
+    command -v git > /dev/null || sudo apt install -y git
+    command -v docker > /dev/null || sudo apt install -y docker
+    command -v pip > /dev/null || sudo apt install -y python-pip
 elif [ "${OS_TYPE}" == "yum" ]; then
     sudo yum update -y
-    command -v jq > /dev/null   || sudo yum install -y jq
-    command -v git > /dev/null  || sudo yum install -y git
-    command -v pip > /dev/null  || sudo yum install -y python-pip
+    command -v jq > /dev/null || sudo yum install -y jq
+    command -v git > /dev/null || sudo yum install -y git
+    command -v docker > /dev/null || sudo yum install -y docker
+    command -v pip > /dev/null || sudo yum install -y python-pip
 elif [ "${OS_TYPE}" == "brew" ]; then
     brew update && brew upgrade
-    command -v jq > /dev/null   || brew install jq
-    command -v git > /dev/null  || brew install git
+    command -v jq > /dev/null || brew install jq
+    command -v git > /dev/null || brew install git
 fi
 
 # aws-cli
 echo "================================================================================"
-title "# install aws-cli..."
+_result "install aws-cli..."
 
 if [ "${OS_TYPE}" == "brew" ]; then
     command -v aws > /dev/null || brew install awscli
@@ -87,7 +114,7 @@ else
     pip install --upgrade --user awscli
 fi
 
-aws --version
+aws --version | xargs
 
 if [ ! -f ~/.aws/config ]; then
     # aws region
@@ -96,7 +123,7 @@ fi
 
 # kubectl
 echo "================================================================================"
-title "# install kubectl..."
+_result "install kubectl..."
 
 if [ "${OS_TYPE}" == "brew" ]; then
     command -v kubectl > /dev/null || brew install kubernetes-cli
@@ -104,7 +131,7 @@ else
     VERSION=$(curl -s https://storage.googleapis.com/kubernetes-release/release/stable.txt)
 
     if [ "${KUBECTL}" != "${VERSION}" ]; then
-        title " ${KUBECTL} >> ${VERSION}"
+        _result " ${KUBECTL} >> ${VERSION}"
 
         curl -LO https://storage.googleapis.com/kubernetes-release/release/${VERSION}/bin/${OS_NAME}/amd64/kubectl
         chmod +x kubectl && sudo mv kubectl /usr/local/bin/kubectl
@@ -117,7 +144,7 @@ kubectl version --client --short | xargs | awk '{print $3}'
 
 # kops
 echo "================================================================================"
-title "# install kops..."
+_result "install kops..."
 
 if [ "${OS_TYPE}" == "brew" ]; then
     command -v kops > /dev/null || brew install kops
@@ -125,7 +152,7 @@ else
     VERSION=$(curl -s https://api.github.com/repos/kubernetes/kops/releases/latest | jq -r '.tag_name')
 
     if [ "${KOPS}" != "${VERSION}" ]; then
-        title " ${KOPS} >> ${VERSION}"
+        _result " ${KOPS} >> ${VERSION}"
 
         curl -LO https://github.com/kubernetes/kops/releases/download/${VERSION}/kops-${OS_NAME}-amd64
         chmod +x kops-${OS_NAME}-amd64 && sudo mv kops-${OS_NAME}-amd64 /usr/local/bin/kops
@@ -138,7 +165,7 @@ kops version 2>&1 | grep Version | xargs | awk '{print $2}'
 
 # helm
 echo "================================================================================"
-title "# install helm..."
+_result "install helm..."
 
 if [ "${OS_TYPE}" == "brew" ]; then
     command -v helm > /dev/null || brew install kubernetes-helm
@@ -146,7 +173,7 @@ else
     VERSION=$(curl -s https://api.github.com/repos/helm/helm/releases/latest | jq -r '.tag_name')
 
     if [ "${HELM}" != "${VERSION}" ]; then
-        title " ${HELM} >> ${VERSION}"
+        _result " ${HELM} >> ${VERSION}"
 
         curl -L https://storage.googleapis.com/kubernetes-helm/helm-${VERSION}-${OS_NAME}-amd64.tar.gz | tar xz
         sudo mv ${OS_NAME}-amd64/helm /usr/local/bin/helm && rm -rf ${OS_NAME}-amd64
@@ -159,7 +186,7 @@ helm version --client --short | xargs | awk '{print $2}'
 
 # draft
 echo "================================================================================"
-title "# install draft..."
+_result "install draft..."
 
 #if [ "${OS_TYPE}" == "brew" ]; then
 #    command -v draft > /dev/null || brew install draft
@@ -167,7 +194,7 @@ title "# install draft..."
     VERSION=$(curl -s https://api.github.com/repos/Azure/draft/releases/latest | jq -r '.tag_name')
 
     if [ "${DRAFT}" != "${VERSION}" ]; then
-        title " ${DRAFT} >> ${VERSION}"
+        _result " ${DRAFT} >> ${VERSION}"
 
         curl -L https://azuredraft.blob.core.windows.net/draft/draft-${VERSION}-${OS_NAME}-amd64.tar.gz | tar xz
         sudo mv ${OS_NAME}-amd64/draft /usr/local/bin/draft && rm -rf ${OS_NAME}-amd64
@@ -180,7 +207,7 @@ draft version --short | xargs
 
 # # istioctl
 # echo "================================================================================"
-# title "# install istioctl..."
+# _result "install istioctl..."
 
 # # if [ "${OS_TYPE}" == "brew" ]; then
 # #     command -v istioctl > /dev/null || brew install istioctl
@@ -188,7 +215,7 @@ draft version --short | xargs
 #     VERSION=$(curl -s https://api.github.com/repos/istio/istio/releases/latest | jq -r '.tag_name')
 
 #     if [ "${ISTIOCTL}" != "${VERSION}" ]; then
-#         title " ${ISTIOCTL} >> ${VERSION}"
+#         _result " ${ISTIOCTL} >> ${VERSION}"
 
 #         if [ "${OS_NAME}" == "darwin" ]; then
 #             ISTIO_OS="osx"
@@ -204,8 +231,9 @@ draft version --short | xargs
 
 # istioctl version | grep "Version" | xargs | awk '{print $2}'
 
+# clean
 echo "================================================================================"
-title "# clean all..."
+_result "clean all..."
 
 if [ "${OS_TYPE}" == "apt" ]; then
     sudo apt clean all
@@ -226,4 +254,4 @@ echo "HELM=\"${HELM}\"" >> ${CONFIG}
 echo "DRAFT=\"${DRAFT}\"" >> ${CONFIG}
 echo "ISTIOCTL=\"${ISTIOCTL}\"" >> ${CONFIG}
 
-title "# Done."
+_success "done."
