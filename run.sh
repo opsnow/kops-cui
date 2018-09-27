@@ -1459,8 +1459,8 @@ helm_nginx_ingress() {
     helm history ${NAME}
     echo
 
-    _command "kubectl get pod,svc -n ${NAMESPACE}"
-    kubectl get pod,svc -n ${NAMESPACE}
+    _command "kubectl get deploy,pod,svc -n ${NAMESPACE}"
+    kubectl get deploy,pod,svc -n ${NAMESPACE}
     echo
 
     _result "Pending ELB..."
@@ -1547,8 +1547,8 @@ helm_apply() {
     helm history ${NAME}
     echo
 
-    _command "kubectl get pod,svc,ing,pvc -n ${NAMESPACE}"
-    kubectl get pod,svc,ing,pvc -n ${NAMESPACE}
+    _command "kubectl get deploy,pod,svc,ing,pvc -n ${NAMESPACE}"
+    kubectl get deploy,pod,svc,ing,pvc -n ${NAMESPACE}
 
     if [ ! -z ${INGRESS} ]; then
         if [ -z ${BASE_DOMAIN} ] || [ "${INGRESS}" == "false" ]; then
@@ -1715,8 +1715,8 @@ apply_sample() {
 
     waiting 2
 
-    _command "kubectl get pod,svc,ing -n ${NAMESPACE}"
-    kubectl get pod,svc,ing -n ${NAMESPACE}
+    _command "kubectl get deploy,pod,svc,ing -n ${NAMESPACE}"
+    kubectl get deploy,pod,svc,ing -n ${NAMESPACE}
 
     if [ ! -z ${INGRESS} ]; then
         if [ -z ${BASE_DOMAIN} ]; then
