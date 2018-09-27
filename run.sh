@@ -546,7 +546,9 @@ addons_menu() {
         3)
             helm_apply kubernetes-dashboard kube-system false
             echo
-            SECRET=$(kubectl get secret -n kube-system | grep kubernetes-dashboard-token | awk '{print $1}')
+            kubectl create serviceaccount dashboard-admin -n kube-system
+            echo
+            SECRET=$(kubectl get secret -n kube-system | grep dashboard-admin-token | awk '{print $1}')
             kubectl describe secret ${SECRET} -n kube-system | grep 'token:'
             press_enter addons
             ;;

@@ -19,6 +19,6 @@ ingress:
   hosts:
     - INGRESS_DOMAIN
 
-rbac:
-  create: true
-  clusterAdminRole: true
+# rbac:
+#   create: true
+#   clusterAdminRole: true
