@@ -45,10 +45,10 @@ spec:
             cpu: "250m"
         env:
         - name: REDIS_URL
-          value: "redis://sample-redis:6379"
+          value: "redis://redis:6379"
         # envFrom:
         # - configMapRef:
-        #     name: sample-configmap
+        #     name: configmap
 
 ---
 # ------------------- Service ------------------- #

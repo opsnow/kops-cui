@@ -1,0 +1,29 @@
+# chart-version: latest
+
+# helm upgrade --install gitlab gitlab/gitlab --namespace gitlab -f
+# helm delete --purge gitlab
+# helm status gitlab
+
+global:
+  ingress:
+    configureCertmanager: false
+    class: "nginx"
+  hosts:
+    domain: chewie.nalbam.com
+    externalIP: 10.0.0.0
+
+# Don't use certmanager, we'll self-sign
+certmanager:
+  install: false
+
+# GitLab Runner isn't a big fan of self-signed certificates
+gitlab-runner:
+  install: false
+
+# Use the `ingress` addon, not our Ingress (can't map 22/80/443)
+# nginx-ingress:
+#   enabled: false
+
+# Save resources, only 2 CPU
+# prometheus:
+#   install: false

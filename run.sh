@@ -106,10 +106,12 @@ press_enter() {
             addons_menu
             ;;
         monitor)
-            monitor_menu
+            # monitor_menu
+            charts_menu "monitor"
             ;;
         devops)
-            devops_menu
+            # devops_menu
+            charts_menu "devops"
             ;;
         sample)
             sample_menu
@@ -530,7 +532,7 @@ addons_menu() {
     echo
     _echo "11. sample.."
     _echo "12. monitor.."
-    # _echo "13. devops.."
+    _echo "13. devops.."
 
     question
 
@@ -574,7 +576,8 @@ addons_menu() {
             press_enter addons
             ;;
         7)
-            helm_efs_provisioner
+            # helm_efs_provisioner
+            helm_apply efs-provisioner kube-system
             press_enter addons
             ;;
         9)
@@ -585,10 +588,12 @@ addons_menu() {
             sample_menu
             ;;
         12)
-            monitor_menu
+            # monitor_menu
+            charts_menu "monitor"
             ;;
         13)
-            devops_menu
+            # devops_menu
+            charts_menu "devops"
             ;;
         *)
             cluster_menu
@@ -599,107 +604,88 @@ addons_menu() {
 sample_menu() {
     title
 
-    _echo "1. sample-redis"
-    echo
-    _echo "2. sample-web"
-    _echo "3. sample-node"
-    _echo "4. sample-spring"
-    _echo "5. sample-tomcat"
-    _echo "6. sample-webpack"
+    LIST=$(mktemp /tmp/kops-cui-sample-list.XXXXXX)
 
+    # find sample
+    ls ${SHELL_DIR}/sample | sort | sed 's/.yaml//' > ${LIST}
+
+    IDX=0
+    while read VAL; do
+        IDX=$(( ${IDX} + 1 ))
+        printf "%4s. %s\n" "$IDX" "${VAL}";
+    done < ${LIST}
+
+    # select
     question
 
-    case ${ANSWER} in
-        1)
-            apply_sample sample-redis default
-            press_enter sample
-            ;;
-        2)
-            apply_sample sample-web default true
-            press_enter sample
-            ;;
-        3)
-            apply_sample sample-node default true
-            press_enter sample
-            ;;
-        4)
-            apply_sample sample-spring default true
-            press_enter sample
-            ;;
-        5)
-            apply_sample sample-tomcat default true
-            press_enter sample
-            ;;
-        6)
-            apply_sample sample-webpack default true
-            press_enter sample
-            ;;
-        *)
-            addons_menu
-            ;;
-    esac
+    # answer
+    SELECTED=
+    if [ -z ${ANSWER} ]; then
+        addons_menu
+        return
+    fi
+    TEST='^[0-9]+$'
+    if ! [[ ${ANSWER} =~ ${TEST} ]]; then
+        addons_menu
+        return
+    fi
+    SELECTED=$(sed -n ${ANSWER}p ${LIST})
+    if [ -z ${SELECTED} ]; then
+        addons_menu
+        return
+    fi
+
+    # sample install
+    if [ "${SELECTED}" == "configmap" ] || [ "${SELECTED}" == "redis" ]; then
+        apply_sample ${SELECTED} default
+    else
+        apply_sample ${SELECTED} default true
+    fi
+
+    press_enter sample
 }
 
-monitor_menu() {
+charts_menu () {
     title
 
-    _echo "1. prometheus"
-    _echo "2. grafana"
+    NAMESPACE=$1
 
+    LIST=$(mktemp /tmp/kops-cui-charts-list.XXXXXX)
+
+    # find chart
+    ls ${SHELL_DIR}/charts/${NAMESPACE} | sort | sed 's/.yaml//' > ${LIST}
+
+    IDX=0
+    while read VAL; do
+        IDX=$(( ${IDX} + 1 ))
+        printf "%4s. %s\n" "$IDX" "${VAL}";
+    done < ${LIST}
+
+    # select
     question
 
-    case ${ANSWER} in
-        1)
-            helm_apply prometheus monitor true
-            press_enter monitor
-            ;;
-        2)
-            helm_apply grafana monitor true
-            press_enter monitor
-            ;;
-        *)
-            addons_menu
-            ;;
-    esac
-}
+    # answer
+    SELECTED=
+    if [ -z ${ANSWER} ]; then
+        addons_menu
+        return
+    fi
+    TEST='^[0-9]+$'
+    if ! [[ ${ANSWER} =~ ${TEST} ]]; then
+        addons_menu
+        return
+    fi
+    SELECTED=$(sed -n ${ANSWER}p ${LIST})
+    if [ -z ${SELECTED} ]; then
+        addons_menu
+        return
+    fi
 
-devops_menu() {
-    title
+    create_cluster_role_binding cluster-admin ${NAMESPACE}
 
-    _echo "1. jenkins"
-    _echo "2. docker-registry"
-    _echo "3. chartmuseum"
-    _echo "4. sonarqube"
-    _echo "5. sonatype-nexus"
-
-    question
-
-    case ${ANSWER} in
-        1)
-            create_cluster_role_binding cluster-admin devops
-            helm_apply jenkins devops true
-            press_enter devops
-            ;;
-        2)
-            helm_apply docker-registry devops true
-            press_enter devops
-            ;;
-        3)
-            helm_apply chartmuseum devops true
-            press_enter devops
-            ;;
-        4)
-            helm_apply sonarqube devops true
-            press_enter devops
-            ;;
-        5)
-            helm_apply sonatype-nexus devops true
-            press_enter devops
-            ;;
-        *)
-            addons_menu
-            ;;
-    esac
+    # helm install
+    helm_apply ${SELECTED} ${NAMESPACE} true
+    press_enter ${NAMESPACE}
 }
 
 get_kops_cluster() {
@@ -1315,15 +1301,15 @@ create_efs() {
         _error "Not found the VPC."
     fi
 
-    echo "General conditions:"
-    echo "   K8S_NODE_SG_ID=${K8S_NODE_SG_ID}"
-    echo "   VPC_ID=${VPC_ID}"
-    echo "   VPC_SUBNETS=${VPC_SUBNETS}"
+    _result "K8S_NODE_SG_ID=${K8S_NODE_SG_ID}"
+    _result "VPC_ID=${VPC_ID}"
+    _result "VPC_SUBNETS="
+    echo "${VPC_SUBNETS}"
+    echo
 
     # create a security group for efs mount targets
     EFS_SG_LENGTH=$(aws ec2 describe-security-groups --filters "Name=group-name,Values=efs-sg.${KOPS_CLUSTER_NAME}" | jq '.SecurityGroups | length')
     if [ ${EFS_SG_LENGTH} -eq 0 ]; then
-
         echo "Creating a security group for mount targets"
 
         EFS_SG_ID=$(aws ec2 create-security-group \
@@ -1342,13 +1328,13 @@ create_efs() {
         EFS_SG_ID=$(aws ec2 describe-security-groups --filters "Name=group-name,Values=efs-sg.${KOPS_CLUSTER_NAME}" | jq -r '.SecurityGroups[].GroupId')
     fi
 
-    echo "Security group for mount targets:"
-    echo "    EFS_SG_ID=${EFS_SG_ID}"
+    # echo "Security group for mount targets:"
+    _result "EFS_SG_ID=${EFS_SG_ID}"
+    echo
 
     # create an efs
     EFS_LENGTH=$(aws efs describe-file-systems --creation-token ${KOPS_CLUSTER_NAME} | jq '.FileSystems | length')
     if [ ${EFS_LENGTH} -eq 0 ]; then
-
         echo "Creating a elastic file system"
 
         EFS_FILE_SYSTEM_ID=$(aws efs create-file-system --creation-token ${KOPS_CLUSTER_NAME} --region ${REGION} | jq -r '.FileSystemId')
@@ -1360,15 +1346,15 @@ create_efs() {
         EFS_FILE_SYSTEM_ID=$(aws efs describe-file-systems --creation-token ${KOPS_CLUSTER_NAME} --region ${REGION} | jq -r '.FileSystems[].FileSystemId')
     fi
 
-    echo "EFS:"
-    echo "   EFS_FILE_SYSTEM_ID=${EFS_FILE_SYSTEM_ID}"
-    echo 'Waiting for the state of the EFS to be available.'
+    _result "EFS_FILE_SYSTEM_ID=${EFS_FILE_SYSTEM_ID}"
+    echo
+
+    echo "Waiting for the state of the EFS to be available."
     waiting_for isEFSAvailable
 
     # create mount targets
     EFS_MOUNT_TARGET_LENGTH=$(aws efs describe-mount-targets --file-system-id ${EFS_FILE_SYSTEM_ID} --region ${REGION} | jq -r '.MountTargets | length')
     if [ ${EFS_MOUNT_TARGET_LENGTH} -eq 0 ]; then
-
         echo "Creating mount targets"
 
         for SubnetId in ${VPC_SUBNETS}; do
@@ -1383,13 +1369,14 @@ create_efs() {
         EFS_MOUNT_TARGET_IDS=$(aws efs describe-mount-targets --file-system-id ${EFS_FILE_SYSTEM_ID} --region ${REGION} | jq -r '.MountTargets[].MountTargetId')
     fi
 
-    echo "Mount targets:"
-    echo "   EFS_MOUNT_TARGET_IDS=${EFS_MOUNT_TARGET_IDS[@]}"
+    _result "EFS_MOUNT_TARGET_IDS="
+    echo "${EFS_MOUNT_TARGET_IDS[@]}"
+    echo
 
-    echo 'Waiting for the state of the EFS mount targets to be available.'
+    echo "Waiting for the state of the EFS mount targets to be available."
     waiting_for isMountTargetAvailable
 
-    echo
+    save_kops_config true
 }
 
 delete_efs() {
@@ -1404,7 +1391,7 @@ delete_efs() {
         aws efs delete-mount-target --mount-target-id ${MountTargetId}
     done
 
-    echo 'Waiting for the EFS mount targets to be deleted.'
+    echo "Waiting for the EFS mount targets to be deleted."
     waiting_for isMountTargetDeleted
 
     # delete security group for efs mount targets
@@ -1423,33 +1410,8 @@ delete_efs() {
     echo
 }
 
-helm_efs_provisioner() {
-    create_efs
-
-    APP_NAME="efs-provisioner"
-    NAMESPACE="kube-system"
-
-    CHART=$(mktemp /tmp/kops-cui-${APP_NAME}.XXXXXX.yaml)
-    get_template charts/${APP_NAME}.yaml ${CHART}
-
-    sed -i -e "s/CLUSTER_NAME/${KOPS_CLUSTER_NAME}/" ${CHART}
-    sed -i -e "s/AWS_REGION/${REGION}/" ${CHART}
-    sed -i -e "s/EFS_FILE_SYSTEM_ID/${EFS_FILE_SYSTEM_ID}/" ${CHART}
-
-    helm upgrade --install ${APP_NAME} stable/${APP_NAME} --namespace ${NAMESPACE} -f ${CHART}
-
-    waiting 2
-
-    helm history ${APP_NAME}
-    echo
-    kubectl get pod,svc -n ${NAMESPACE}
-    echo
-
-    save_kops_config true
-}
-
 helm_nginx_ingress() {
-    APP_NAME="nginx-ingress"
+    NAME="nginx-ingress"
     NAMESPACE=${1:-kube-ingress}
 
     create_namespace ${NAMESPACE}
@@ -1471,8 +1433,8 @@ helm_nginx_ingress() {
         BASE_DOMAIN=${ANSWER:-${DEFAULT}}
     fi
 
-    CHART=$(mktemp /tmp/kops-cui-${APP_NAME}.XXXXXX.yaml)
-    get_template charts/${APP_NAME}.yaml ${CHART}
+    CHART=$(mktemp /tmp/kops-cui-${NAME}.XXXXXX.yaml)
+    get_template charts/${NAMESPACE}/${NAME}.yaml ${CHART}
 
     # certificate
     if [ ! -z ${BASE_DOMAIN} ]; then
@@ -1497,17 +1459,17 @@ helm_nginx_ingress() {
 
     # helm install
     if [ -z ${CHART_VERSION} ] || [ "${CHART_VERSION}" == "latest" ]; then
-        _command "helm upgrade --install ${APP_NAME} stable/${APP_NAME} --namespace ${NAMESPACE} --values ${CHART}"
-        helm upgrade --install ${APP_NAME} stable/${APP_NAME} --namespace ${NAMESPACE} --values ${CHART}
+        _command "helm upgrade --install ${NAME} stable/${NAME} --namespace ${NAMESPACE} --values ${CHART}"
+        helm upgrade --install ${NAME} stable/${NAME} --namespace ${NAMESPACE} --values ${CHART}
     else
-        _command "helm upgrade --install ${APP_NAME} stable/${APP_NAME} --namespace ${NAMESPACE} --values ${CHART} --version ${CHART_VERSION}"
-        helm upgrade --install ${APP_NAME} stable/${APP_NAME} --namespace ${NAMESPACE} --values ${CHART} --version ${CHART_VERSION}
+        _command "helm upgrade --install ${NAME} stable/${NAME} --namespace ${NAMESPACE} --values ${CHART} --version ${CHART_VERSION}"
+        helm upgrade --install ${NAME} stable/${NAME} --namespace ${NAMESPACE} --values ${CHART} --version ${CHART_VERSION}
     fi
 
     waiting 2
 
-    _command "helm history ${APP_NAME}"
-    helm history ${APP_NAME}
+    _command "helm history ${NAME}"
+    helm history ${NAME}
     echo
 
     _command "kubectl get pod,svc -n ${NAMESPACE}"
@@ -1531,20 +1493,25 @@ helm_nginx_ingress() {
 }
 
 helm_apply() {
-    APP_NAME=${1}
-    NAMESPACE=${2:-default}
+    NAME=${1}
+    NAMESPACE=${2}
     INGRESS=${3}
     DOMAIN=
+
+    # for efs-provisioner
+    if [ "${NAME}" == "efs-provisioner" ]; then
+        create_efs
+    fi
 
     create_namespace ${NAMESPACE}
 
     helm_check
 
-    CHART=$(mktemp /tmp/kops-cui-${APP_NAME}.XXXXXX.yaml)
-    get_template charts/${APP_NAME}.yaml ${CHART}
+    CHART=$(mktemp /tmp/kops-cui-${NAME}.XXXXXX.yaml)
+    get_template charts/${NAMESPACE}/${NAME}.yaml ${CHART}
 
     # for jenkins jobs
-    if [ "${APP_NAME}" == "jenkins" ]; then
+    if [ "${NAME}" == "jenkins" ]; then
         ${SHELL_DIR}/jobs/replace.sh ${CHART}
         echo
     fi
@@ -1552,13 +1519,17 @@ helm_apply() {
     sed -i -e "s/CLUSTER_NAME/${KOPS_CLUSTER_NAME}/" ${CHART}
     sed -i -e "s/AWS_REGION/${REGION}/" ${CHART}
 
+    if [ ! -z ${EFS_FILE_SYSTEM_ID} ]; then
+        sed -i -e "s/EFS_FILE_SYSTEM_ID/${EFS_FILE_SYSTEM_ID}/" ${CHART}
+    fi
+
     # ingress
     if [ ! -z ${INGRESS} ]; then
         if [ -z ${BASE_DOMAIN} ] || [ "${INGRESS}" == "false" ]; then
             sed -i -e "s/SERVICE_TYPE/LoadBalancer/" ${CHART}
             sed -i -e "s/INGRESS_ENABLED/false/" ${CHART}
         else
-            DOMAIN="${APP_NAME}-${NAMESPACE}.${BASE_DOMAIN}"
+            DOMAIN="${NAME}-${NAMESPACE}.${BASE_DOMAIN}"
 
             sed -i -e "s/SERVICE_TYPE/ClusterIP/" ${CHART}
             sed -i -e "s/INGRESS_ENABLED/true/" ${CHART}
@@ -1576,17 +1547,17 @@ helm_apply() {
 
     # helm install
     if [ -z ${CHART_VERSION} ] || [ "${CHART_VERSION}" == "latest" ]; then
-        _command "helm upgrade --install ${APP_NAME} stable/${APP_NAME} --namespace ${NAMESPACE} --values ${CHART}"
-        helm upgrade --install ${APP_NAME} stable/${APP_NAME} --namespace ${NAMESPACE} --values ${CHART}
+        _command "helm upgrade --install ${NAME} stable/${NAME} --namespace ${NAMESPACE} --values ${CHART}"
+        helm upgrade --install ${NAME} stable/${NAME} --namespace ${NAMESPACE} --values ${CHART}
     else
-        _command "helm upgrade --install ${APP_NAME} stable/${APP_NAME} --namespace ${NAMESPACE} --values ${CHART} --version ${CHART_VERSION}"
-        helm upgrade --install ${APP_NAME} stable/${APP_NAME} --namespace ${NAMESPACE} --values ${CHART} --version ${CHART_VERSION}
+        _command "helm upgrade --install ${NAME} stable/${NAME} --namespace ${NAMESPACE} --values ${CHART} --version ${CHART_VERSION}"
+        helm upgrade --install ${NAME} stable/${NAME} --namespace ${NAMESPACE} --values ${CHART} --version ${CHART_VERSION}
     fi
 
     waiting 2
 
-    _command "helm history ${APP_NAME}"
-    helm history ${APP_NAME}
+    _command "helm history ${NAME}"
+    helm history ${NAME}
     echo
 
     _command "kubectl get pod,svc,ing,pvc -n ${NAMESPACE}"
@@ -1595,12 +1566,12 @@ helm_apply() {
     if [ ! -z ${INGRESS} ]; then
         if [ -z ${BASE_DOMAIN} ] || [ "${INGRESS}" == "false" ]; then
             echo
-            get_elb_domain ${APP_NAME} ${NAMESPACE}
+            get_elb_domain ${NAME} ${NAMESPACE}
             echo
-            _result "${APP_NAME}: https://${ELB_DOMAIN}"
+            _result "${NAME}: https://${ELB_DOMAIN}"
         else
             echo
-            _result "${APP_NAME}: https://${DOMAIN}"
+            _result "${NAME}: https://${DOMAIN}"
         fi
     fi
 }
@@ -1728,8 +1699,8 @@ create_cluster_role_binding() {
 }
 
 apply_sample() {
-    APP_NAME=${1}
-    NAMESPACE=${2:-default}
+    NAME=${1}
+    NAMESPACE=${2}
     INGRESS=${3}
 
     if [ ! -z ${INGRESS} ]; then
@@ -1738,14 +1709,14 @@ apply_sample() {
         fi
     fi
 
-    SAMPLE=$(mktemp /tmp/kops-cui-${APP_NAME}.XXXXXX.yaml)
-    get_template sample/${APP_NAME}.yaml ${SAMPLE}
+    SAMPLE=$(mktemp /tmp/kops-cui-${NAME}.XXXXXX.yaml)
+    get_template sample/${NAME}.yaml ${SAMPLE}
 
     if [ ! -z ${INGRESS} ]; then
         if [ -z ${BASE_DOMAIN} ]; then
             sed -i -e "s/SERVICE_TYPE/LoadBalancer/" ${SAMPLE}
         else
-            DOMAIN="${APP_NAME}-${NAMESPACE}.${BASE_DOMAIN}"
+            DOMAIN="${NAME}-${NAMESPACE}.${BASE_DOMAIN}"
 
             sed -i -e "s/SERVICE_TYPE/ClusterIP/" ${SAMPLE}
             sed -i -e "s/INGRESS_DOMAIN/${DOMAIN}/" ${SAMPLE}
@@ -1762,13 +1733,13 @@ apply_sample() {
 
     if [ ! -z ${INGRESS} ]; then
         if [ -z ${BASE_DOMAIN} ]; then
-            get_elb_domain ${APP_NAME} ${NAMESPACE}
+            get_elb_domain ${NAME} ${NAMESPACE}
 
             echo
-            _result "${APP_NAME}: https://${ELB_DOMAIN}"
+            _result "${NAME}: https://${ELB_DOMAIN}"
         else
             echo
-            _result "${APP_NAME}: https://${DOMAIN}"
+            _result "${NAME}: https://${DOMAIN}"
         fi
     fi
 }

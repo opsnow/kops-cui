@@ -1,7 +1,0 @@
-apiVersion: v1
-kind: ConfigMap
-metadata:
-  name: sample-configmap
-data:
-  PROFILE: dev
-  REDIS_URL: redis://sample-redis.default:6379
