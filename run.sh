@@ -1667,22 +1667,6 @@ helm_init() {
     helm ls
 }
 
-helm_uninit() {
-    NAMESPACE="kube-system"
-    ACCOUNT="tiller"
-
-    _command "kubectl delete deployment tiller-deploy -n ${NAMESPACE}"
-    kubectl delete deployment tiller-deploy -n ${NAMESPACE}
-    echo
-
-    _command "kubectl delete clusterrolebinding cluster-admin:${NAMESPACE}:${ACCOUNT}"
-    kubectl delete clusterrolebinding cluster-admin:${NAMESPACE}:${ACCOUNT}
-    echo
-
-    _command "kubectl delete serviceaccount ${ACCOUNT} -n ${NAMESPACE}"
-    kubectl delete serviceaccount ${ACCOUNT} -n ${NAMESPACE}
-}
-
 create_namespace() {
     NAMESPACE=$1
 
