@@ -587,7 +587,7 @@ addons_menu() {
             press_enter addons
             ;;
         3)
-            helm_apply kubernetes-dashboard kube-system false
+            helm_install kubernetes-dashboard kube-system false
             echo
             create_cluster_role_binding cluster-admin kube-system dashboard-admin
             echo
@@ -596,17 +596,17 @@ addons_menu() {
             press_enter addons
             ;;
         4)
-            helm_apply heapster kube-system
+            helm_install heapster kube-system
             press_enter addons
             ;;
         5)
-            helm_apply metrics-server kube-system
+            helm_install metrics-server kube-system
             echo
             kubectl get hpa
             press_enter addons
             ;;
         6)
-            helm_apply cluster-autoscaler kube-system
+            helm_install cluster-autoscaler kube-system
             echo
             _result "Edit InstanceGroup for AutoDiscovery"
             echo
@@ -618,11 +618,11 @@ addons_menu() {
             ;;
         7)
             # helm_efs_provisioner
-            helm_apply efs-provisioner kube-system
+            helm_install efs-provisioner kube-system
             press_enter addons
             ;;
         9)
-            helm_remove
+            helm_delete
             press_enter addons
             ;;
         11)
@@ -711,7 +711,7 @@ charts_menu () {
     create_cluster_role_binding cluster-admin ${NAMESPACE}
 
     # helm install
-    helm_apply ${SELECTED} ${NAMESPACE} true
+    helm_install ${SELECTED} ${NAMESPACE} true
 
     press_enter ${NAMESPACE}
 }
@@ -1143,6 +1143,8 @@ read_root_domain() {
                 ROOT_DOMAIN=$(sed -n ${ANSWER}p ${HOST_LIST} | sed 's/.$//')
             fi
         fi
+
+        _result "${ROOT_DOMAIN}"
     fi
 }
 
@@ -1521,7 +1523,7 @@ helm_nginx_ingress() {
     save_kops_config true
 }
 
-helm_apply() {
+helm_install() {
     NAME=${1}
     NAMESPACE=${2}
     INGRESS=${3}
@@ -1606,7 +1608,7 @@ helm_apply() {
     fi
 }
 
-helm_remove() {
+helm_delete() {
     NAME=
 
     LIST=$(mktemp /tmp/kops-cui-helm-list.XXXXXX)
@@ -1619,11 +1621,9 @@ helm_remove() {
     # select
     select_one
 
-    if [ -z ${SELECTED} ]; then
+    if [ "${SELECTED}" == "" ]; then
         return
     fi
-
-    _result "${SELECTED}"
 
     NAME="$(echo ${SELECTED} | awk '{print $1}')"
 
