@@ -158,6 +158,47 @@ waiting_for() {
     echo
 }
 
+waiting_pod() {
+    NAMESPACE=${1}
+    NAME=${2}
+    SEC=${3:-10}
+
+    echo
+    _command "kubectl get pod -n ${NAMESPACE} | grep ${NAME}"
+
+    TMP=$(mktemp /tmp/kops-cui-waiting-pod.XXXXXX)
+
+    IDX=0
+    while [ 1 ]; do
+        kubectl get pod -n ${NAMESPACE} | grep ${NAME} | head -1 > ${TMP}
+        cat ${TMP}
+
+        READY=$(cat ${TMP} | awk '{print $2}' | cut -d'/' -f1)
+        STATUS=$(cat ${TMP} | awk '{print $3}')
+
+        if [ "${STATUS}" == "Running" ] && [ "x${READY}" != "x0" ]; then
+            break
+        elif [ "${STATUS}" == "Error" ]; then
+            echo
+            _result "${STATUS}"
+            break
+        elif [ "${STATUS}" == "CrashLoopBackOff" ]; then
+            echo
+            _result "${STATUS}"
+            break
+        elif [ "x${IDX}" == "x${SEC}" ]; then
+            echo
+            _result "Timeout"
+            break
+        fi
+
+        IDX=$(( ${IDX} + 1 ))
+        sleep 2
+    done
+
+    echo
+}
+
 isElapsed() {
     SEC=${1}
     IDX=${2}
@@ -1453,7 +1494,8 @@ helm_nginx_ingress() {
         helm upgrade --install ${NAME} stable/${NAME} --namespace ${NAMESPACE} --values ${CHART} --version ${CHART_VERSION}
     fi
 
-    waiting 2
+    # waiting 2
+    waiting_pod "${NAMESPACE}" "${NAME}" 20
 
     _command "helm history ${NAME}"
     helm history ${NAME}
@@ -1541,7 +1583,8 @@ helm_apply() {
         helm upgrade --install ${NAME} stable/${NAME} --namespace ${NAMESPACE} --values ${CHART} --version ${CHART_VERSION}
     fi
 
-    waiting 2
+    # waiting 2
+    waiting_pod "${NAMESPACE}" "${NAME}"
 
     _command "helm history ${NAME}"
     helm history ${NAME}
@@ -1564,14 +1607,29 @@ helm_apply() {
 }
 
 helm_remove() {
+    NAME=
+
+    LIST=$(mktemp /tmp/kops-cui-helm-list.XXXXXX)
+
     _command "helm ls --all"
-    helm ls --all
 
-    question "Enter chart name : "
+    # find sample
+    helm ls --all | grep -v "NAME" | sort > ${LIST}
 
-    if [ ! -z ${ANSWER} ]; then
-        _command "helm delete --purge ${ANSWER}"
-        helm delete --purge ${ANSWER}
+    # select
+    select_one
+
+    if [ -z ${SELECTED} ]; then
+        return
+    fi
+
+    _result "${SELECTED}"
+
+    NAME="$(echo ${SELECTED} | awk '{print $1}')"
+
+    if [ ! -z ${NAME} ]; then
+        _command "helm delete --purge ${NAME}"
+        helm delete --purge ${NAME}
     fi
 }
 
@@ -1594,7 +1652,8 @@ helm_init() {
     _command "helm init --upgrade --service-account=${ACCOUNT}"
     helm init --upgrade --service-account=${ACCOUNT}
 
-    waiting 5
+    # waiting 5
+    waiting_pod "${NAMESPACE}" "tiller"
 
     _command "kubectl get pod,svc -n ${NAMESPACE}"
     kubectl get pod,svc -n ${NAMESPACE}
@@ -1714,6 +1773,7 @@ apply_sample() {
     kubectl apply -f ${SAMPLE}
 
     waiting 2
+    # waiting_pod "${NAMESPACE}" "${NAME}"
 
     _command "kubectl get deploy,pod,svc,ing -n ${NAMESPACE}"
     kubectl get deploy,pod,svc,ing -n ${NAMESPACE}
