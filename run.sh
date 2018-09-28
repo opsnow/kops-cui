@@ -158,6 +158,47 @@ waiting_for() {
     echo
 }
 
+waiting_pod() {
+    NAMESPACE=${1}
+    NAME=${2}
+    SEC=${3:-10}
+
+    echo
+    _command "kubectl get pod -n ${NAMESPACE} | grep ${NAME}"
+
+    TMP=$(mktemp /tmp/kops-cui-waiting-pod.XXXXXX)
+
+    IDX=0
+    while [ 1 ]; do
+        kubectl get pod -n ${NAMESPACE} | grep ${NAME} | head -1 > ${TMP}
+        cat ${TMP}
+
+        READY=$(cat ${TMP} | awk '{print $2}' | cut -d'/' -f1)
+        STATUS=$(cat ${TMP} | awk '{print $3}')
+
+        if [ "${STATUS}" == "Running" ] && [ "x${READY}" != "x0" ]; then
+            break
+        elif [ "${STATUS}" == "Error" ]; then
+            echo
+            _result "${STATUS}"
+            break
+        elif [ "${STATUS}" == "CrashLoopBackOff" ]; then
+            echo
+            _result "${STATUS}"
+            break
+        elif [ "x${IDX}" == "x${SEC}" ]; then
+            echo
+            _result "Timeout"
+            break
+        fi
+
+        IDX=$(( ${IDX} + 1 ))
+        sleep 2
+    done
+
+    echo
+}
+
 isElapsed() {
     SEC=${1}
     IDX=${2}
@@ -546,7 +587,7 @@ addons_menu() {
             press_enter addons
             ;;
         3)
-            helm_apply kubernetes-dashboard kube-system false
+            helm_install kubernetes-dashboard kube-system false
             echo
             create_cluster_role_binding cluster-admin kube-system dashboard-admin
             echo
@@ -555,17 +596,17 @@ addons_menu() {
             press_enter addons
             ;;
         4)
-            helm_apply heapster kube-system
+            helm_install heapster kube-system
             press_enter addons
             ;;
         5)
-            helm_apply metrics-server kube-system
+            helm_install metrics-server kube-system
             echo
             kubectl get hpa
             press_enter addons
             ;;
         6)
-            helm_apply cluster-autoscaler kube-system
+            helm_install cluster-autoscaler kube-system
             echo
             _result "Edit InstanceGroup for AutoDiscovery"
             echo
@@ -577,11 +618,11 @@ addons_menu() {
             ;;
         7)
             # helm_efs_provisioner
-            helm_apply efs-provisioner kube-system
+            helm_install efs-provisioner kube-system
             press_enter addons
             ;;
         9)
-            helm_remove
+            helm_delete
             press_enter addons
             ;;
         11)
@@ -670,7 +711,7 @@ charts_menu () {
     create_cluster_role_binding cluster-admin ${NAMESPACE}
 
     # helm install
-    helm_apply ${SELECTED} ${NAMESPACE} true
+    helm_install ${SELECTED} ${NAMESPACE} true
 
     press_enter ${NAMESPACE}
 }
@@ -1102,6 +1143,8 @@ read_root_domain() {
                 ROOT_DOMAIN=$(sed -n ${ANSWER}p ${HOST_LIST} | sed 's/.$//')
             fi
         fi
+
+        _result "${ROOT_DOMAIN}"
     fi
 }
 
@@ -1453,7 +1496,8 @@ helm_nginx_ingress() {
         helm upgrade --install ${NAME} stable/${NAME} --namespace ${NAMESPACE} --values ${CHART} --version ${CHART_VERSION}
     fi
 
-    waiting 2
+    # waiting 2
+    waiting_pod "${NAMESPACE}" "${NAME}" 20
 
     _command "helm history ${NAME}"
     helm history ${NAME}
@@ -1479,7 +1523,7 @@ helm_nginx_ingress() {
     save_kops_config true
 }
 
-helm_apply() {
+helm_install() {
     NAME=${1}
     NAMESPACE=${2}
     INGRESS=${3}
@@ -1541,7 +1585,8 @@ helm_apply() {
         helm upgrade --install ${NAME} stable/${NAME} --namespace ${NAMESPACE} --values ${CHART} --version ${CHART_VERSION}
     fi
 
-    waiting 2
+    # waiting 2
+    waiting_pod "${NAMESPACE}" "${NAME}"
 
     _command "helm history ${NAME}"
     helm history ${NAME}
@@ -1563,15 +1608,28 @@ helm_apply() {
     fi
 }
 
-helm_remove() {
+helm_delete() {
+    NAME=
+
+    LIST=$(mktemp /tmp/kops-cui-helm-list.XXXXXX)
+
     _command "helm ls --all"
-    helm ls --all
 
-    question "Enter chart name : "
+    # find sample
+    helm ls --all | grep -v "NAME" | sort > ${LIST}
 
-    if [ ! -z ${ANSWER} ]; then
-        _command "helm delete --purge ${ANSWER}"
-        helm delete --purge ${ANSWER}
+    # select
+    select_one
+
+    if [ "${SELECTED}" == "" ]; then
+        return
+    fi
+
+    NAME="$(echo ${SELECTED} | awk '{print $1}')"
+
+    if [ ! -z ${NAME} ]; then
+        _command "helm delete --purge ${NAME}"
+        helm delete --purge ${NAME}
     fi
 }
 
@@ -1594,7 +1652,8 @@ helm_init() {
     _command "helm init --upgrade --service-account=${ACCOUNT}"
     helm init --upgrade --service-account=${ACCOUNT}
 
-    waiting 5
+    # waiting 5
+    waiting_pod "${NAMESPACE}" "tiller"
 
     _command "kubectl get pod,svc -n ${NAMESPACE}"
     kubectl get pod,svc -n ${NAMESPACE}
@@ -1606,22 +1665,6 @@ helm_init() {
 
     _command "helm ls"
     helm ls
-}
-
-helm_uninit() {
-    NAMESPACE="kube-system"
-    ACCOUNT="tiller"
-
-    _command "kubectl delete deployment tiller-deploy -n ${NAMESPACE}"
-    kubectl delete deployment tiller-deploy -n ${NAMESPACE}
-    echo
-
-    _command "kubectl delete clusterrolebinding cluster-admin:${NAMESPACE}:${ACCOUNT}"
-    kubectl delete clusterrolebinding cluster-admin:${NAMESPACE}:${ACCOUNT}
-    echo
-
-    _command "kubectl delete serviceaccount ${ACCOUNT} -n ${NAMESPACE}"
-    kubectl delete serviceaccount ${ACCOUNT} -n ${NAMESPACE}
 }
 
 create_namespace() {
@@ -1714,6 +1757,7 @@ apply_sample() {
     kubectl apply -f ${SAMPLE}
 
     waiting 2
+    # waiting_pod "${NAMESPACE}" "${NAME}"
 
     _command "kubectl get deploy,pod,svc,ing -n ${NAMESPACE}"
     kubectl get deploy,pod,svc,ing -n ${NAMESPACE}
