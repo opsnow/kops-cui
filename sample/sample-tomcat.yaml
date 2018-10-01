@@ -45,17 +45,11 @@ spec:
           periodSeconds: 15
         resources:
           requests:
-            memory: "256Mi"
-            cpu: "250m"
+            cpu: 500m
+            memory: 512Mi
           limits:
-            memory: "256Mi"
-            cpu: "250m"
-#        env:
-#        - name: PROFILE
-#          valueFrom:
-#            configMapKeyRef:
-#              name: sample-tomcat-dev
-#              key: PROFILE
+            cpu: 1000m
+            memory: 1024Mi
 
 ---
 # ------------------- Service ------------------- #
@@ -68,7 +62,7 @@ metadata:
   labels:
     app: sample-tomcat
 spec:
-  type: SERVICE_TYPE
+  # type: SERVICE_TYPE
   ports:
     - name: http
       port: 80

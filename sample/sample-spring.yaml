@@ -45,27 +45,11 @@ spec:
           periodSeconds: 15
         resources:
           requests:
-            memory: "256Mi"
-            cpu: "250m"
+            cpu: 500m
+            memory: 512Mi
           limits:
-            memory: "256Mi"
-            cpu: "250m"
-#        env:
-#        - name: PROFILE
-#          valueFrom:
-#            configMapKeyRef:
-#              name: sample-spring-dev
-#              key: PROFILE
-#        - name: SLACK_WEBHOOK
-#          valueFrom:
-#            configMapKeyRef:
-#              name: sample-spring-dev
-#              key: SLACK_WEBHOOK
-#        - name: SLACK_CHANNEL
-#          valueFrom:
-#            configMapKeyRef:
-#              name: sample-spring-dev
-#              key: SLACK_CHANNEL
+            cpu: 1000m
+            memory: 1024Mi
 
 ---
 # ------------------- Service ------------------- #
@@ -78,7 +62,7 @@ metadata:
   labels:
     app: sample-spring
 spec:
-  type: SERVICE_TYPE
+  # type: SERVICE_TYPE
   ports:
     - name: http
       port: 80
