@@ -1,0 +1,53 @@
+<?xml version='1.0' encoding='UTF-8'?>
+<flow-definition plugin="workflow-job@2.23">
+<actions/>
+<description></description>
+<keepDependencies>false</keepDependencies>
+<properties>
+    <hudson.model.ParametersDefinitionProperty>
+    <parameterDefinitions>
+        <hudson.model.StringParameterDefinition>
+        <name>NAME</name>
+        <description></description>
+        <defaultValue>sample-node-dev.yaml</defaultValue>
+        </hudson.model.StringParameterDefinition>
+        <hudson.model.StringParameterDefinition>
+        <name>NAMESPACE</name>
+        <description></description>
+        <defaultValue>dev</defaultValue>
+        </hudson.model.StringParameterDefinition>
+        <hudson.model.StringParameterDefinition>
+        <name>CLUSTER</name>
+        <description></description>
+        <defaultValue>dev</defaultValue>
+        </hudson.model.StringParameterDefinition>
+        <hudson.model.StringParameterDefinition>
+        <name>REPOSITORY_URL</name>
+        <description></description>
+        <defaultValue>https://github.com/nalbam/sample-config</defaultValue>
+        </hudson.model.StringParameterDefinition>
+        <hudson.model.StringParameterDefinition>
+        <name>REPOSITORY_SECRET</name>
+        <description></description>
+        <defaultValue></defaultValue>
+        </hudson.model.StringParameterDefinition>
+        <hudson.model.StringParameterDefinition>
+        <name>SLACK_TOKEN</name>
+        <description></description>
+        <defaultValue></defaultValue>
+        </hudson.model.StringParameterDefinition>
+    </parameterDefinitions>
+    </hudson.model.ParametersDefinitionProperty>
+    <org.jenkinsci.plugins.workflow.job.properties.PipelineTriggersJobProperty>
+    <triggers/>
+    </org.jenkinsci.plugins.workflow.job.properties.PipelineTriggersJobProperty>
+</properties>
+<definition class="org.jenkinsci.plugins.workflow.cps.CpsFlowDefinition" plugin="workflow-cps@2.54">
+    <script>// build-pipeline
+REPLACE
+    </script>
+    <sandbox>true</sandbox>
+</definition>
+<triggers/>
+<disabled>false</disabled>
+</flow-definition>

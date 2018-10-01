@@ -1,0 +1,86 @@
+def NAME = "dev"
+def NAMESPACE = "devops"
+def CLUSTER = "dev"
+
+def REPOSITORY_URL = "http://bespin.poc@61.100.13.19:7990/scm/sp/coruscant.git"
+def REPOSITORY_SECRET = "bespin-poc"
+def SLACK_TOKEN = ""
+
+@Library("github.com/opsnow-tools/valve-butler")
+def butler = new com.opsnow.valve.Butler()
+def label = "worker-${UUID.randomUUID().toString()}"
+def VERSION = ""
+def SOURCE_LANG = ""
+def SOURCE_ROOT = ""
+properties([
+  buildDiscarder(logRotator(daysToKeepStr: "60", numToKeepStr: "30"))
+])
+podTemplate(label: label, containers: [
+  containerTemplate(name: "builder", image: "quay.io/opsnow-tools/valve-builder", command: "cat", ttyEnabled: true, alwaysPullImage: true)
+], volumes: [
+  // hostPathVolume(mountPath: "/var/run/docker.sock", hostPath: "/var/run/docker.sock"),
+  // hostPathVolume(mountPath: "/home/jenkins/.draft", hostPath: "/home/jenkins/.draft"),
+  // hostPathVolume(mountPath: "/home/jenkins/.helm", hostPath: "/home/jenkins/.helm")
+]) {
+  node(label) {
+    stage("Prepare") {
+      container("builder") {
+        butler.prepare()
+
+        if (!SLACK_TOKEN) {
+          SLACK_TOKEN = butler.slack_token
+        }
+      }
+    }
+    stage("Checkout") {
+      container("builder") {
+        try {
+          if (REPOSITORY_SECRET) {
+            git(url: REPOSITORY_URL, branch: BRANCH_NAME, credentialsId: REPOSITORY_SECRET)
+          } else {
+            git(url: REPOSITORY_URL, branch: BRANCH_NAME)
+          }
+        } catch (e) {
+          failure(SLACK_TOKEN, "Checkout", IMAGE_NAME)
+          throw e
+        }
+      }
+    }
+    stage("Apply Config") {
+      container("builder") {
+        butler.apply_config("secret", NAME, NAMESPACE, CLUSTER)
+        success(SLACK_TOKEN, "Apply Config", NAME, "yaml", NAMESPACE, "", CLUSTER)
+      }
+    }
+  }
+}
+def failure(token = "", type = "", name = "") {
+  slack("$token", "danger", "$type Failure", "`$name`", "$JOB_NAME <$RUN_DISPLAY_URL|#$BUILD_NUMBER>")
+}
+def success(token = "", type = "", name = "", version = "", namespace = "", base_domain = "", cluster = "") {
+  if (cluster) {
+    if (base_domain) {
+      def link = "https://$name-$namespace.$base_domain"
+      slack("$token", "good", "$type Success", "`$name` `$version` :satellite: `$namespace` :earth_asia: `$cluster`", "$JOB_NAME <$RUN_DISPLAY_URL|#$BUILD_NUMBER> : <$link|$name-$namespace>")
+    } else {
+      slack("$token", "good", "$type Success", "`$name` `$version` :satellite: `$namespace` :earth_asia: `$cluster`", "$JOB_NAME <$RUN_DISPLAY_URL|#$BUILD_NUMBER>")
+    }
+  } else if (base_domain) {
+    def link = "https://$name-$namespace.$base_domain"
+    slack("$token", "good", "$type Success", "`$name` `$version` :satellite: `$namespace`", "$JOB_NAME <$RUN_DISPLAY_URL|#$BUILD_NUMBER> : <$link|$name-$namespace>")
+  } else if (namespace) {
+    slack("$token", "good", "$type Success", "`$name` `$version` :rocket: `$namespace`", "$JOB_NAME <$RUN_DISPLAY_URL|#$BUILD_NUMBER>")
+  } else {
+    slack("$token", "good", "$type Success", "`$name` `$version` :heavy_check_mark:", "$JOB_NAME <$RUN_DISPLAY_URL|#$BUILD_NUMBER>")
+  }
+}
+def slack(token = "", color = "", title = "", message = "", footer = "") {
+  try {
+    // butler.slack("$token", "$color", "$title", "$message", "$footer")
+    sh """
+      curl -sL repo.opsnow.io/valve-ctl/slack | bash -s -- --token='$token' \
+      --color='$color' --title='$title' --footer='$footer' '$message'
+    """
+  } catch (ignored) {
+  }
+}
