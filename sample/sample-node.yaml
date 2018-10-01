@@ -38,11 +38,11 @@ spec:
           periodSeconds: 15
         resources:
           requests:
-            memory: "256Mi"
-            cpu: "250m"
+            cpu: 200m
+            memory: 256Mi
           limits:
-            memory: "256Mi"
-            cpu: "250m"
+            cpu: 500m
+            memory: 512Mi
         env:
         - name: REDIS_URL
           value: "redis://redis:6379"
@@ -61,7 +61,7 @@ metadata:
   labels:
     app: sample-node
 spec:
-  type: SERVICE_TYPE
+  # type: SERVICE_TYPE
   ports:
     - name: http
       port: 80
