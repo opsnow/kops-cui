@@ -1,11 +1,3 @@
-def NAME = "dev"
-def NAMESPACE = "devops"
-def CLUSTER = "dev"
-
-def REPOSITORY_URL = "http://bespin.poc@61.100.13.19:7990/scm/sp/coruscant.git"
-def REPOSITORY_SECRET = "bespin-poc"
-def SLACK_TOKEN = ""
-
 @Library("github.com/opsnow-tools/valve-butler")
 def butler = new com.opsnow.valve.Butler()
 def label = "worker-${UUID.randomUUID().toString()}"
@@ -41,7 +33,7 @@ podTemplate(label: label, containers: [
             git(url: REPOSITORY_URL, branch: BRANCH_NAME)
           }
         } catch (e) {
-          failure(SLACK_TOKEN, "Checkout", IMAGE_NAME)
+          failure(SLACK_TOKEN, "Checkout", NAME)
           throw e
         }
       }

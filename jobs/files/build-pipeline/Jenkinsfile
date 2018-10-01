@@ -38,11 +38,11 @@ podTemplate(label: label, containers: [
             git(url: REPOSITORY_URL, branch: BRANCH_NAME)
           }
         } catch (e) {
-          failure(SLACK_TOKEN, "Checkout", IMAGE_NAME)
+          failure(SLACK_TOKEN, "Checkout", NAME)
           throw e
         }
 
-        pump.scan(IMAGE_NAME, BRANCH_NAME)
+        pump.scan(NAME, BRANCH_NAME)
 
         VERSION = pump.version
         SOURCE_LANG = pump.source_lang
@@ -57,9 +57,9 @@ podTemplate(label: label, containers: [
               cd $SOURCE_ROOT
               mvn package -s /home/jenkins/.m2/settings.xml
             """
-            success(SLACK_TOKEN, "Build", IMAGE_NAME, VERSION)
+            success(SLACK_TOKEN, "Build", NAME, VERSION)
           } catch (e) {
-            failure(SLACK_TOKEN, "Build", IMAGE_NAME)
+            failure(SLACK_TOKEN, "Build", NAME)
             throw e
           }
         }
@@ -71,9 +71,9 @@ podTemplate(label: label, containers: [
               cd $SOURCE_ROOT
               npm run build
             """
-            success(SLACK_TOKEN, "Build", IMAGE_NAME, VERSION)
+            success(SLACK_TOKEN, "Build", NAME, VERSION)
           } catch (e) {
-            failure(SLACK_TOKEN, "Build", IMAGE_NAME)
+            failure(SLACK_TOKEN, "Build", NAME)
             throw e
           }
         }
@@ -87,8 +87,8 @@ podTemplate(label: label, containers: [
     // if (BRANCH_NAME != "master") {
     //   stage("Deploy PRE") {
     //     container("builder") {
-    //       pump.draft_up(IMAGE_NAME, "pre", CLUSTER, BASE_DOMAIN)
-    //       success(SLACK_TOKEN, "Deploy PRE", IMAGE_NAME, VERSION, "pre", BASE_DOMAIN)
+    //       pump.draft_up(NAME, "pre", CLUSTER, BASE_DOMAIN)
+    //       success(SLACK_TOKEN, "Deploy PRE", NAME, VERSION, "pre", BASE_DOMAIN)
     //     }
     //   }
     // }
@@ -97,34 +97,34 @@ podTemplate(label: label, containers: [
         parallel(
           "Build Docker": {
             container("builder") {
-              pump.build_image(IMAGE_NAME, VERSION)
+              pump.build_image(NAME, VERSION)
             }
           },
           "Build Charts": {
             container("builder") {
-              pump.build_chart(IMAGE_NAME, VERSION)
+              pump.build_chart(NAME, VERSION)
             }
           }
         )
       }
       stage("Deploy DEV") {
         container("builder") {
-          pump.helm_install(IMAGE_NAME, VERSION, "dev", BASE_DOMAIN, CLUSTER)
-          success(SLACK_TOKEN, "Deploy DEV", IMAGE_NAME, VERSION, "dev", BASE_DOMAIN)
+          pump.helm_install(NAME, VERSION, "dev", BASE_DOMAIN, CLUSTER)
+          success(SLACK_TOKEN, "Deploy DEV", NAME, VERSION, "dev", BASE_DOMAIN)
         }
       }
       stage("Proceed STAGE") {
         container("builder") {
-          proceed(SLACK_TOKEN, "Deploy STAGE", IMAGE_NAME, VERSION, "stage")
+          proceed(SLACK_TOKEN, "Deploy STAGE", NAME, VERSION, "stage")
           timeout(time: 60, unit: "MINUTES") {
-            input(message: "$IMAGE_NAME $VERSION to stage")
+            input(message: "$NAME $VERSION to stage")
           }
         }
       }
       stage("Deploy STAGE") {
         container("builder") {
-          pump.helm_install(IMAGE_NAME, VERSION, "stage", BASE_DOMAIN, CLUSTER)
-          success(SLACK_TOKEN, "Deploy STAGE", IMAGE_NAME, VERSION, "stage", BASE_DOMAIN)
+          pump.helm_install(NAME, VERSION, "stage", BASE_DOMAIN, CLUSTER)
+          success(SLACK_TOKEN, "Deploy STAGE", NAME, VERSION, "stage", BASE_DOMAIN)
         }
       }
     }

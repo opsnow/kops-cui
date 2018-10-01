@@ -22,8 +22,8 @@ podTemplate(label: label, containers: [
     }
     stage("Remove") {
       container("builder") {
-        pump.helm_delete(IMAGE_NAME, NAMESPACE, CLUSTER)
-        success(SLACK_TOKEN, "Remove", IMAGE_NAME, NAMESPACE, CLUSTER)
+        pump.helm_delete(NAME, NAMESPACE, CLUSTER)
+        success(SLACK_TOKEN, "Remove", NAME, NAMESPACE, CLUSTER)
       }
     }
   }

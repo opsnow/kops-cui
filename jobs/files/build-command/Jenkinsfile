@@ -32,11 +32,11 @@ podTemplate(label: label, containers: [
             git(url: REPOSITORY_URL, branch: BRANCH_NAME)
           }
         } catch (e) {
-          checkout_failure(IMAGE_NAME, PIPELINE)
+          checkout_failure(NAME, PIPELINE)
           throw e
         }
 
-        pump.scan(IMAGE_NAME)
+        pump.scan(NAME)
       }
     }
     stage("Command") {
