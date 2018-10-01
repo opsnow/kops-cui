@@ -9,7 +9,7 @@
         <hudson.model.StringParameterDefinition>
         <name>NAME</name>
         <description></description>
-        <defaultValue>sample-node-dev.yaml</defaultValue>
+        <defaultValue>sample-node</defaultValue>
         </hudson.model.StringParameterDefinition>
         <hudson.model.StringParameterDefinition>
         <name>REPOSITORY_URL</name>
@@ -48,7 +48,7 @@
     </org.jenkinsci.plugins.workflow.job.properties.PipelineTriggersJobProperty>
 </properties>
 <definition class="org.jenkinsci.plugins.workflow.cps.CpsFlowDefinition" plugin="workflow-cps@2.54">
-    <script>// apply-config
+    <script>// deploy-config
 REPLACE
     </script>
     <sandbox>true</sandbox>
