@@ -646,7 +646,7 @@ select_one() {
     IDX=0
     while read VAL; do
         IDX=$(( ${IDX} + 1 ))
-        printf "%4s. %s\n" "$IDX" "${VAL}";
+        printf "%4s. %s\n" "${IDX}" "${VAL}";
     done < ${LIST}
 
     # select
