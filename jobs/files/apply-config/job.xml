@@ -12,16 +12,6 @@
         <defaultValue>sample-node-dev.yaml</defaultValue>
         </hudson.model.StringParameterDefinition>
         <hudson.model.StringParameterDefinition>
-        <name>NAMESPACE</name>
-        <description></description>
-        <defaultValue>dev</defaultValue>
-        </hudson.model.StringParameterDefinition>
-        <hudson.model.StringParameterDefinition>
-        <name>CLUSTER</name>
-        <description></description>
-        <defaultValue>dev</defaultValue>
-        </hudson.model.StringParameterDefinition>
-        <hudson.model.StringParameterDefinition>
         <name>REPOSITORY_URL</name>
         <description></description>
         <defaultValue>https://github.com/nalbam/sample-config</defaultValue>
@@ -35,6 +25,16 @@
         <name>BRANCH_NAME</name>
         <description></description>
         <defaultValue>master</defaultValue>
+        </hudson.model.StringParameterDefinition>
+        <hudson.model.StringParameterDefinition>
+        <name>CLUSTER</name>
+        <description></description>
+        <defaultValue>dev</defaultValue>
+        </hudson.model.StringParameterDefinition>
+        <hudson.model.StringParameterDefinition>
+        <name>NAMESPACE</name>
+        <description></description>
+        <defaultValue>dev</defaultValue>
         </hudson.model.StringParameterDefinition>
         <hudson.model.StringParameterDefinition>
         <name>SLACK_TOKEN</name>
