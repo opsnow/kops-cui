@@ -1744,12 +1744,11 @@ apply_sample() {
 
     if [ ! -z ${INGRESS} ]; then
         if [ -z ${BASE_DOMAIN} ]; then
-
             sed -i -e "s/# type: SERVICE_TYPE/type: LoadBalancer/" ${SAMPLE}
         else
             DOMAIN="${NAME}-${NAMESPACE}.${BASE_DOMAIN}"
 
-            # sed -i -e "s/SERVICE_TYPE/ClusterIP/" ${SAMPLE}
+            sed -i -e "s/# type: SERVICE_TYPE/type: ClusterIP/" ${SAMPLE}
             sed -i -e "s/INGRESS_DOMAIN/${DOMAIN}/" ${SAMPLE}
         fi
     fi
