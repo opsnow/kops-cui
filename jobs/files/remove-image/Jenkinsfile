@@ -5,7 +5,7 @@ properties([
   buildDiscarder(logRotator(daysToKeepStr: "60", numToKeepStr: "30"))
 ])
 podTemplate(label: label, containers: [
-  containerTemplate(name: "builder", image: "opspresso/builder", command: "cat", ttyEnabled: true, alwaysPullImage: true)
+  containerTemplate(name: "builder", image: "quay.io/opsnow-tools/valve-builder", command: "cat", ttyEnabled: true, alwaysPullImage: true)
 ], volumes: [
   hostPathVolume(mountPath: "/var/run/docker.sock", hostPath: "/var/run/docker.sock"),
   hostPathVolume(mountPath: "/home/jenkins/.helm", hostPath: "/home/jenkins/.helm")
@@ -22,8 +22,8 @@ podTemplate(label: label, containers: [
     }
     stage("Remove") {
       container("builder") {
-        pump.helm_delete(IMAGE_NAME, NAMESPACE, CLUSTER)
-        success(SLACK_TOKEN, "Remove", IMAGE_NAME, NAMESPACE, CLUSTER)
+        pump.helm_delete(NAME, NAMESPACE, CLUSTER)
+        success(SLACK_TOKEN, "Remove", NAME, NAMESPACE, CLUSTER)
       }
     }
   }

@@ -7,7 +7,7 @@
     <hudson.model.ParametersDefinitionProperty>
     <parameterDefinitions>
         <hudson.model.StringParameterDefinition>
-        <name>IMAGE_NAME</name>
+        <name>NAME</name>
         <description></description>
         <defaultValue>sample-web</defaultValue>
         </hudson.model.StringParameterDefinition>

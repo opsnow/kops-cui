@@ -7,9 +7,24 @@
     <hudson.model.ParametersDefinitionProperty>
     <parameterDefinitions>
         <hudson.model.StringParameterDefinition>
+        <name>NAME</name>
+        <description></description>
+        <defaultValue>sample-node-dev.yaml</defaultValue>
+        </hudson.model.StringParameterDefinition>
+        <hudson.model.StringParameterDefinition>
+        <name>NAMESPACE</name>
+        <description></description>
+        <defaultValue>dev</defaultValue>
+        </hudson.model.StringParameterDefinition>
+        <hudson.model.StringParameterDefinition>
+        <name>CLUSTER</name>
+        <description></description>
+        <defaultValue>dev</defaultValue>
+        </hudson.model.StringParameterDefinition>
+        <hudson.model.StringParameterDefinition>
         <name>REPOSITORY_URL</name>
         <description></description>
-        <defaultValue>https://github.com/nalbam/sample-web</defaultValue>
+        <defaultValue>https://github.com/nalbam/sample-config</defaultValue>
         </hudson.model.StringParameterDefinition>
         <hudson.model.StringParameterDefinition>
         <name>REPOSITORY_SECRET</name>
@@ -17,19 +32,9 @@
         <defaultValue></defaultValue>
         </hudson.model.StringParameterDefinition>
         <hudson.model.StringParameterDefinition>
-        <name>BRANCH_NAME</name>
+        <name>SLACK_TOKEN</name>
         <description></description>
-        <defaultValue>master</defaultValue>
-        </hudson.model.StringParameterDefinition>
-        <hudson.model.StringParameterDefinition>
-        <name>NAME</name>
-        <description></description>
-        <defaultValue>sample-web</defaultValue>
-        </hudson.model.StringParameterDefinition>
-        <hudson.model.StringParameterDefinition>
-        <name>COMMAND</name>
-        <description></description>
-        <defaultValue>ls -al</defaultValue>
+        <defaultValue></defaultValue>
         </hudson.model.StringParameterDefinition>
     </parameterDefinitions>
     </hudson.model.ParametersDefinitionProperty>
@@ -38,7 +43,7 @@
     </org.jenkinsci.plugins.workflow.job.properties.PipelineTriggersJobProperty>
 </properties>
 <definition class="org.jenkinsci.plugins.workflow.cps.CpsFlowDefinition" plugin="workflow-cps@2.54">
-    <script>// build-command
+    <script>// apply-config
 REPLACE
     </script>
     <sandbox>true</sandbox>

@@ -5,7 +5,7 @@ properties([
   buildDiscarder(logRotator(daysToKeepStr: "60", numToKeepStr: "30"))
 ])
 podTemplate(label: label, containers: [
-  containerTemplate(name: "builder", image: "opspresso/builder", command: "cat", ttyEnabled: true, alwaysPullImage: true)
+  containerTemplate(name: "builder", image: "quay.io/opsnow-tools/valve-builder", command: "cat", ttyEnabled: true, alwaysPullImage: true)
 ], volumes: [
   hostPathVolume(mountPath: "/var/run/docker.sock", hostPath: "/var/run/docker.sock"),
   hostPathVolume(mountPath: "/home/jenkins/.helm", hostPath: "/home/jenkins/.helm")
@@ -25,8 +25,8 @@ podTemplate(label: label, containers: [
     }
     stage("Deploy") {
       container("builder") {
-        pump.helm_install(IMAGE_NAME, VERSION, NAMESPACE, BASE_DOMAIN, CLUSTER)
-        success(SLACK_TOKEN, "Deploy", IMAGE_NAME, VERSION, NAMESPACE, BASE_DOMAIN, CLUSTER)
+        pump.helm_install(NAME, VERSION, NAMESPACE, BASE_DOMAIN, CLUSTER)
+        success(SLACK_TOKEN, "Deploy", NAME, VERSION, NAMESPACE, BASE_DOMAIN, CLUSTER)
       }
     }
   }
