@@ -14,7 +14,7 @@
         <hudson.model.StringParameterDefinition>
         <name>NAMESPACE</name>
         <description></description>
-        <defaultValue>production</defaultValue>
+        <defaultValue>prod</defaultValue>
         </hudson.model.StringParameterDefinition>
         <hudson.model.StringParameterDefinition>
         <name>CLUSTER</name>
