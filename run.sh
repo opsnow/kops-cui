@@ -281,7 +281,7 @@ run() {
         if [ "${ANSWER}" == "Y" ]; then
             ${SHELL_DIR}/tools.sh
         else
-            error
+            _error
         fi
     fi
 
@@ -471,8 +471,11 @@ create_menu() {
 
     case ${ANSWER} in
         1)
-            question "Enter master size [${master_size}] : "
-            master_size=${ANSWER:-${master_size}}
+            LIST=${SHELL_DIR}/addons/instances.txt
+            select_one
+            master_size=${SELECTED:-${master_size}}
+            # question "Enter master size [${master_size}] : "
+            # master_size=${ANSWER:-${master_size}}
             create_menu
             ;;
         2)
@@ -482,8 +485,11 @@ create_menu() {
             create_menu
             ;;
         3)
-            question "Enter node size [${node_size}] : "
-            node_size=${ANSWER:-${node_size}}
+            LIST=${SHELL_DIR}/addons/instances.txt
+            select_one
+            node_size=${SELECTED:-${node_size}}
+            # question "Enter node size [${node_size}] : "
+            # node_size=${ANSWER:-${node_size}}
             create_menu
             ;;
         4)
@@ -823,7 +829,7 @@ read_state_store() {
         BUCKET=$(aws s3api get-bucket-acl --bucket ${KOPS_STATE_STORE} | jq -r '.Owner.ID')
         if [ -z ${BUCKET} ]; then
             clear_kops_config
-            error
+            _error
         fi
     fi
 }
@@ -867,31 +873,43 @@ read_cluster_list() {
 
     if [ -z ${KOPS_CLUSTER_NAME} ]; then
         clear_kops_config
-        error
+        _error
     fi
 }
 
 read_cluster_name() {
-    if [ "${OS_NAME}" == "linux" ]; then
-        RND=$(shuf -i 1-6 -n 1)
-    elif [ "${OS_NAME}" == "darwin" ]; then
-        RND=$(ruby -e 'p rand(1...6)')
-    else
-        RND=
+    # if [ "${OS_NAME}" == "linux" ]; then
+    #     RND=$(shuf -i 1-6 -n 1)
+    # elif [ "${OS_NAME}" == "darwin" ]; then
+    #     RND=$(ruby -e 'p rand(1...6)')
+    # else
+    #     RND=
+    # fi
+
+    # if [ ! -z ${RND} ]; then
+    #     WORD=$(sed -n ${RND}p ${SHELL_DIR}/addons/words.txt)
+    # fi
+
+    # if [ -z ${WORD} ]; then
+    #     WORD="demo"
+    # fi
+
+    # DEFAULT="${WORD}.k8s.local"
+    # question "Enter your cluster name [${DEFAULT}] : "
+
+    echo
+
+    # words list
+    LIST=${SHELL_DIR}/addons/words.txt
+
+    # select
+    select_one
+
+    if [ "${SELECTED}" == "" ]; then
+        _error
     fi
 
-    if [ ! -z ${RND} ]; then
-        WORD=$(sed -n ${RND}p ${SHELL_DIR}/addons/words.txt)
-    fi
-
-    if [ -z ${WORD} ]; then
-        WORD="demo"
-    fi
-
-    DEFAULT="${WORD}.k8s.local"
-    question "Enter your cluster name [${DEFAULT}] : "
-
-    KOPS_CLUSTER_NAME=${ANSWER:-${DEFAULT}}
+    KOPS_CLUSTER_NAME="${SELECTED}.k8s.local"
 }
 
 kops_get() {

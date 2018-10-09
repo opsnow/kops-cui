@@ -1,6 +1,8 @@
+demo
 anakin
 bespin
 kamino
 chewie
 falcon
 obiwan
+sample
