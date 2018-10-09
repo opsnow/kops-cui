@@ -134,7 +134,7 @@ waiting() {
             break
         fi
         IDX=$(( ${IDX} + 1 ))
-        progress
+        progress ${IDX}
     done
 
     progress end
@@ -151,7 +151,7 @@ waiting_for() {
             break
         fi
         IDX=$(( ${IDX} + 1 ))
-        progress
+        progress ${IDX}
     done
 
     progress end
@@ -199,17 +199,6 @@ waiting_pod() {
     echo
 }
 
-isElapsed() {
-    SEC=${1}
-    IDX=${2}
-
-    if [ "${IDX}" == "${SEC}" ]; then
-        return 0;
-    else
-        return -1;
-    fi
-}
-
 progress() {
     if [ "$1" == "start" ]; then
         printf '%3s'
@@ -218,6 +207,17 @@ progress() {
     else
         printf '.'
         sleep 2
+    fi
+}
+
+isElapsed() {
+    SEC=${1}
+    IDX=${2}
+
+    if [ "${IDX}" == "${SEC}" ]; then
+        return 0;
+    else
+        return -1;
     fi
 }
 
@@ -1089,6 +1089,10 @@ get_ingress_elb_name() {
     get_elb_domain "nginx-ingress"
     echo
 
+    if [ -z ${ELB_DOMAIN} ]; then
+        return
+    fi
+
     _command "echo ${ELB_DOMAIN} | cut -d'-' -f1"
     ELB_NAME=$(echo ${ELB_DOMAIN} | cut -d'-' -f1)
 
@@ -1099,6 +1103,7 @@ get_ingress_nip_io() {
     ELB_IP=
 
     get_elb_domain "nginx-ingress"
+    echo
 
     if [ -z ${ELB_DOMAIN} ]; then
         return
@@ -1215,7 +1220,7 @@ set_record_cname() {
 }
 
 set_record_alias() {
-    if [ -z ${BASE_DOMAIN} ]; then
+    if [ -z ${BASE_DOMAIN} ] || [ -z ${ELB_NAME} ]; then
         return
     fi
 
