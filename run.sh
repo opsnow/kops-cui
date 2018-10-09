@@ -1048,9 +1048,9 @@ get_elb_domain() {
     ELB_DOMAIN=
 
     if [ -z $2 ]; then
-        _command "kubectl get svc --all-namespaces -o wide | grep LoadBalancer | grep $1 | awk '{print \$5}' | head -1"
+        _command "kubectl get svc --all-namespaces -o wide | grep LoadBalancer | grep $1 | head -1 | awk '{print \$5}'"
     else
-        _command "kubectl get svc -n $2 -o wide | grep LoadBalancer | grep $1 | awk '{print \$4}' | head -1"
+        _command "kubectl get svc -n $2 -o wide | grep LoadBalancer | grep $1 | head -1 | awk '{print \$4}'"
     fi
 
     progress start
@@ -1059,9 +1059,9 @@ get_elb_domain() {
     while [ 1 ]; do
         # ELB Domain 을 획득
         if [ -z $2 ]; then
-            ELB_DOMAIN=$(kubectl get svc --all-namespaces -o wide | grep LoadBalancer | grep $1 | awk '{print $5}' | head -1)
+            ELB_DOMAIN=$(kubectl get svc --all-namespaces -o wide | grep LoadBalancer | grep $1 | head -1 | awk '{print $5}')
         else
-            ELB_DOMAIN=$(kubectl get svc -n $2 -o wide | grep LoadBalancer | grep $1 | awk '{print $4}' | head -1)
+            ELB_DOMAIN=$(kubectl get svc -n $2 -o wide | grep LoadBalancer | grep $1 | head -1 | awk '{print $4}')
         fi
 
         if [ ! -z ${ELB_DOMAIN} ] && [ "${ELB_DOMAIN}" != "<pending>" ]; then
