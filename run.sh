@@ -1048,9 +1048,9 @@ get_elb_domain() {
     ELB_DOMAIN=
 
     if [ -z $2 ]; then
-        _command "kubectl get svc --all-namespaces -o wide | grep LoadBalancer | grep $1 | awk '{print $5}' | head -1"
+        _command "kubectl get svc --all-namespaces -o wide | grep LoadBalancer | grep $1 | awk '{print \$5}' | head -1"
     else
-        _command "kubectl get svc -n $2 -o wide | grep LoadBalancer | grep $1 | awk '{print $4}' | head -1"
+        _command "kubectl get svc -n $2 -o wide | grep LoadBalancer | grep $1 | awk '{print \$4}' | head -1"
     fi
 
     progress start
