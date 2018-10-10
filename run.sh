@@ -471,7 +471,7 @@ create_menu() {
 
     case ${ANSWER} in
         1)
-            LIST=${SHELL_DIR}/addons/instances.txt
+            LIST=${SHELL_DIR}/templates/instances.txt
             select_one
             master_size=${SELECTED:-${master_size}}
             # question "Enter master size [${master_size}] : "
@@ -485,7 +485,7 @@ create_menu() {
             create_menu
             ;;
         3)
-            LIST=${SHELL_DIR}/addons/instances.txt
+            LIST=${SHELL_DIR}/templates/instances.txt
             select_one
             node_size=${SELECTED:-${node_size}}
             # question "Enter node size [${node_size}] : "
@@ -887,7 +887,7 @@ read_cluster_name() {
     # fi
 
     # if [ ! -z ${RND} ]; then
-    #     WORD=$(sed -n ${RND}p ${SHELL_DIR}/addons/words.txt)
+    #     WORD=$(sed -n ${RND}p ${SHELL_DIR}/templates/words.txt)
     # fi
 
     # if [ -z ${WORD} ]; then
@@ -900,7 +900,7 @@ read_cluster_name() {
     echo
 
     # words list
-    LIST=${SHELL_DIR}/addons/words.txt
+    LIST=${SHELL_DIR}/templates/words.txt
 
     # select
     select_one
@@ -1204,7 +1204,7 @@ set_record_cname() {
 
     # record sets
     RECORD=$(mktemp /tmp/kops-cui-record-sets-cname.XXXXXX.json)
-    get_template addons/record-sets-cname.json ${RECORD}
+    get_template templates/record-sets-cname.json ${RECORD}
 
     # replace
     sed -i -e "s/DOMAIN/${CERT_DNS_NAME}/g" ${RECORD}
@@ -1238,7 +1238,7 @@ set_record_alias() {
 
     # record sets
     RECORD=$(mktemp /tmp/kops-cui-record-sets-alias.XXXXXX.json)
-    get_template addons/record-sets-alias.json ${RECORD}
+    get_template templates/record-sets-alias.json ${RECORD}
 
     # replace
     sed -i -e "s/DOMAIN/*.${BASE_DOMAIN}/g" ${RECORD}
@@ -1265,7 +1265,7 @@ delete_record() {
 
     # record sets
     RECORD=$(mktemp /tmp/kops-cui-record-sets-delete.XXXXXX.json)
-    get_template addons/record-sets-delete.json ${RECORD}
+    get_template templates/record-sets-delete.json ${RECORD}
 
     # replace
     sed -i -e "s/DOMAIN/*.${BASE_DOMAIN}/g" ${RECORD}
