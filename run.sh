@@ -85,9 +85,16 @@ _error() {
 
 question() {
     Q=${1:-"Enter your choice : "}
+
     echo
     _read "$Q" 6
     echo
+
+    if [ ! -z ${2} ]; then
+        if ! [[ ${ANSWER} =~ ${2} ]]; then
+            ANSWER=
+        fi
+    fi
 }
 
 logo() {
@@ -153,24 +160,33 @@ press_enter() {
 }
 
 select_one() {
+    SELECTED=
+
     IDX=0
     while read VAL; do
         IDX=$(( ${IDX} + 1 ))
         printf "%4s. %s\n" "${IDX}" "${VAL}";
     done < ${LIST}
 
+    COUNT=$(cat ${LIST} | wc -l | xargs)
+
     # select
-    question
+    if [ "${COUNT}" == "x0" ]; then
+        return
+    elif [ "${COUNT}" != "x1" ]
+        COUNT="1-${COUNT}"
+    fi
+
+    question "Enter your choice (${COUNT}) : " "^[0-9]+$"
 
     # answer
-    SELECTED=
     if [ -z ${ANSWER} ]; then
         return
     fi
-    TEST='^[0-9]+$'
-    if ! [[ ${ANSWER} =~ ${TEST} ]]; then
-        return
-    fi
+    # TEST='^[0-9]+$'
+    # if ! [[ ${ANSWER} =~ ${TEST} ]]; then
+    #     return
+    # fi
     SELECTED=$(sed -n ${ANSWER}p ${LIST})
 }
 
@@ -496,12 +512,10 @@ create_menu() {
             LIST=${SHELL_DIR}/templates/instances.txt
             select_one
             master_size=${SELECTED:-${master_size}}
-            # question "Enter master size [${master_size}] : "
-            # master_size=${ANSWER:-${master_size}}
             create_menu
             ;;
         2)
-            question "Enter master count [${master_count}] : "
+            question "Enter master count [${master_count}] : " "^[0-9]+$"
             master_count=${ANSWER:-${master_count}}
             get_master_zones
             create_menu
@@ -510,12 +524,10 @@ create_menu() {
             LIST=${SHELL_DIR}/templates/instances.txt
             select_one
             node_size=${SELECTED:-${node_size}}
-            # question "Enter node size [${node_size}] : "
-            # node_size=${ANSWER:-${node_size}}
             create_menu
             ;;
         4)
-            question "Enter node count [${node_count}] : "
+            question "Enter node count [${node_count}] : " "^[0-9]+$"
             node_count=${ANSWER:-${node_count}}
             get_node_zones
             create_menu
@@ -534,8 +546,6 @@ create_menu() {
             LIST=${SHELL_DIR}/templates/topology.txt
             select_one
             topology=${SELECTED:-${topology}}
-            # question "Enter topology [${topology}] : "
-            # topology=${ANSWER:-${topology}}
             create_menu
             ;;
         8)
@@ -881,25 +891,6 @@ read_cluster_list() {
 }
 
 read_cluster_name() {
-    # if [ "${OS_NAME}" == "linux" ]; then
-    #     RND=$(shuf -i 1-6 -n 1)
-    # elif [ "${OS_NAME}" == "darwin" ]; then
-    #     RND=$(ruby -e 'p rand(1...6)')
-    # else
-    #     RND=
-    # fi
-
-    # if [ ! -z ${RND} ]; then
-    #     WORD=$(sed -n ${RND}p ${SHELL_DIR}/templates/words.txt)
-    # fi
-
-    # if [ -z ${WORD} ]; then
-    #     WORD="demo"
-    # fi
-
-    # DEFAULT="${WORD}.k8s.local"
-    # question "Enter your cluster name [${DEFAULT}] : "
-
     echo
 
     # words list
