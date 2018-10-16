@@ -36,7 +36,7 @@ node_count=2
 zones=
 network_cidr=10.0.0.0/16
 networking=calico
-topology=private
+topology=public
 dns_zone=
 vpc=
 
@@ -509,8 +509,11 @@ create_menu() {
             create_menu
             ;;
         7)
-            question "Enter topology [${topology}] : "
-            topology=${ANSWER:-${topology}}
+            LIST=${SHELL_DIR}/templates/topology.txt
+            select_one
+            topology=${SELECTED:-${topology}}
+            # question "Enter topology [${topology}] : "
+            # topology=${ANSWER:-${topology}}
             create_menu
             ;;
         8)
