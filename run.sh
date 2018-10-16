@@ -90,6 +90,36 @@ question() {
     echo
 }
 
+logo() {
+    if [ -z ${TPUT} ]; then
+        tput clear
+    fi
+
+    # figlet kops cui
+    echo
+    echo
+    _echo "  _                                _  " 3
+    _echo " | | _____  _ __  ___    ___ _   _(_) " 3
+    _echo " | |/ / _ \| '_ \/ __|  / __| | | | | " 3
+    _echo " |   < (_) | |_) \__ \ | (__| |_| | | " 3
+    _echo " |_|\_\___/| .__/|___/  \___|\__,_|_| " 3
+    _echo "           |_|                        " 3
+    echo
+}
+
+title() {
+    if [ -z ${TPUT} ]; then
+        tput clear
+    fi
+
+    echo
+    echo
+    _echo "KOPS CUI" 3
+    echo
+    _echo "${KOPS_STATE_STORE} > ${KOPS_CLUSTER_NAME}" 4
+    echo
+}
+
 press_enter() {
     echo
     _read "Press Enter to continue..." 5
@@ -120,6 +150,28 @@ press_enter() {
             state_store
             ;;
     esac
+}
+
+select_one() {
+    IDX=0
+    while read VAL; do
+        IDX=$(( ${IDX} + 1 ))
+        printf "%4s. %s\n" "${IDX}" "${VAL}";
+    done < ${LIST}
+
+    # select
+    question
+
+    # answer
+    SELECTED=
+    if [ -z ${ANSWER} ]; then
+        return
+    fi
+    TEST='^[0-9]+$'
+    if ! [[ ${ANSWER} =~ ${TEST} ]]; then
+        return
+    fi
+    SELECTED=$(sed -n ${ANSWER}p ${LIST})
 }
 
 waiting() {
@@ -219,36 +271,6 @@ isElapsed() {
     else
         return -1;
     fi
-}
-
-logo() {
-    if [ -z ${TPUT} ]; then
-        tput clear
-    fi
-
-    # figlet kops cui
-    echo
-    echo
-    _echo "  _                                _  " 3
-    _echo " | | _____  _ __  ___    ___ _   _(_) " 3
-    _echo " | |/ / _ \| '_ \/ __|  / __| | | | | " 3
-    _echo " |   < (_) | |_) \__ \ | (__| |_| | | " 3
-    _echo " |_|\_\___/| .__/|___/  \___|\__,_|_| " 3
-    _echo "           |_|                        " 3
-    echo
-}
-
-title() {
-    if [ -z ${TPUT} ]; then
-        tput clear
-    fi
-
-    echo
-    echo
-    _echo "KOPS CUI" 3
-    echo
-    _echo "${KOPS_STATE_STORE} > ${KOPS_CLUSTER_NAME}" 4
-    echo
 }
 
 run() {
@@ -649,28 +671,6 @@ addons_menu() {
             cluster_menu
             ;;
     esac
-}
-
-select_one() {
-    IDX=0
-    while read VAL; do
-        IDX=$(( ${IDX} + 1 ))
-        printf "%4s. %s\n" "${IDX}" "${VAL}";
-    done < ${LIST}
-
-    # select
-    question
-
-    # answer
-    SELECTED=
-    if [ -z ${ANSWER} ]; then
-        return
-    fi
-    TEST='^[0-9]+$'
-    if ! [[ ${ANSWER} =~ ${TEST} ]]; then
-        return
-    fi
-    SELECTED=$(sed -n ${ANSWER}p ${LIST})
 }
 
 sample_menu() {
