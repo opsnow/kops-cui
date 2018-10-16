@@ -173,7 +173,7 @@ select_one() {
     # select
     if [ "${COUNT}" == "x0" ]; then
         return
-    elif [ "${COUNT}" != "x1" ]
+    elif [ "${COUNT}" != "x1" ]; then
         COUNT="1-${COUNT}"
     fi
 
