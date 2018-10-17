@@ -47,13 +47,13 @@ dashboardProviders:
 
 dashboards:
   default:
-    prometheus-stats:
-      gnetId: 2
-      revision: 2
-      datasource: Prometheus
-    prometheus-cluster:
-      gnetId: 315
-      revision: 3
-      datasource: Prometheus
     kube-mon:
       url: https://raw.githubusercontent.com/opsnow/kops-cui/master/templates/kube-mon.json
+    # prometheus-stats:
+    #   gnetId: 2
+    #   revision: 2
+    #   datasource: Prometheus
+    # prometheus-cluster:
+    #   gnetId: 315
+    #   revision: 3
+    #   datasource: Prometheus
