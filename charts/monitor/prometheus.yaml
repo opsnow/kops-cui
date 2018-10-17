@@ -16,7 +16,7 @@ server:
     accessModes:
       - ReadWriteOnce
     size: 8Gi
-    #:EFS:storageClass: "efs"
+#    #:EFS:storageClass: "efs"
 
 alertmanager:
   persistentVolume:
@@ -24,4 +24,4 @@ alertmanager:
     accessModes:
       - ReadWriteOnce
     size: 2Gi
-    #:EFS:storageClass: "efs"
+#    #:EFS:storageClass: "efs"
