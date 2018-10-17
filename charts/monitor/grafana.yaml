@@ -55,3 +55,5 @@ dashboards:
       gnetId: 315
       revision: 3
       datasource: Prometheus
+    kube-mon:
+      url: https://raw.githubusercontent.com/opsnow/kops-cui/master/templates/kube-mon.json

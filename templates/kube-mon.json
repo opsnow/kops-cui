@@ -2234,7 +2234,7 @@
     ]
   },
   "timezone": "browser",
-  "title": "Kubernetes cluster monitoring (via Prometheus)",
-  "uid": "wqCTn00iz",
+  "title": "Kubernetes Cluster Monitor (via Prometheus)",
+  "uid": "kops-cui-mon",
   "version": 1
 }
