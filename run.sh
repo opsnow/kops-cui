@@ -445,8 +445,14 @@ cluster_menu() {
                 return
             fi
 
-            kops_secret
-            press_enter cluster
+            question "Are you sure? (YES/[no]) : "
+
+            if [ "${ANSWER}" == "YES" ]; then
+                kops_secret
+                press_enter state
+            else
+                cluster_menu
+            fi
             ;;
         9)
             if [ "x${CLUSTER}" == "x0" ]; then
