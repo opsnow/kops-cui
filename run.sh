@@ -1568,16 +1568,12 @@ helm_install() {
     if [ "${NAME}" == "fluentd-elasticsearch" ]; then
         # host
         question "elasticsearch host [elasticsearch-client] : "
-
         CUSTOM_HOST=${ANSWER:-elasticsearch-client}
-
         sed -i -e "s/CUSTOM_HOST/${CUSTOM_HOST}/" ${CHART}
 
         # port
         question "elasticsearch port [9200]: "
-
         CUSTOM_PORT=${ANSWER:-9200}
-
         sed -i -e "s/CUSTOM_PORT/${CUSTOM_PORT}/" ${CHART}
     fi
 
