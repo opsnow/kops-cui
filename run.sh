@@ -1558,14 +1558,31 @@ helm_install() {
     CHART=$(mktemp /tmp/kops-cui-${NAME}.XXXXXX.yaml)
     get_template charts/${NAMESPACE}/${NAME}.yaml ${CHART}
 
-    # for jenkins jobs
+    # for jenkins
     if [ "${NAME}" == "jenkins" ]; then
         ${SHELL_DIR}/jobs/replace.sh ${CHART}
         echo
     fi
 
-    sed -i -e "s/CLUSTER_NAME/${KOPS_CLUSTER_NAME}/" ${CHART}
+    # for fluentd-elasticsearch
+    if [ "${NAME}" == "fluentd-elasticsearch" ]; then
+        # host
+        question "elasticsearch host [elasticsearch-client] : "
+
+        CUSTOM_HOST=${ANSWER:-elasticsearch-client}
+
+        sed -i -e "s/CUSTOM_HOST/${CUSTOM_HOST}/" ${CHART}
+
+        # port
+        question "elasticsearch port [9200]: "
+
+        CUSTOM_PORT=${ANSWER:-9200}
+
+        sed -i -e "s/CUSTOM_PORT/${CUSTOM_PORT}/" ${CHART}
+    fi
+
     sed -i -e "s/AWS_REGION/${REGION}/" ${CHART}
+    sed -i -e "s/CLUSTER_NAME/${KOPS_CLUSTER_NAME}/" ${CHART}
 
     if [ ! -z ${EFS_FILE_SYSTEM_ID} ]; then
         sed -i -e "s/EFS_FILE_SYSTEM_ID/${EFS_FILE_SYSTEM_ID}/" ${CHART}
