@@ -365,6 +365,7 @@ cluster_menu() {
         _echo "4. Rolling Update"
         _echo "5. Validate Cluster"
         _echo "6. Export Kube Config"
+        _echo "7. Change SSH key"
         echo
         _echo "9. Delete Cluster"
         echo
@@ -436,6 +437,15 @@ cluster_menu() {
             fi
 
             kops_export
+            press_enter cluster
+            ;;
+        7)
+            if [ "x${CLUSTER}" == "x0" ]; then
+                cluster_menu
+                return
+            fi
+
+            kops_secret
             press_enter cluster
             ;;
         9)
@@ -787,6 +797,7 @@ save_kops_config() {
     if [ ! -z ${S3_SYNC} ] && [ ! -z ${KOPS_CLUSTER_NAME} ]; then
         _command "aws s3 cp ${CONFIG} s3://${KOPS_STATE_STORE}/${KOPS_CLUSTER_NAME}.kops-cui"
         aws s3 cp ${CONFIG} s3://${KOPS_STATE_STORE}/${KOPS_CLUSTER_NAME}.kops-cui --quiet
+        aws s3 cp ${CONFIG} s3://${KOPS_STATE_STORE}/${KOPS_CLUSTER_NAME}/kops-cui --quiet
     fi
 }
 
@@ -1022,6 +1033,14 @@ kops_export() {
 
     _command "kops export kubecfg --name ${KOPS_CLUSTER_NAME} --state=s3://${KOPS_STATE_STORE}"
     kops export kubecfg --name ${KOPS_CLUSTER_NAME} --state=s3://${KOPS_STATE_STORE}
+}
+
+kops_secret() {
+    _command "kops delete secret --name=${KOPS_CLUSTER_NAME} --state=s3://${KOPS_STATE_STORE}"
+    kops delete secret --name=${KOPS_CLUSTER_NAME} --state=s3://${KOPS_STATE_STORE}
+
+    _command "kops create secret --name=${KOPS_CLUSTER_NAME} --state=s3://${KOPS_STATE_STORE} admin -i ~/.ssh/id_rsa.pub"
+    kops create secret --name=${KOPS_CLUSTER_NAME} --state=s3://${KOPS_STATE_STORE} admin -i ~/.ssh/id_rsa.pub
 }
 
 kops_delete() {
