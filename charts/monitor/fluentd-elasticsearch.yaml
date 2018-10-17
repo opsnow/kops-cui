@@ -3,7 +3,7 @@
 nameOverride: fluentd-elasticsearch
 
 elasticsearch:
-  host: 'elasticsearch-client'
-  port: 9200
+  host: CUSTOM_HOST
+  port: CUSTOM_PORT
   buffer_chunk_limit: 2M
   buffer_queue_limit: 8
