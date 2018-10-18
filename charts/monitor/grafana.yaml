@@ -57,3 +57,12 @@ dashboards:
     #   gnetId: 315
     #   revision: 3
     #   datasource: Prometheus
+
+# grafana.ini:
+#   auth.ldap:
+#     enabled: true
+#     allow_sign_up: false
+#     config_file: /etc/grafana/ldap.toml
+
+# ldap:
+#   existingSecret: "grafana-ldap-toml"
