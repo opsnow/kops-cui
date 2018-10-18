@@ -16,7 +16,6 @@
   "editable": true,
   "gnetId": null,
   "graphTooltip": 0,
-  "id": 3,
   "iteration": 1539840520849,
   "links": [],
   "panels": [
@@ -1538,7 +1537,7 @@
       "dashes": false,
       "datasource": null,
       "decimals": 2,
-      "fill": 1,
+      "fill": 0,
       "gridPos": {
         "h": 7,
         "w": 24,
