@@ -61,7 +61,7 @@ dashboards:
 # grafana.ini:
 #   auth.ldap:
 #     enabled: true
-#     allow_sign_up: false
+#     allow_sign_up: true
 #     config_file: /etc/grafana/ldap.toml
 
 # ldap:
