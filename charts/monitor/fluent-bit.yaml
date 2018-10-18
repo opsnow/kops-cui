@@ -1,0 +1,9 @@
+# chart-version: latest
+
+nameOverride: fluent-bit
+
+backend:
+  type: es
+  es:
+    host: CUSTOM_HOST
+    port: CUSTOM_PORT

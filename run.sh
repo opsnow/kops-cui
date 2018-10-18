@@ -1589,6 +1589,19 @@ helm_install() {
         echo
     fi
 
+    # for fluent-bit
+    if [ "${NAME}" == "fluent-bit" ]; then
+        # host
+        question "elasticsearch host [elasticsearch-client] : "
+        CUSTOM_HOST=${ANSWER:-elasticsearch-client}
+        sed -i -e "s/CUSTOM_HOST/${CUSTOM_HOST}/" ${CHART}
+
+        # port
+        question "elasticsearch port [9200]: "
+        CUSTOM_PORT=${ANSWER:-9200}
+        sed -i -e "s/CUSTOM_PORT/${CUSTOM_PORT}/" ${CHART}
+    fi
+
     # for fluentd-elasticsearch
     if [ "${NAME}" == "fluentd-elasticsearch" ]; then
         # host
