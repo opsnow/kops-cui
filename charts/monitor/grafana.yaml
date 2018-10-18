@@ -48,7 +48,7 @@ dashboardProviders:
 dashboards:
   default:
     kube-mon:
-      url: https://raw.githubusercontent.com/opsnow/kops-cui/master/templates/kube-mon.json
+      url: https://raw.githubusercontent.com/opsnow/kops-cui/master/templates/kube-mon-3.json
     # prometheus-stats:
     #   gnetId: 2
     #   revision: 2

@@ -16,7 +16,7 @@
   "editable": true,
   "gnetId": null,
   "graphTooltip": 0,
-  "iteration": 1539837513915,
+  "iteration": 1539840476660,
   "links": [],
   "panels": [
     {
@@ -2268,5 +2268,5 @@
   "timezone": "browser",
   "title": "Kubernetes Cluster Monitor (via Prometheus)",
   "uid": "kops-cui-mon",
-  "version": 1
+  "version": 2
 }
