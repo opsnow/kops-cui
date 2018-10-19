@@ -1596,52 +1596,48 @@ helm_install() {
     # for jenkins
     if [ "${NAME}" == "jenkins" ]; then
         # admin password
-        question "Admin Password [password] : "
+        question "Enter admin password [password] : "
         PASSWORD=${ANSWER:-password}
-        _result "Admin Password: ${PASSWORD}"
+        _result "password: ${PASSWORD}"
         _replace "s|AdminPassword: .*|AdminPassword: ${PASSWORD}|" ${CHART}
-        echo
 
-        ${SHELL_DIR}/jobs/replace.sh ${CHART}
+        echo
+        ${SHELL_DIR}/jenkins/jobs.sh ${CHART}
         echo
     fi
 
     # for grafana
     if [ "${NAME}" == "grafana" ]; then
         # admin password
-        question "Admin Password [password] : "
+        question "Enter admin password [password] : "
         PASSWORD=${ANSWER:-password}
-        _result "Admin Password: ${PASSWORD}"
+        _result "password: ${PASSWORD}"
         _replace "s|adminPassword: .*|adminPassword: ${PASSWORD}|" ${CHART}
 
         # ldap
-        question "Grafana LDAP Secret : "
+        question "Enter grafana LDAP secret : "
         GRAFANA_LDAP="${ANSWER}"
-        _result "Grafana LDAP Secret: ${GRAFANA_LDAP}"
+        _result "secret: ${GRAFANA_LDAP}"
 
         if [ "${GRAFANA_LDAP}" != "" ]; then
             _replace "s/#:LDAP://" ${CHART}
             _replace "s/GRAFANA_LDAP/${GRAFANA_LDAP}/" ${CHART}
         fi
-
-        echo
     fi
 
     # for fluentd-elasticsearch
     if [ "${NAME}" == "fluentd-elasticsearch" ]; then
         # host
-        question "Elasticsearch Host [elasticsearch-client] : "
+        question "Enter elasticsearch host [elasticsearch-client] : "
         CUSTOM_HOST=${ANSWER:-elasticsearch-client}
-        _result "Elasticsearch Host: ${CUSTOM_HOST}"
+        _result "host: ${CUSTOM_HOST}"
         _replace "s/CUSTOM_HOST/${CUSTOM_HOST}/" ${CHART}
 
         # port
-        question "Elasticsearch Port [9200]: "
+        question "Enter elasticsearch port [9200]: "
         CUSTOM_PORT=${ANSWER:-9200}
-        _result "Elasticsearch Port: ${CUSTOM_PORT}"
+        _result "port: ${CUSTOM_PORT}"
         _replace "s/CUSTOM_PORT/${CUSTOM_PORT}/" ${CHART}
-
-        echo
     fi
 
     # for efs-provisioner
@@ -1666,6 +1662,11 @@ helm_install() {
 
     # chart version
     CHART_VERSION=$(cat ${CHART} | grep chart-version | awk '{print $3}')
+
+    # if [ -z ${CHART_VERSION} ] || [ "${CHART_VERSION}" == "latest" ]; then
+    #     # https://kubernetes-charts.storage.googleapis.com/
+    #     CHART_VERSION=${CHART_VERSION:-latest}
+    # fi
 
     # helm install
     if [ -z ${CHART_VERSION} ] || [ "${CHART_VERSION}" == "latest" ]; then

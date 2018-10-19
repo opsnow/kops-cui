@@ -5,18 +5,6 @@
 rbac:
   install: true
 
-Persistence:
-  Enabled: true
-  AccessMode: ReadWriteOnce
-  Size: 8Gi
-  #:EFS:StorageClass: "efs"
-
-# Agent:
-#   Enabled: true
-#   Image: quay.io/nalbam/jnlp-slave
-#   ImageTag: latest
-#   AlwaysPullImage: true
-
 Master:
   # Image: quay.io/nalbam/jenkins
   # ImageTag: latest
@@ -48,4 +36,17 @@ Master:
     - active-directory:latest
     # https://plugins.jenkins.io/role-strategy
     - role-strategy:latest
-  # Jobs: -- auto generate -- see: jobs/replace.sh
+  # -- jenkins-jobs -- start -- see: jenkins/jobs.sh #
+  # -- jenkins-jobs -- end -- #
+
+# Agent:
+#   Enabled: true
+#   Image: quay.io/nalbam/jnlp-slave
+#   ImageTag: latest
+#   AlwaysPullImage: true
+
+Persistence:
+  Enabled: true
+  AccessMode: ReadWriteOnce
+  Size: 8Gi
+  #:EFS:StorageClass: "efs"
