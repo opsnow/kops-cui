@@ -1589,7 +1589,7 @@ helm_install() {
     fi
 
     # for grafana
-    if [ "${NAME}" == "jenkins" ]; then
+    if [ "${NAME}" == "grafana" ]; then
         # ldap
         question "grafana ldap secret : "
         GRAFANA_LDAP="${ANSWER}"
