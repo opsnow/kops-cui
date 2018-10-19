@@ -1584,12 +1584,20 @@ helm_install() {
 
     # for jenkins
     if [ "${NAME}" == "jenkins" ]; then
+        # admin password
+        question "Admin Password [password] : "
+        sed -i -e "s|AdminPassword: .*|AdminPassword: ${ANSWER:-password}|" ${CHART}
+
         ${SHELL_DIR}/jobs/replace.sh ${CHART}
         echo
     fi
 
     # for grafana
     if [ "${NAME}" == "grafana" ]; then
+        # admin password
+        question "Admin Password [password] : "
+        sed -i -e "s|adminPassword: .*|adminPassword: ${ANSWER:-password}|" ${CHART}
+
         # ldap
         question "grafana ldap secret : "
         GRAFANA_LDAP="${ANSWER}"
@@ -1597,7 +1605,6 @@ helm_install() {
         if [ "${GRAFANA_LDAP}" != "" ]; then
             sed -i -e "s/#:LDAP://" ${CHART}
             sed -i -e "s/GRAFANA_LDAP/${GRAFANA_LDAP}/" ${CHART}
-            sed -i -e "s/adminPassword/#adminPassword/" ${CHART}
         fi
     fi
 
@@ -1605,13 +1612,11 @@ helm_install() {
     if [ "${NAME}" == "fluentd-elasticsearch" ]; then
         # host
         question "elasticsearch host [elasticsearch-client] : "
-        CUSTOM_HOST=${ANSWER:-elasticsearch-client}
-        sed -i -e "s/CUSTOM_HOST/${CUSTOM_HOST}/" ${CHART}
+        sed -i -e "s/CUSTOM_HOST/${ANSWER:-elasticsearch-client}/" ${CHART}
 
         # port
         question "elasticsearch port [9200]: "
-        CUSTOM_PORT=${ANSWER:-9200}
-        sed -i -e "s/CUSTOM_PORT/${CUSTOM_PORT}/" ${CHART}
+        sed -i -e "s/CUSTOM_PORT/${ANSWER:-9200}/" ${CHART}
     fi
 
     sed -i -e "s/AWS_REGION/${REGION}/" ${CHART}
