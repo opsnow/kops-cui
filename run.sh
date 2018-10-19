@@ -1590,11 +1590,17 @@ helm_install() {
     CHART=$(mktemp /tmp/kops-cui-${NAME}.XXXXXX.yaml)
     get_template charts/${NAMESPACE}/${NAME}.yaml ${CHART}
 
+    _replace "s/AWS_REGION/${REGION}/" ${CHART}
+    _replace "s/CLUSTER_NAME/${KOPS_CLUSTER_NAME}/" ${CHART}
+
     # for jenkins
     if [ "${NAME}" == "jenkins" ]; then
         # admin password
         question "Admin Password [password] : "
-        _replace "s|AdminPassword: .*|AdminPassword: ${ANSWER:-password}|" ${CHART}
+        PASSWORD=${ANSWER:-password}
+        _result "Admin Password: ${PASSWORD}"
+        _replace "s|AdminPassword: .*|AdminPassword: ${PASSWORD}|" ${CHART}
+        echo
 
         ${SHELL_DIR}/jobs/replace.sh ${CHART}
         echo
@@ -1604,31 +1610,39 @@ helm_install() {
     if [ "${NAME}" == "grafana" ]; then
         # admin password
         question "Admin Password [password] : "
-        _replace "s|adminPassword: .*|adminPassword: ${ANSWER:-password}|" ${CHART}
+        PASSWORD=${ANSWER:-password}
+        _result "Admin Password: ${PASSWORD}"
+        _replace "s|adminPassword: .*|adminPassword: ${PASSWORD}|" ${CHART}
 
         # ldap
-        question "grafana ldap secret : "
+        question "Grafana LDAP Secret : "
         GRAFANA_LDAP="${ANSWER}"
+        _result "Grafana LDAP Secret: ${GRAFANA_LDAP}"
 
         if [ "${GRAFANA_LDAP}" != "" ]; then
             _replace "s/#:LDAP://" ${CHART}
             _replace "s/GRAFANA_LDAP/${GRAFANA_LDAP}/" ${CHART}
         fi
+
+        echo
     fi
 
     # for fluentd-elasticsearch
     if [ "${NAME}" == "fluentd-elasticsearch" ]; then
         # host
-        question "elasticsearch host [elasticsearch-client] : "
-        _replace "s/CUSTOM_HOST/${ANSWER:-elasticsearch-client}/" ${CHART}
+        question "Elasticsearch Host [elasticsearch-client] : "
+        CUSTOM_HOST=${ANSWER:-elasticsearch-client}
+        _result "Elasticsearch Host: ${CUSTOM_HOST}"
+        _replace "s/CUSTOM_HOST/${CUSTOM_HOST}/" ${CHART}
 
         # port
-        question "elasticsearch port [9200]: "
-        _replace "s/CUSTOM_PORT/${ANSWER:-9200}/" ${CHART}
-    fi
+        question "Elasticsearch Port [9200]: "
+        CUSTOM_PORT=${ANSWER:-9200}
+        _result "Elasticsearch Port: ${CUSTOM_PORT}"
+        _replace "s/CUSTOM_PORT/${CUSTOM_PORT}/" ${CHART}
 
-    _replace "s/AWS_REGION/${REGION}/" ${CHART}
-    _replace "s/CLUSTER_NAME/${KOPS_CLUSTER_NAME}/" ${CHART}
+        echo
+    fi
 
     # for efs-provisioner
     if [ ! -z ${EFS_FILE_SYSTEM_ID} ]; then
