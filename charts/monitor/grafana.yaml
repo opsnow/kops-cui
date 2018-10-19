@@ -20,7 +20,7 @@ persistence:
   accessModes:
     - ReadWriteOnce
   size: 5Gi
-#  # :EFS:storageClass: "efs"
+#  #:EFS:storageClass: "efs"
 
 datasources:
   datasources.yaml:
@@ -58,11 +58,11 @@ dashboards:
     #   revision: 3
     #   datasource: Prometheus
 
-# grafana.ini:
-#   auth.ldap:
-#     enabled: true
-#     allow_sign_up: true
-#     config_file: /etc/grafana/ldap.toml
+#:LDAP:grafana.ini:
+#:LDAP:  auth.ldap:
+#:LDAP:    enabled: true
+#:LDAP:    allow_sign_up: true
+#:LDAP:    config_file: /etc/grafana/ldap.toml
 
-# ldap:
-#   existingSecret: "grafana-ldap-toml"
+#:LDAP:ldap:
+#:LDAP:  existingSecret: "GRAFANA_LDAP"

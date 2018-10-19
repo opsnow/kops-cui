@@ -1588,6 +1588,18 @@ helm_install() {
         echo
     fi
 
+    # for grafana
+    if [ "${NAME}" == "jenkins" ]; then
+        # ldap
+        question "grafana ldap secret : "
+        GRAFANA_LDAP="${ANSWER}"
+
+        if [ "${GRAFANA_LDAP}" != "" ]; then
+            sed -i -e "s/#:LDAP://" ${CHART}
+            sed -i -e "s/GRAFANA_LDAP/${GRAFANA_LDAP}/" ${CHART}
+        fi
+    fi
+
     # for fluentd-elasticsearch
     if [ "${NAME}" == "fluentd-elasticsearch" ]; then
         # host
@@ -1604,7 +1616,9 @@ helm_install() {
     sed -i -e "s/AWS_REGION/${REGION}/" ${CHART}
     sed -i -e "s/CLUSTER_NAME/${KOPS_CLUSTER_NAME}/" ${CHART}
 
+    # for efs-provisioner
     if [ ! -z ${EFS_FILE_SYSTEM_ID} ]; then
+        sed -i -e "s/#:EFS://" ${CHART}
         sed -i -e "s/EFS_FILE_SYSTEM_ID/${EFS_FILE_SYSTEM_ID}/" ${CHART}
     fi
 
@@ -1620,11 +1634,6 @@ helm_install() {
             sed -i -e "s/INGRESS_ENABLED/true/" ${CHART}
             sed -i -e "s/INGRESS_DOMAIN/${DOMAIN}/" ${CHART}
         fi
-    fi
-
-    # efs
-    if [ ! -z ${EFS_FILE_SYSTEM_ID} ]; then
-        sed -i -e "s/#:EFS://" ${CHART}
     fi
 
     # chart version
