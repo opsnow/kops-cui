@@ -848,7 +848,7 @@
         "min": false,
         "rightSide": false,
         "show": false,
-        "sideWidth": 200,
+        "sideWidth": null,
         "sort": "current",
         "sortDesc": true,
         "total": false,
@@ -1064,7 +1064,7 @@
             "h": 7,
             "w": 24,
             "x": 0,
-            "y": 4
+            "y": 25
           },
           "height": "",
           "id": 17,
@@ -1177,7 +1177,7 @@
             "h": 7,
             "w": 24,
             "x": 0,
-            "y": 5
+            "y": 26
           },
           "height": "",
           "id": 23,
@@ -1290,7 +1290,7 @@
             "h": 7,
             "w": 24,
             "x": 0,
-            "y": 6
+            "y": 27
           },
           "height": "",
           "id": 24,
@@ -1427,7 +1427,7 @@
             "h": 13,
             "w": 24,
             "x": 0,
-            "y": 7
+            "y": 28
           },
           "id": 20,
           "isNew": true,
@@ -1439,6 +1439,7 @@
             "min": false,
             "rightSide": false,
             "show": true,
+            "sideWidth": 300,
             "sort": "current",
             "sortDesc": true,
             "total": false,
@@ -1551,7 +1552,7 @@
         "min": false,
         "rightSide": true,
         "show": true,
-        "sideWidth": 200,
+        "sideWidth": null,
         "total": false,
         "values": true
       },
@@ -1650,7 +1651,7 @@
             "h": 7,
             "w": 24,
             "x": 0,
-            "y": 9
+            "y": 37
           },
           "id": 25,
           "isNew": true,
@@ -1662,7 +1663,7 @@
             "min": false,
             "rightSide": true,
             "show": true,
-            "sideWidth": 200,
+            "sideWidth": null,
             "sort": "current",
             "sortDesc": true,
             "total": false,
@@ -1762,7 +1763,7 @@
             "h": 7,
             "w": 24,
             "x": 0,
-            "y": 10
+            "y": 45
           },
           "id": 26,
           "isNew": true,
@@ -1774,7 +1775,7 @@
             "min": false,
             "rightSide": true,
             "show": true,
-            "sideWidth": 200,
+            "sideWidth": null,
             "sort": "current",
             "sortDesc": true,
             "total": false,
@@ -1874,7 +1875,7 @@
             "h": 7,
             "w": 24,
             "x": 0,
-            "y": 39
+            "y": 46
           },
           "id": 27,
           "isNew": true,
@@ -1886,7 +1887,7 @@
             "min": false,
             "rightSide": true,
             "show": true,
-            "sideWidth": 200,
+            "sideWidth": null,
             "sort": "current",
             "sortDesc": true,
             "total": false,
@@ -2006,7 +2007,7 @@
             "h": 13,
             "w": 24,
             "x": 0,
-            "y": 12
+            "y": 47
           },
           "id": 28,
           "isNew": true,
@@ -2018,7 +2019,7 @@
             "min": false,
             "rightSide": false,
             "show": true,
-            "sideWidth": 200,
+            "sideWidth": 300,
             "sort": "current",
             "sortDesc": true,
             "total": false,
@@ -2243,7 +2244,7 @@
             "h": 7,
             "w": 24,
             "x": 0,
-            "y": 14
+            "y": 49
           },
           "id": 16,
           "isNew": true,
@@ -2255,7 +2256,7 @@
             "min": false,
             "rightSide": true,
             "show": true,
-            "sideWidth": 200,
+            "sideWidth": 300,
             "sort": "current",
             "sortDesc": true,
             "total": false,
@@ -2365,7 +2366,7 @@
             "h": 7,
             "w": 24,
             "x": 0,
-            "y": 14
+            "y": 57
           },
           "id": 30,
           "isNew": true,
@@ -2377,7 +2378,7 @@
             "min": false,
             "rightSide": true,
             "show": true,
-            "sideWidth": 200,
+            "sideWidth": 300,
             "sort": "current",
             "sortDesc": true,
             "total": false,
@@ -2545,7 +2546,7 @@
             "min": false,
             "rightSide": false,
             "show": true,
-            "sideWidth": 200,
+            "sideWidth": 300,
             "sort": "current",
             "sortDesc": true,
             "total": false,
