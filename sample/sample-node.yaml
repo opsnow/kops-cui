@@ -41,8 +41,8 @@ spec:
             cpu: 200m
             memory: 256Mi
           limits:
-            cpu: 500m
-            memory: 512Mi
+            cpu: 200m
+            memory: 256Mi
         env:
         - name: REDIS_URL
           value: "redis://redis:6379"
