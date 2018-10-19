@@ -58,6 +58,14 @@ _read() {
     fi
 }
 
+_replace() {
+    if [ "${OS_NAME}" == "darwin" ]; then
+        sed -i "" -e "$1" $2
+    else
+        sed -i -e "$1" $2
+    fi
+}
+
 _result() {
     _echo "# $@" 4
 }
@@ -1225,8 +1233,8 @@ set_record_cname() {
     get_template templates/record-sets-cname.json ${RECORD}
 
     # replace
-    sed -i -e "s/DOMAIN/${CERT_DNS_NAME}/g" ${RECORD}
-    sed -i -e "s/DNS_NAME/${CERT_DNS_VALUE}/g" ${RECORD}
+    _replace "s/DOMAIN/${CERT_DNS_NAME}/g" ${RECORD}
+    _replace "s/DNS_NAME/${CERT_DNS_VALUE}/g" ${RECORD}
 
     cat ${RECORD}
 
@@ -1259,9 +1267,9 @@ set_record_alias() {
     get_template templates/record-sets-alias.json ${RECORD}
 
     # replace
-    sed -i -e "s/DOMAIN/*.${BASE_DOMAIN}/g" ${RECORD}
-    sed -i -e "s/ZONE_ID/${ELB_ZONE_ID}/g" ${RECORD}
-    sed -i -e "s/DNS_NAME/${ELB_DNS_NAME}/g" ${RECORD}
+    _replace "s/DOMAIN/*.${BASE_DOMAIN}/g" ${RECORD}
+    _replace "s/ZONE_ID/${ELB_ZONE_ID}/g" ${RECORD}
+    _replace "s/DNS_NAME/${ELB_DNS_NAME}/g" ${RECORD}
 
     cat ${RECORD}
 
@@ -1286,7 +1294,7 @@ delete_record() {
     get_template templates/record-sets-delete.json ${RECORD}
 
     # replace
-    sed -i -e "s/DOMAIN/*.${BASE_DOMAIN}/g" ${RECORD}
+    _replace "s/DOMAIN/*.${BASE_DOMAIN}/g" ${RECORD}
 
     cat ${RECORD}
 
@@ -1522,7 +1530,7 @@ helm_nginx_ingress() {
         _result "CertificateArn: ${SSL_CERT_ARN}"
         echo
 
-        sed -i -e "s@aws-load-balancer-ssl-cert:.*@aws-load-balancer-ssl-cert: ${SSL_CERT_ARN}@" ${CHART}
+        _replace "s@aws-load-balancer-ssl-cert:.*@aws-load-balancer-ssl-cert: ${SSL_CERT_ARN}@" ${CHART}
     fi
 
     # chart version
@@ -1582,11 +1590,17 @@ helm_install() {
     CHART=$(mktemp /tmp/kops-cui-${NAME}.XXXXXX.yaml)
     get_template charts/${NAMESPACE}/${NAME}.yaml ${CHART}
 
+    _replace "s/AWS_REGION/${REGION}/" ${CHART}
+    _replace "s/CLUSTER_NAME/${KOPS_CLUSTER_NAME}/" ${CHART}
+
     # for jenkins
     if [ "${NAME}" == "jenkins" ]; then
         # admin password
         question "Admin Password [password] : "
-        sed -i -e "s|AdminPassword: .*|AdminPassword: ${ANSWER:-password}|" ${CHART}
+        PASSWORD=${ANSWER:-password}
+        _result "Admin Password: ${PASSWORD}"
+        _replace "s|AdminPassword: .*|AdminPassword: ${PASSWORD}|" ${CHART}
+        echo
 
         ${SHELL_DIR}/jobs/replace.sh ${CHART}
         echo
@@ -1596,49 +1610,57 @@ helm_install() {
     if [ "${NAME}" == "grafana" ]; then
         # admin password
         question "Admin Password [password] : "
-        sed -i -e "s|adminPassword: .*|adminPassword: ${ANSWER:-password}|" ${CHART}
+        PASSWORD=${ANSWER:-password}
+        _result "Admin Password: ${PASSWORD}"
+        _replace "s|adminPassword: .*|adminPassword: ${PASSWORD}|" ${CHART}
 
         # ldap
-        question "grafana ldap secret : "
+        question "Grafana LDAP Secret : "
         GRAFANA_LDAP="${ANSWER}"
+        _result "Grafana LDAP Secret: ${GRAFANA_LDAP}"
 
         if [ "${GRAFANA_LDAP}" != "" ]; then
-            sed -i -e "s/#:LDAP://" ${CHART}
-            sed -i -e "s/GRAFANA_LDAP/${GRAFANA_LDAP}/" ${CHART}
+            _replace "s/#:LDAP://" ${CHART}
+            _replace "s/GRAFANA_LDAP/${GRAFANA_LDAP}/" ${CHART}
         fi
+
+        echo
     fi
 
     # for fluentd-elasticsearch
     if [ "${NAME}" == "fluentd-elasticsearch" ]; then
         # host
-        question "elasticsearch host [elasticsearch-client] : "
-        sed -i -e "s/CUSTOM_HOST/${ANSWER:-elasticsearch-client}/" ${CHART}
+        question "Elasticsearch Host [elasticsearch-client] : "
+        CUSTOM_HOST=${ANSWER:-elasticsearch-client}
+        _result "Elasticsearch Host: ${CUSTOM_HOST}"
+        _replace "s/CUSTOM_HOST/${CUSTOM_HOST}/" ${CHART}
 
         # port
-        question "elasticsearch port [9200]: "
-        sed -i -e "s/CUSTOM_PORT/${ANSWER:-9200}/" ${CHART}
-    fi
+        question "Elasticsearch Port [9200]: "
+        CUSTOM_PORT=${ANSWER:-9200}
+        _result "Elasticsearch Port: ${CUSTOM_PORT}"
+        _replace "s/CUSTOM_PORT/${CUSTOM_PORT}/" ${CHART}
 
-    sed -i -e "s/AWS_REGION/${REGION}/" ${CHART}
-    sed -i -e "s/CLUSTER_NAME/${KOPS_CLUSTER_NAME}/" ${CHART}
+        echo
+    fi
 
     # for efs-provisioner
     if [ ! -z ${EFS_FILE_SYSTEM_ID} ]; then
-        sed -i -e "s/#:EFS://" ${CHART}
-        sed -i -e "s/EFS_FILE_SYSTEM_ID/${EFS_FILE_SYSTEM_ID}/" ${CHART}
+        _replace "s/#:EFS://" ${CHART}
+        _replace "s/EFS_FILE_SYSTEM_ID/${EFS_FILE_SYSTEM_ID}/" ${CHART}
     fi
 
     # ingress
     if [ ! -z ${INGRESS} ]; then
         if [ -z ${BASE_DOMAIN} ] || [ "${INGRESS}" == "false" ]; then
-            sed -i -e "s/SERVICE_TYPE/LoadBalancer/" ${CHART}
-            sed -i -e "s/INGRESS_ENABLED/false/" ${CHART}
+            _replace "s/SERVICE_TYPE/LoadBalancer/" ${CHART}
+            _replace "s/INGRESS_ENABLED/false/" ${CHART}
         else
             DOMAIN="${NAME}-${NAMESPACE}.${BASE_DOMAIN}"
 
-            sed -i -e "s/SERVICE_TYPE/ClusterIP/" ${CHART}
-            sed -i -e "s/INGRESS_ENABLED/true/" ${CHART}
-            sed -i -e "s/INGRESS_DOMAIN/${DOMAIN}/" ${CHART}
+            _replace "s/SERVICE_TYPE/ClusterIP/" ${CHART}
+            _replace "s/INGRESS_ENABLED/true/" ${CHART}
+            _replace "s/INGRESS_DOMAIN/${DOMAIN}/" ${CHART}
         fi
     fi
 
@@ -1813,12 +1835,12 @@ apply_sample() {
 
     if [ ! -z ${INGRESS} ]; then
         if [ -z ${BASE_DOMAIN} ]; then
-            sed -i -e "s/# type: SERVICE_TYPE/type: LoadBalancer/" ${SAMPLE}
+            _replace "s/# type: SERVICE_TYPE/type: LoadBalancer/" ${SAMPLE}
         else
             DOMAIN="${NAME}-${NAMESPACE}.${BASE_DOMAIN}"
 
-            sed -i -e "s/# type: SERVICE_TYPE/type: ClusterIP/" ${SAMPLE}
-            sed -i -e "s/INGRESS_DOMAIN/${DOMAIN}/" ${SAMPLE}
+            _replace "s/# type: SERVICE_TYPE/type: ClusterIP/" ${SAMPLE}
+            _replace "s/INGRESS_DOMAIN/${DOMAIN}/" ${SAMPLE}
         fi
     fi
 
