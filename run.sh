@@ -1597,6 +1597,7 @@ helm_install() {
         if [ "${GRAFANA_LDAP}" != "" ]; then
             sed -i -e "s/#:LDAP://" ${CHART}
             sed -i -e "s/GRAFANA_LDAP/${GRAFANA_LDAP}/" ${CHART}
+            sed -i -e "s/adminPassword/#adminPassword/" ${CHART}
         fi
     fi
 
