@@ -49,7 +49,7 @@ spec:
             memory: 512Mi
           limits:
             cpu: 1000m
-            memory: 1024Mi
+            memory: 2048Mi
 
 ---
 # ------------------- Service ------------------- #
@@ -64,9 +64,9 @@ metadata:
 spec:
   # type: SERVICE_TYPE
   ports:
-    - name: http
-      port: 80
-      targetPort: 8080
+  - name: http
+    port: 80
+    targetPort: 8080
   selector:
     k8s-app: sample-spring
 
@@ -95,7 +95,7 @@ spec:
 ---
 # ------------------- HorizontalPodAutoscaler ------------------- #
 
-apiVersion: autoscaling/v1
+apiVersion: autoscaling/v2beta1
 kind: HorizontalPodAutoscaler
 metadata:
   name: sample-spring
@@ -106,10 +106,35 @@ spec:
     kind: Deployment
     name: sample-spring
   minReplicas: 1
-  maxReplicas: 22
-  targetCPUUtilizationPercentage: 50
+  maxReplicas: 10
+  metrics:
+  - type: Resource
+    resource:
+      name: cpu
+      targetAverageUtilization: 66
+  - type: Resource
+    resource:
+      name: memory
+      targetAverageUtilization: 66
 
-# apiVersion: autoscaling/v2beta1
+#   - type: Pods
+#     pods:
+#       metricName: packets-per-second
+#       targetAverageValue: 1k
+
+#   - type: Object
+#     object:
+#       metricName: requests-per-second
+#       describedObject:
+#         apiVersion: extensions/v1beta1
+#         kind: Ingress
+#         name: main-route
+#       target:
+#         name: rps
+#         kind: Value
+#       targetValue: 10k
+
+# apiVersion: autoscaling/v2beta2
 # kind: HorizontalPodAutoscaler
 # metadata:
 #   name: sample-spring
@@ -120,17 +145,11 @@ spec:
 #     kind: Deployment
 #     name: sample-spring
 #   minReplicas: 1
-#   maxReplicas: 22
+#   maxReplicas: 10
 #   metrics:
 #   - type: Resource
 #     resource:
 #       name: cpu
-#       targetAverageUtilization: 50
-#   - type: Resource
-#     resource:
-#       name: memory
-#       targetAverageUtilization: 50
-  # - type: Pods
-  #   pods:
-  #     metricName: packets-per-second
-  #     targetAverageValue: 1k
+#       target:
+#         type: Utilization
+#         averageUtilization: 50

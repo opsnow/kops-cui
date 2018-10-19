@@ -57,9 +57,9 @@ metadata:
 spec:
   # type: SERVICE_TYPE
   ports:
-    - name: http
-      port: 80
-      targetPort: 80
+  - name: http
+    port: 80
+    targetPort: 80
   selector:
     k8s-app: sample-webpack
 
@@ -88,7 +88,7 @@ spec:
 ---
 # ------------------- HorizontalPodAutoscaler ------------------- #
 
-apiVersion: autoscaling/v1
+apiVersion: autoscaling/v2beta1
 kind: HorizontalPodAutoscaler
 metadata:
   name: sample-webpack
@@ -99,31 +99,13 @@ spec:
     kind: Deployment
     name: sample-webpack
   minReplicas: 1
-  maxReplicas: 22
-  targetCPUUtilizationPercentage: 50
-
-# apiVersion: autoscaling/v2beta1
-# kind: HorizontalPodAutoscaler
-# metadata:
-#   name: sample-webpack
-#   namespace: default
-# spec:
-#   scaleTargetRef:
-#     apiVersion: apps/v1
-#     kind: Deployment
-#     name: sample-webpack
-#   minReplicas: 1
-#   maxReplicas: 22
-#   metrics:
-#   - type: Resource
-#     resource:
-#       name: cpu
-#       targetAverageUtilization: 50
-#   - type: Resource
-#     resource:
-#       name: memory
-#       targetAverageUtilization: 50
-  # - type: Pods
-  #   pods:
-  #     metricName: packets-per-second
-  #     targetAverageValue: 1k
+  maxReplicas: 10
+  metrics:
+  - type: Resource
+    resource:
+      name: cpu
+      targetAverageUtilization: 66
+  - type: Resource
+    resource:
+      name: memory
+      targetAverageUtilization: 66
