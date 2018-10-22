@@ -67,7 +67,7 @@ elif [ "${OS_NAME}" == "darwin" ]; then
     OS_TYPE="brew"
 fi
 
-_result "${OS_FULL}"
+_result "${OS_NAME} [${OS_TYPE}]"
 _result "${DATE}"
 
 if [ "${OS_TYPE}" == "" ]; then
@@ -92,19 +92,22 @@ if [ "${OS_TYPE}" == "apt" ]; then
     sudo apt update && sudo apt upgrade -y
     command -v jq > /dev/null || sudo apt install -y jq
     command -v git > /dev/null || sudo apt install -y git
-    # command -v docker > /dev/null || sudo apt install -y docker
     command -v pip > /dev/null || sudo apt install -y python-pip
 elif [ "${OS_TYPE}" == "yum" ]; then
     sudo yum update -y
     command -v jq > /dev/null || sudo yum install -y jq
     command -v git > /dev/null || sudo yum install -y git
-    # command -v docker > /dev/null || sudo yum install -y docker
     command -v pip > /dev/null || sudo yum install -y python-pip
 elif [ "${OS_TYPE}" == "brew" ]; then
     brew update && brew upgrade
     command -v jq > /dev/null || brew install jq
     command -v git > /dev/null || brew install git
-    command -v getopts /dev/null || brew install gnu-getopt
+    # getopt
+    GETOPT=$(getopt 2>&1 | head -1 | xargs)
+    if [ "${GETOPT}" == "--" ]; then
+        brew install gnu-getopt
+        brew link --force gnu-getopt
+    fi
 fi
 
 # aws-cli
