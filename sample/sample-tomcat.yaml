@@ -46,9 +46,9 @@ spec:
         resources:
           requests:
             cpu: 500m
-            memory: 512Mi
+            memory: 1024Mi
           limits:
-            cpu: 1000m
+            cpu: 500m
             memory: 1024Mi
 
 ---
@@ -64,9 +64,9 @@ metadata:
 spec:
   # type: SERVICE_TYPE
   ports:
-    - name: http
-      port: 80
-      targetPort: 8080
+  - name: http
+    port: 80
+    targetPort: 8080
   selector:
     k8s-app: sample-tomcat
 
@@ -95,7 +95,7 @@ spec:
 ---
 # ------------------- HorizontalPodAutoscaler ------------------- #
 
-apiVersion: autoscaling/v1
+apiVersion: autoscaling/v2beta1
 kind: HorizontalPodAutoscaler
 metadata:
   name: sample-tomcat
@@ -106,31 +106,13 @@ spec:
     kind: Deployment
     name: sample-tomcat
   minReplicas: 1
-  maxReplicas: 22
-  targetCPUUtilizationPercentage: 50
-
-# apiVersion: autoscaling/v2beta1
-# kind: HorizontalPodAutoscaler
-# metadata:
-#   name: sample-tomcat
-#   namespace: default
-# spec:
-#   scaleTargetRef:
-#     apiVersion: apps/v1
-#     kind: Deployment
-#     name: sample-tomcat
-#   minReplicas: 1
-#   maxReplicas: 22
-#   metrics:
-#   - type: Resource
-#     resource:
-#       name: cpu
-#       targetAverageUtilization: 50
-#   - type: Resource
-#     resource:
-#       name: memory
-#       targetAverageUtilization: 50
-  # - type: Pods
-  #   pods:
-  #     metricName: packets-per-second
-  #     targetAverageValue: 1k
+  maxReplicas: 10
+  metrics:
+  - type: Resource
+    resource:
+      name: cpu
+      targetAverageUtilization: 66
+  - type: Resource
+    resource:
+      name: memory
+      targetAverageUtilization: 66
