@@ -38,11 +38,11 @@ spec:
           periodSeconds: 15
         resources:
           requests:
-            cpu: 200m
-            memory: 256Mi
+            cpu: 100m
+            memory: 128Mi
           limits:
-            cpu: 200m
-            memory: 256Mi
+            cpu: 100m
+            memory: 128Mi
         env:
         - name: REDIS_URL
           value: "redis://redis:6379"
@@ -110,8 +110,8 @@ spec:
   - type: Resource
     resource:
       name: cpu
-      targetAverageUtilization: 66
+      targetAverageUtilization: 65
   - type: Resource
     resource:
       name: memory
-      targetAverageUtilization: 66
+      targetAverageUtilization: 65

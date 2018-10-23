@@ -111,11 +111,11 @@ spec:
   - type: Resource
     resource:
       name: cpu
-      targetAverageUtilization: 66
+      targetAverageUtilization: 65
   - type: Resource
     resource:
       name: memory
-      targetAverageUtilization: 66
+      targetAverageUtilization: 65
 
 #   - type: Pods
 #     pods:
