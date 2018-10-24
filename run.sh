@@ -313,7 +313,6 @@ run() {
     NEED_TOOL=
     command -v jq > /dev/null      || export NEED_TOOL=jq
     command -v git > /dev/null     || export NEED_TOOL=git
-    command -v wget > /dev/null    || export NEED_TOOL=wget
     command -v aws > /dev/null     || export NEED_TOOL=awscli
     command -v kubectl > /dev/null || export NEED_TOOL=kubectl
     command -v kops > /dev/null    || export NEED_TOOL=kops

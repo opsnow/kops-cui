@@ -16,7 +16,7 @@
   "editable": true,
   "gnetId": null,
   "graphTooltip": 0,
-  "iteration": 1540351972019,
+  "iteration": 1540365221650,
   "links": [],
   "panels": [
     {
@@ -163,7 +163,7 @@
       "tableColumn": "",
       "targets": [
         {
-          "expr": "sum (container_memory_working_set_bytes{pod_name=~\"^$Group-.*\",pod_name=~\"^$Deployment-[a-z0-9]+-[a-z0-9]+\"}) / sum (kube_pod_container_resource_requests_memory_bytes{pod=~\"^$Group-.*\"}) * 100",
+          "expr": "sum (container_memory_working_set_bytes{pod_name=~\"^$Group-.*\",pod_name=~\"^$Deployment-[a-z0-9]+-[a-z0-9]+\"}) / sum (kube_pod_container_resource_requests_memory_bytes{pod=~\"^$Group-.*\",pod=~\"^$Deployment-[a-z0-9]+-[a-z0-9]+\"}) * 100",
           "format": "time_series",
           "intervalFactor": 1,
           "refId": "A"
@@ -223,7 +223,7 @@
       "steppedLine": false,
       "targets": [
         {
-          "expr": "kube_deployment_status_replicas{deployment=~\"^$Group-.*\",deployment=~\"^$Deployment\"}",
+          "expr": "kube_deployment_status_replicas{deployment=~\"^$Group.*\",deployment=~\"^$Deployment\"}",
           "format": "time_series",
           "interval": "",
           "intervalFactor": 1,
@@ -927,7 +927,7 @@
         "options": [],
         "query": "label_values(kube_deployment_labels, deployment)",
         "refresh": 1,
-        "regex": "/([a-z]+)-.*-[dev|stage|prod]/",
+        "regex": "/([a-z]+)/",
         "skipUrlSync": false,
         "sort": 1,
         "tagValuesQuery": "",
@@ -950,7 +950,7 @@
         "multi": false,
         "name": "Deployment",
         "options": [],
-        "query": "label_values(kube_deployment_labels{deployment=~\"^$Group-.*\"}, deployment)",
+        "query": "label_values(kube_deployment_labels{deployment=~\"^$Group.*\"}, deployment)",
         "refresh": 2,
         "regex": "",
         "skipUrlSync": false,
