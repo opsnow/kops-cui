@@ -90,7 +90,7 @@
         }
       ],
       "thresholds": "65, 90",
-      "title": "Group CPU usage",
+      "title": "CPU usage",
       "type": "singlestat",
       "valueFontSize": "80%",
       "valueMaps": [
@@ -170,7 +170,7 @@
         }
       ],
       "thresholds": "65,90",
-      "title": "Group memory usage",
+      "title": "Memory usage",
       "type": "singlestat",
       "valueFontSize": "80%",
       "valueMaps": [
@@ -994,6 +994,6 @@
   },
   "timezone": "browser",
   "title": "Kubernetes Application Monitor (via Prometheus)",
-  "uid": "kops-cui-mon-sample",
+  "uid": "kube-mon-apps",
   "version": 1
 }

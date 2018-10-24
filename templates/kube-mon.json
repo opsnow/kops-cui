@@ -2703,6 +2703,6 @@
   },
   "timezone": "browser",
   "title": "Kubernetes Cluster Monitor (via Prometheus)",
-  "uid": "kops-cui-mon",
+  "uid": "kube-mon",
   "version": 1
 }
