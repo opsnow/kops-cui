@@ -12,11 +12,11 @@
       }
     ]
   },
-  "description": "Monitors Kubernetes application using Prometheus. Shows overall cluster CPU / Memory / Filesystem usage as well as individual pod, containers, systemd services statistics. Uses cAdvisor metrics only.",
+  "description": "Monitors Kubernetes deployment using Prometheus. Shows overall cluster CPU / Memory / Filesystem usage as well as individual pod, containers, systemd services statistics. Uses cAdvisor metrics only.",
   "editable": true,
   "gnetId": null,
   "graphTooltip": 0,
-  "iteration": 1540348538216,
+  "iteration": 1540351972019,
   "links": [],
   "panels": [
     {
@@ -82,7 +82,7 @@
       "tableColumn": "",
       "targets": [
         {
-          "expr": "sum (rate (container_cpu_usage_seconds_total{pod_name=~\"^$Group.*\",pod_name=~\"^$App.*\"}[2m])) / sum (kube_pod_container_resource_requests_cpu_cores{pod=~\"^$Group.*\"}) * 100",
+          "expr": "sum (rate (container_cpu_usage_seconds_total{pod_name=~\"^$Group-.*\",pod_name=~\"^$Deployment-[a-z0-9]+-[a-z0-9]+\"}[2m])) / sum (kube_pod_container_resource_requests_cpu_cores{pod=~\"^$Group-.*\"}) * 100",
           "format": "time_series",
           "interval": "",
           "intervalFactor": 1,
@@ -163,7 +163,7 @@
       "tableColumn": "",
       "targets": [
         {
-          "expr": "sum (container_memory_working_set_bytes{pod_name=~\"^$Group.*\",pod_name=~\"^$App.*\"}) / sum (kube_pod_container_resource_requests_memory_bytes{pod=~\"^$Group.*\"}) * 100",
+          "expr": "sum (container_memory_working_set_bytes{pod_name=~\"^$Group-.*\",pod_name=~\"^$Deployment-[a-z0-9]+-[a-z0-9]+\"}) / sum (kube_pod_container_resource_requests_memory_bytes{pod=~\"^$Group-.*\"}) * 100",
           "format": "time_series",
           "intervalFactor": 1,
           "refId": "A"
@@ -223,11 +223,11 @@
       "steppedLine": false,
       "targets": [
         {
-          "expr": "kube_hpa_status_current_replicas{hpa=~\"^$Group.*\",hpa=~\"^$App.*\"}",
+          "expr": "kube_deployment_status_replicas{deployment=~\"^$Group-.*\",deployment=~\"^$Deployment\"}",
           "format": "time_series",
           "interval": "",
           "intervalFactor": 1,
-          "legendFormat": "{{ hpa }}",
+          "legendFormat": "{{ deployment }}",
           "refId": "A"
         }
       ],
@@ -333,7 +333,7 @@
       "tableColumn": "",
       "targets": [
         {
-          "expr": "sum (rate (container_cpu_usage_seconds_total{pod_name=~\"^$Group.*\",pod_name=~\"^$App.*\"}[2m]))",
+          "expr": "sum (rate (container_cpu_usage_seconds_total{pod_name=~\"^$Group-.*\",pod_name=~\"^$Deployment-[a-z0-9]+-[a-z0-9]+\"}[2m]))",
           "format": "time_series",
           "intervalFactor": 1,
           "refId": "A"
@@ -414,7 +414,7 @@
       "tableColumn": "",
       "targets": [
         {
-          "expr": "sum (kube_pod_container_resource_requests_cpu_cores{pod=~\"^$Group.*\",pod=~\"^$App.*\"})",
+          "expr": "sum (kube_pod_container_resource_requests_cpu_cores{pod=~\"^$Group-.*\",pod=~\"^$Deployment-[a-z0-9]+-[a-z0-9]+\"})",
           "format": "time_series",
           "intervalFactor": 1,
           "refId": "A"
@@ -495,7 +495,7 @@
       "tableColumn": "",
       "targets": [
         {
-          "expr": "sum (container_memory_working_set_bytes{pod_name=~\"^$Group.*\",pod_name=~\"^$App.*\"})",
+          "expr": "sum (container_memory_working_set_bytes{pod_name=~\"^$Group-.*\",pod_name=~\"^$Deployment-[a-z0-9]+-[a-z0-9]+\"})",
           "format": "time_series",
           "intervalFactor": 1,
           "refId": "A"
@@ -576,7 +576,7 @@
       "tableColumn": "",
       "targets": [
         {
-          "expr": "sum (kube_pod_container_resource_requests_memory_bytes{pod=~\"^$Group.*\",pod=~\"^$App.*\"})",
+          "expr": "sum (kube_pod_container_resource_requests_memory_bytes{pod=~\"^$Group-.*\",pod=~\"^$Deployment-[a-z0-9]+-[a-z0-9]+\"})",
           "format": "time_series",
           "intervalFactor": 1,
           "refId": "A"
@@ -643,7 +643,7 @@
       "steppedLine": false,
       "targets": [
         {
-          "expr": "sum (rate (container_cpu_usage_seconds_total{image!=\"\",name=~\"^k8s_.*\",pod_name=~\"^$Group.*\",pod_name=~\"^$App.*\"}[2m])) by (pod_name)",
+          "expr": "sum (rate (container_cpu_usage_seconds_total{image!=\"\",name=~\"^k8s_.*\",pod_name=~\"^$Group-.*\",pod_name=~\"^$Deployment-[a-z0-9]+-[a-z0-9]+\"}[2m])) by (pod_name)",
           "format": "time_series",
           "interval": "",
           "intervalFactor": 1,
@@ -742,7 +742,7 @@
       "steppedLine": false,
       "targets": [
         {
-          "expr": "sum (container_memory_working_set_bytes{image!=\"\",name=~\"^k8s_.*\",pod_name=~\"^$Group.*\",pod_name=~\"^$App.*\"}) by (pod_name)",
+          "expr": "sum (container_memory_working_set_bytes{image!=\"\",name=~\"^k8s_.*\",pod_name=~\"^$Group-.*\",pod_name=~\"^$Deployment-[a-z0-9]+-[a-z0-9]+\"}) by (pod_name)",
           "format": "time_series",
           "interval": "",
           "intervalFactor": 1,
@@ -840,7 +840,7 @@
       "steppedLine": false,
       "targets": [
         {
-          "expr": "sum (rate (container_network_receive_bytes_total{image!=\"\",name=~\"^k8s_.*\",pod_name=~\"^$Group.*\",pod_name=~\"^$App.*\"}[2m])) by (pod_name)",
+          "expr": "sum (rate (container_network_receive_bytes_total{image!=\"\",name=~\"^k8s_.*\",pod_name=~\"^$Group-.*\",pod_name=~\"^$Deployment-[a-z0-9]+-[a-z0-9]+\"}[2m])) by (pod_name)",
           "format": "time_series",
           "interval": "",
           "intervalFactor": 1,
@@ -850,7 +850,7 @@
           "step": 10
         },
         {
-          "expr": "- sum (rate (container_network_transmit_bytes_total{image!=\"\",name=~\"^k8s_.*\",pod_name=~\"^$Group.*\",pod_name=~\"^$App.*\"}[2m])) by (pod_name)",
+          "expr": "- sum (rate (container_network_transmit_bytes_total{image!=\"\",name=~\"^k8s_.*\",pod_name=~\"^$Group-.*\",pod_name=~\"^$Deployment-[a-z0-9]+-[a-z0-9]+\"}[2m])) by (pod_name)",
           "format": "time_series",
           "interval": "",
           "intervalFactor": 1,
@@ -915,8 +915,8 @@
         "allValue": ".*",
         "current": {
           "tags": [],
-          "text": "sample",
-          "value": "sample"
+          "text": "kube",
+          "value": "kube"
         },
         "datasource": "Prometheus",
         "hide": 0,
@@ -925,9 +925,9 @@
         "multi": false,
         "name": "Group",
         "options": [],
-        "query": "label_values(hpa)",
+        "query": "label_values(kube_deployment_labels, deployment)",
         "refresh": 1,
-        "regex": "/([a-z]+)-.*/",
+        "regex": "/([a-z]+)-.*-[dev|stage|prod]/",
         "skipUrlSync": false,
         "sort": 1,
         "tagValuesQuery": "",
@@ -940,18 +940,18 @@
         "allValue": ".*",
         "current": {
           "tags": [],
-          "text": "All",
-          "value": "$__all"
+          "text": "kube-dns",
+          "value": "kube-dns"
         },
         "datasource": "Prometheus",
         "hide": 0,
-        "includeAll": true,
+        "includeAll": false,
         "label": null,
         "multi": false,
-        "name": "App",
+        "name": "Deployment",
         "options": [],
-        "query": "label_values(hpa)",
-        "refresh": 1,
+        "query": "label_values(kube_deployment_labels{deployment=~\"^$Group-.*\"}, deployment)",
+        "refresh": 2,
         "regex": "",
         "skipUrlSync": false,
         "sort": 1,
@@ -993,7 +993,7 @@
     ]
   },
   "timezone": "browser",
-  "title": "Kubernetes Application Monitor (via Prometheus)",
-  "uid": "kube-mon-apps",
+  "title": "Kubernetes Deployment Monitor (via Prometheus)",
+  "uid": "kube-mon-deploy",
   "version": 1
 }
