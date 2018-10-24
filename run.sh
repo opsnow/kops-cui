@@ -1042,11 +1042,11 @@ kops_export() {
 }
 
 kops_secret() {
-    _command "kops delete secret sshpublickey admin --name=${KOPS_CLUSTER_NAME} --state=s3://${KOPS_STATE_STORE}"
-    kops delete secret sshpublickey admin --name=${KOPS_CLUSTER_NAME} --state=s3://${KOPS_STATE_STORE}
+    _command "kops delete secret --name=${KOPS_CLUSTER_NAME} --state=s3://${KOPS_STATE_STORE}"
+    kops delete secret --name=${KOPS_CLUSTER_NAME} --state=s3://${KOPS_STATE_STORE}
 
-    _command "kops create secret sshpublickey admin -i ~/.ssh/id_rsa.pub --name=${KOPS_CLUSTER_NAME} --state=s3://${KOPS_STATE_STORE}"
-    kops create secret sshpublickey admin -i ~/.ssh/id_rsa.pub --name=${KOPS_CLUSTER_NAME} --state=s3://${KOPS_STATE_STORE}
+    _command "kops create secret --name=${KOPS_CLUSTER_NAME} --state=s3://${KOPS_STATE_STORE} admin -i ~/.ssh/id_rsa.pub"
+    kops create secret --name=${KOPS_CLUSTER_NAME} --state=s3://${KOPS_STATE_STORE} admin -i ~/.ssh/id_rsa.pub
 }
 
 kops_delete() {
