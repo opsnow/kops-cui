@@ -14,10 +14,10 @@ ingress:
 
 resources:
   requests:
-    cpu: 100m
+    cpu: 1000m
     memory: 3072Mi
   limits:
-    cpu: 200m
+    cpu: 2000m
     memory: 5120Mi
 
 readinessProbe:
