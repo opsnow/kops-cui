@@ -16,8 +16,7 @@
   "editable": true,
   "gnetId": null,
   "graphTooltip": 0,
-  "id": 1,
-  "iteration": 1540347434086,
+  "iteration": 1540347898015,
   "links": [],
   "panels": [
     {
@@ -969,6 +968,7 @@
         "min": false,
         "rightSide": true,
         "show": true,
+        "sideWidth": 200,
         "total": false,
         "values": true
       },
@@ -1067,7 +1067,7 @@
             "h": 7,
             "w": 24,
             "x": 0,
-            "y": 4
+            "y": 12
           },
           "height": "",
           "id": 17,
@@ -1080,6 +1080,7 @@
             "min": false,
             "rightSide": true,
             "show": true,
+            "sideWidth": 200,
             "sort": "current",
             "sortDesc": true,
             "total": false,
@@ -1180,7 +1181,7 @@
             "h": 7,
             "w": 24,
             "x": 0,
-            "y": 5
+            "y": 13
           },
           "height": "",
           "id": 23,
@@ -1193,6 +1194,7 @@
             "min": false,
             "rightSide": true,
             "show": true,
+            "sideWidth": 200,
             "sort": "current",
             "sortDesc": true,
             "total": false,
@@ -1293,7 +1295,7 @@
             "h": 7,
             "w": 24,
             "x": 0,
-            "y": 6
+            "y": 14
           },
           "height": "",
           "id": 24,
@@ -1308,7 +1310,7 @@
             "min": false,
             "rightSide": true,
             "show": true,
-            "sideWidth": null,
+            "sideWidth": 200,
             "sort": "current",
             "sortDesc": true,
             "total": false,
@@ -1427,10 +1429,10 @@
           "fill": 0,
           "grid": {},
           "gridPos": {
-            "h": 13,
+            "h": 10,
             "w": 24,
             "x": 0,
-            "y": 7
+            "y": 15
           },
           "id": 20,
           "isNew": true,
@@ -1653,7 +1655,7 @@
             "h": 7,
             "w": 24,
             "x": 0,
-            "y": 9
+            "y": 17
           },
           "id": 25,
           "isNew": true,
@@ -1765,7 +1767,7 @@
             "h": 7,
             "w": 24,
             "x": 0,
-            "y": 10
+            "y": 18
           },
           "id": 26,
           "isNew": true,
@@ -1877,7 +1879,7 @@
             "h": 7,
             "w": 24,
             "x": 0,
-            "y": 39
+            "y": 19
           },
           "id": 27,
           "isNew": true,
@@ -2009,7 +2011,7 @@
             "h": 13,
             "w": 24,
             "x": 0,
-            "y": 12
+            "y": 20
           },
           "id": 28,
           "isNew": true,
@@ -2132,6 +2134,7 @@
         "min": false,
         "rightSide": true,
         "show": true,
+        "sideWidth": 200,
         "total": false,
         "values": true
       },
@@ -2246,7 +2249,7 @@
             "h": 7,
             "w": 24,
             "x": 0,
-            "y": 14
+            "y": 22
           },
           "id": 16,
           "isNew": true,
@@ -2368,7 +2371,7 @@
             "h": 7,
             "w": 24,
             "x": 0,
-            "y": 14
+            "y": 23
           },
           "id": 30,
           "isNew": true,
@@ -2536,7 +2539,7 @@
             "h": 13,
             "w": 24,
             "x": 0,
-            "y": 15
+            "y": 24
           },
           "id": 29,
           "isNew": true,
@@ -2700,6 +2703,6 @@
   },
   "timezone": "browser",
   "title": "Kubernetes Cluster Monitor (via Prometheus)",
-  "uid": "kube-mon",
+  "uid": "kops-cui-mon",
   "version": 1
 }

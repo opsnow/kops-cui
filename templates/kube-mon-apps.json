@@ -16,8 +16,7 @@
   "editable": true,
   "gnetId": null,
   "graphTooltip": 0,
-  "id": 4,
-  "iteration": 1540343893588,
+  "iteration": 1540348538216,
   "links": [],
   "panels": [
     {
@@ -206,6 +205,7 @@
         "min": false,
         "rightSide": true,
         "show": true,
+        "sideWidth": null,
         "total": false,
         "values": true
       },
@@ -623,7 +623,7 @@
         "min": false,
         "rightSide": true,
         "show": true,
-        "sideWidth": 250,
+        "sideWidth": 200,
         "sort": "current",
         "sortDesc": true,
         "total": false,
@@ -722,7 +722,7 @@
         "min": false,
         "rightSide": true,
         "show": true,
-        "sideWidth": 250,
+        "sideWidth": 200,
         "sort": "current",
         "sortDesc": true,
         "total": false,
@@ -914,8 +914,9 @@
       {
         "allValue": ".*",
         "current": {
-          "text": "lightsaber",
-          "value": "lightsaber"
+          "tags": [],
+          "text": "sample",
+          "value": "sample"
         },
         "datasource": "Prometheus",
         "hide": 0,
@@ -938,8 +939,9 @@
       {
         "allValue": ".*",
         "current": {
-          "text": "lightsaber-incident-svc-dev",
-          "value": "lightsaber-incident-svc-dev"
+          "tags": [],
+          "text": "All",
+          "value": "$__all"
         },
         "datasource": "Prometheus",
         "hide": 0,
@@ -992,6 +994,6 @@
   },
   "timezone": "browser",
   "title": "Kubernetes Application Monitor (via Prometheus)",
-  "uid": "kube-mon-apps",
-  "version": 20
+  "uid": "kops-cui-mon-sample",
+  "version": 1
 }
