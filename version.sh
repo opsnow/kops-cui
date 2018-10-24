@@ -3,7 +3,7 @@
 rm -rf target
 mkdir -p target
 
-USERNAME=${1:-nalbam}
+USERNAME=${1:-opsnow}
 REPONAME=${2:-kops-cui}
 
 # VERSION

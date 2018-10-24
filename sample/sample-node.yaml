@@ -38,11 +38,11 @@ spec:
           periodSeconds: 15
         resources:
           requests:
-            cpu: 200m
-            memory: 256Mi
+            cpu: 100m
+            memory: 128Mi
           limits:
-            cpu: 500m
-            memory: 512Mi
+            cpu: 100m
+            memory: 128Mi
         env:
         - name: REDIS_URL
           value: "redis://redis:6379"
@@ -63,9 +63,9 @@ metadata:
 spec:
   # type: SERVICE_TYPE
   ports:
-    - name: http
-      port: 80
-      targetPort: 3000
+  - name: http
+    port: 80
+    targetPort: 3000
   selector:
     k8s-app: sample-node
 
@@ -94,7 +94,7 @@ spec:
 ---
 # ------------------- HorizontalPodAutoscaler ------------------- #
 
-apiVersion: autoscaling/v1
+apiVersion: autoscaling/v2beta1
 kind: HorizontalPodAutoscaler
 metadata:
   name: sample-node
@@ -105,31 +105,13 @@ spec:
     kind: Deployment
     name: sample-node
   minReplicas: 1
-  maxReplicas: 22
-  targetCPUUtilizationPercentage: 50
-
-# apiVersion: autoscaling/v2beta1
-# kind: HorizontalPodAutoscaler
-# metadata:
-#   name: sample-node
-#   namespace: default
-# spec:
-#   scaleTargetRef:
-#     apiVersion: apps/v1
-#     kind: Deployment
-#     name: sample-node
-#   minReplicas: 1
-#   maxReplicas: 22
-#   metrics:
-#   - type: Resource
-#     resource:
-#       name: cpu
-#       targetAverageUtilization: 50
-#   - type: Resource
-#     resource:
-#       name: memory
-#       targetAverageUtilization: 50
-  # - type: Pods
-  #   pods:
-  #     metricName: packets-per-second
-  #     targetAverageValue: 1k
+  maxReplicas: 10
+  metrics:
+  - type: Resource
+    resource:
+      name: cpu
+      targetAverageUtilization: 65
+  # - type: Resource
+  #   resource:
+  #     name: memory
+  #     targetAverageUtilization: 65

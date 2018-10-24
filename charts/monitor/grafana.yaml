@@ -20,7 +20,7 @@ persistence:
   accessModes:
     - ReadWriteOnce
   size: 5Gi
-  #:EFS:storageClass: "efs"
+#  #:EFS:storageClass: "efs"
 
 datasources:
   datasources.yaml:
@@ -47,11 +47,24 @@ dashboardProviders:
 
 dashboards:
   default:
-    prometheus-stats:
-      gnetId: 2
-      revision: 2
-      datasource: Prometheus
-    prometheus-cluster:
-      gnetId: 1621
-      revision: 1
-      datasource: Prometheus
+    kube-mon:
+      url: https://raw.githubusercontent.com/opsnow/kops-cui/master/templates/kube-mon.json
+    kube-mon-apps:
+      url: https://raw.githubusercontent.com/opsnow/kops-cui/master/templates/kube-mon-apps.json
+    # prometheus-stats:
+    #   gnetId: 2
+    #   revision: 2
+    #   datasource: Prometheus
+    # prometheus-cluster:
+    #   gnetId: 315
+    #   revision: 3
+    #   datasource: Prometheus
+
+#:LDAP:grafana.ini:
+#:LDAP:  auth.ldap:
+#:LDAP:    enabled: true
+#:LDAP:    allow_sign_up: true
+#:LDAP:    config_file: /etc/grafana/ldap.toml
+
+#:LDAP:ldap:
+#:LDAP:  existingSecret: "GRAFANA_LDAP"
