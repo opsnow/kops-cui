@@ -932,6 +932,7 @@ read_cluster_name() {
 kops_get() {
     _command "kops get --name=${KOPS_CLUSTER_NAME} --state=s3://${KOPS_STATE_STORE}"
     kops get --name=${KOPS_CLUSTER_NAME} --state=s3://${KOPS_STATE_STORE}
+    echo
 
     _command "kubectl get no"
     kubectl get no
