@@ -16,11 +16,11 @@ spec:
       maxUnavailable: 25%
   selector:
     matchLabels:
-      k8s-app: sample-tomcat
+      app: sample-tomcat
   template:
     metadata:
       labels:
-        k8s-app: sample-tomcat
+        app: sample-tomcat
     spec:
       containers:
       - name: sample-tomcat
@@ -68,7 +68,7 @@ spec:
     port: 80
     targetPort: 8080
   selector:
-    k8s-app: sample-tomcat
+    app: sample-tomcat
 
 ---
 # ------------------- Ingress ------------------- #
