@@ -24,7 +24,7 @@ spec:
     spec:
       containers:
       - name: sample-webpack
-        image: quay.io/nalbam/sample-webpack
+        image: nalbam/sample-webpack
         imagePullPolicy: Always
         ports:
         - containerPort: 80
