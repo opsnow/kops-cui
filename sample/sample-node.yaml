@@ -5,9 +5,6 @@ kind: Deployment
 metadata:
   name: sample-node
   namespace: default
-  labels:
-    app: sample-node
-    version: 0.0.1
 spec:
   replicas: 1
   revisionHistoryLimit: 10
@@ -22,6 +19,7 @@ spec:
     metadata:
       labels:
         app: sample-node
+        version: 0.0.1
     spec:
       containers:
       - name: sample-node
