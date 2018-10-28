@@ -16,11 +16,11 @@ spec:
       maxUnavailable: 25%
   selector:
     matchLabels:
-      k8s-app: sample-web
+      app: sample-web
   template:
     metadata:
       labels:
-        k8s-app: sample-web
+        app: sample-web
     spec:
       containers:
       - name: sample-web
@@ -61,7 +61,7 @@ spec:
     port: 80
     targetPort: 80
   selector:
-    k8s-app: sample-web
+    app: sample-web
 
 ---
 # ------------------- Ingress ------------------- #
