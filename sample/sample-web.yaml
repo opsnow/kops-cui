@@ -24,7 +24,7 @@ spec:
     spec:
       containers:
       - name: sample-web
-        image: nalbam/sample-web
+        image: nalbam/sample-web:alpine
         imagePullPolicy: Always
         ports:
         - containerPort: 80

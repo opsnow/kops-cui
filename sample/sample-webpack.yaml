@@ -24,7 +24,7 @@ spec:
     spec:
       containers:
       - name: sample-webpack
-        image: nalbam/sample-webpack
+        image: nalbam/sample-webpack:alpine
         imagePullPolicy: Always
         ports:
         - containerPort: 80
