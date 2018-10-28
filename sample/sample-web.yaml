@@ -24,7 +24,7 @@ spec:
     spec:
       containers:
       - name: sample-web
-        image: quay.io/nalbam/sample-web
+        image: nalbam/sample-web
         imagePullPolicy: Always
         ports:
         - containerPort: 80
