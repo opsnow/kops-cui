@@ -24,7 +24,7 @@ spec:
     spec:
       containers:
       - name: sample-tomcat
-        image: nalbam/sample-tomcat
+        image: nalbam/sample-tomcat:alpine
         imagePullPolicy: Always
         ports:
         - containerPort: 8080

@@ -24,7 +24,7 @@ spec:
     spec:
       containers:
       - name: sample-node
-        image: nalbam/sample-node
+        image: nalbam/sample-node:alpine
         imagePullPolicy: Always
         ports:
         - containerPort: 3000
