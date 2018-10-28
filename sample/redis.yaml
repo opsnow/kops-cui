@@ -1,11 +1,10 @@
+# ------------------- Deployment ------------------- #
+
 apiVersion: apps/v1
 kind: Deployment
 metadata:
   name: redis
   namespace: default
-  labels:
-    app: redis
-    version: 0.0.1
 spec:
   selector:
     matchLabels:
@@ -15,6 +14,7 @@ spec:
     metadata:
       labels:
         app: redis
+        version: 0.0.1
     spec:
       containers:
       - name: master
@@ -30,6 +30,7 @@ spec:
         - containerPort: 6379
 
 ---
+# ------------------- Service ------------------- #
 
 apiVersion: v1
 kind: Service
