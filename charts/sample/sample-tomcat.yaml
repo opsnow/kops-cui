@@ -1,8 +1,12 @@
 # chart-version: latest
 
+image:
+  repository: nalbam/sample-tomcat
+  tag: alpine
+
 service:
-  type: ClusterIP
+  type: SERVICE_TYPE
 
 ingress:
-  enabled: false
-  basedomain: 127.0.0.1.nip.io
+  enabled: INGRESS_ENABLED
+  basedomain: BASE_DOMAIN

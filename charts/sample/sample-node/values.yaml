@@ -1,7 +1,7 @@
 replicaCount: 1
 image:
-  repository: nalbam/sample-node:alpine
-  tag: latest
+  repository: nalbam/sample-node
+  tag: alpine
   pullPolicy: Always
 service:
   type: ClusterIP

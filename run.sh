@@ -712,7 +712,7 @@ sample_menu() {
     LIST=$(mktemp /tmp/kops-cui-sample-list.XXXXXX)
 
     # find sample
-    ls ${SHELL_DIR}/sample | sort | sed 's/.yaml//' > ${LIST}
+    ls ${SHELL_DIR}/charts/sample | grep yaml | sort | sed 's/.yaml//' > ${LIST}
 
     # select
     select_one
@@ -723,7 +723,7 @@ sample_menu() {
     fi
 
     # sample install
-    if [ "${SELECTED}" == "configmap" ] || [ "${SELECTED}" == "redis" ]; then
+    if [ "${SELECTED}" == "configmap" ]; then
         apply_sample ${SELECTED} default
     else
         apply_sample ${SELECTED} default true
@@ -1828,31 +1828,39 @@ apply_sample() {
     NAMESPACE=${2}
     INGRESS=${3}
 
+    helm_check
+
     if [ ! -z ${INGRESS} ]; then
         if [ -z ${BASE_DOMAIN} ]; then
             get_ingress_nip_io
         fi
     fi
 
-    SAMPLE=$(mktemp /tmp/kops-cui-${NAME}.XXXXXX.yaml)
-    get_template sample/${NAME}.yaml ${SAMPLE}
+    CHART=$(mktemp /tmp/kops-cui-${NAME}.XXXXXX.yaml)
+    get_template charts/sample/${NAME}.yaml ${CHART}
 
+    # ingress
     if [ ! -z ${INGRESS} ]; then
-        if [ -z ${BASE_DOMAIN} ]; then
-            _replace "s/# type: SERVICE_TYPE/type: LoadBalancer/" ${SAMPLE}
+        if [ -z ${BASE_DOMAIN} ] || [ "${INGRESS}" == "false" ]; then
+            _replace "s/SERVICE_TYPE/LoadBalancer/" ${CHART}
+            _replace "s/INGRESS_ENABLED/false/" ${CHART}
         else
-            DOMAIN="${NAME}-${NAMESPACE}.${BASE_DOMAIN}"
-
-            _replace "s/# type: SERVICE_TYPE/type: ClusterIP/" ${SAMPLE}
-            _replace "s/INGRESS_DOMAIN/${DOMAIN}/" ${SAMPLE}
+            _replace "s/SERVICE_TYPE/ClusterIP/" ${CHART}
+            _replace "s/INGRESS_ENABLED/true/" ${CHART}
+            _replace "s/BASE_DOMAIN/${BASE_DOMAIN}/" ${CHART}
         fi
     fi
 
-    _command "kubectl apply -f ${SAMPLE}"
-    kubectl apply -f ${SAMPLE}
+    # helm install
+    _command "helm upgrade --install ${NAME}-${NAMESPACE} ${SHELL_DIR}/charts/sample/${NAME} --namespace ${NAMESPACE} --values ${CHART}"
+    helm upgrade --install ${NAME}-${NAMESPACE} ${SHELL_DIR}/charts/sample/${NAME} --namespace ${NAMESPACE} --values ${CHART}
 
-    waiting 2
-    # waiting_pod "${NAMESPACE}" "${NAME}"
+    # waiting 2
+    waiting_pod "${NAMESPACE}" "${NAME}"
+
+    _command "helm history ${NAME}"
+    helm history ${NAME}
+    echo
 
     _command "kubectl get deploy,pod,svc,ing -n ${NAMESPACE}"
     kubectl get deploy,pod,svc,ing -n ${NAMESPACE}
@@ -1865,7 +1873,7 @@ apply_sample() {
             _result "${NAME}: https://${ELB_DOMAIN}"
         else
             echo
-            _result "${NAME}: https://${DOMAIN}"
+            _result "${NAME}: https://${NAME}-${NAMESPACE}.${BASE_DOMAIN}"
         fi
     fi
 }
