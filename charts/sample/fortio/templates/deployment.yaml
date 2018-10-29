@@ -20,4 +20,7 @@ spec:
         image: "{{ .Values.image.repository }}:{{ .Values.image.tag }}"
         imagePullPolicy: {{ .Values.image.pullPolicy }}
         ports:
-        - containerPort: {{ .Values.service.internalPort }}
+        - containerPort: 8080
+          name: http-fortio
+        - containerPort: 8079
+          name: grpc-ping
