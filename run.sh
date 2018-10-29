@@ -1851,6 +1851,22 @@ apply_sample() {
         fi
     fi
 
+    # has configmap
+    COUNT=$(kubectl get configmap -n ${NAMESPACE} | grep ${NAME}-${NAMESPACE} | wc -l | xargs)
+    if [ "x${COUNT}" != "x0" ]; then
+        _replace "s/CONFIGMAP_ENABLED/true/" ${CHART}
+    else
+        _replace "s/CONFIGMAP_ENABLED/false/" ${CHART}
+    fi
+
+    # has secret
+    COUNT=$(kubectl get secret -n ${NAMESPACE} | grep ${NAME}-${NAMESPACE} | wc -l | xargs)
+    if [ "x${COUNT}" != "x0" ]; then
+        _replace "s/SECRET_ENABLED/true/" ${CHART}
+    else
+        _replace "s/SECRET_ENABLED/false/" ${CHART}
+    fi
+
     # helm install
     _command "helm upgrade --install ${NAME}-${NAMESPACE} ${SHELL_DIR}/charts/sample/${NAME} --namespace ${NAMESPACE} --values ${CHART}"
     helm upgrade --install ${NAME}-${NAMESPACE} ${SHELL_DIR}/charts/sample/${NAME} --namespace ${NAMESPACE} --values ${CHART}
