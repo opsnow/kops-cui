@@ -1,4 +1,8 @@
-FORTIO_POD=$(kubectl get pod | grep {{ .Release.Namespace }} | awk '{ print $1 }')
+FORTIO_POD=$(kubectl get pod | grep {{ template "fullname" . }} | awk '{ print $1 }')
 echo $FORTIO_POD
 
 kubectl exec -it $FORTIO_POD -c fortio /usr/local/bin/fortio -- load -curl http://httpbin-default/get
+
+kubectl exec -it $FORTIO_POD -c fortio /usr/local/bin/fortio -- load -c 2 -qps 0 -n 20 -loglevel Warning http://httpbin-default:8000/get
+
+kubectl exec -it $FORTIO_POD -c fortio /usr/local/bin/fortio -- load -c 3 -qps 0 -n 20 -loglevel Warning http://httpbin-default:8000/get
