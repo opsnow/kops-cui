@@ -6,9 +6,3 @@ service:
 ingress:
   enabled: INGRESS_ENABLED
   basedomain: BASE_DOMAIN
-
-configmap:
-  enabled: CONFIGMAP_ENABLED
-
-secret:
-  enabled: SECRET_ENABLED

@@ -1,9 +1,5 @@
 # chart-version: latest
 
-image:
-  repository: nalbam/sample-spring
-  tag: alpine
-
 service:
   type: SERVICE_TYPE
 
