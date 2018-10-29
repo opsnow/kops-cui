@@ -1858,8 +1858,8 @@ apply_sample() {
     # waiting 2
     waiting_pod "${NAMESPACE}" "${NAME}"
 
-    _command "helm history ${NAME}"
-    helm history ${NAME}
+    _command "helm history ${NAME}-${NAMESPACE}"
+    helm history ${NAME}-${NAMESPACE}
     echo
 
     _command "kubectl get deploy,pod,svc,ing -n ${NAMESPACE}"
