@@ -35,6 +35,7 @@ kind: Service
 metadata:
   name: {{ template "fullname" . }}-redis
   labels:
+    draft: {{ default "draft-app" .Values.draft }}
     chart: "{{ .Chart.Name }}-{{ .Chart.Version | replace "+" "_" }}"
     app: {{ template "fullname" . }}-redis
 spec:
@@ -43,6 +44,5 @@ spec:
     port: 6379
     targetPort: 6379
   selector:
-    chart: "{{ .Chart.Name }}-{{ .Chart.Version | replace "+" "_" }}"
     app: {{ template "fullname" . }}-redis
 {{- end -}}

@@ -4,6 +4,7 @@ kind: Ingress
 metadata:
   name: {{ template "fullname" . }}
   labels:
+    draft: {{ default "draft-app" .Values.draft }}
     chart: "{{ .Chart.Name }}-{{ .Chart.Version | replace "+" "_" }}"
     app: {{ template "fullname" . }}
 spec:
