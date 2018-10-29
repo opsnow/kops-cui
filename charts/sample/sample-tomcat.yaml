@@ -1,0 +1,8 @@
+# chart-version: latest
+
+service:
+  type: ClusterIP
+
+ingress:
+  enabled: false
+  basedomain: 127.0.0.1.nip.io
