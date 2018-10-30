@@ -1,0 +1,33 @@
+# istio
+
+grafana:
+  enabled: true
+
+ingress:
+  enabled: true
+
+tracing:
+  enabled: true
+  ingress:
+    enabled: INGRESS_ENABLED
+    hosts:
+      - tracing-istio.BASE_DOMAIN
+  jaeger:
+    ingress:
+      enabled: INGRESS_ENABLED
+      hosts:
+        - jaeger-istio.BASE_DOMAIN
+
+kiali:
+  enabled: true
+  ingress:
+    enabled: INGRESS_ENABLED
+    hosts:
+      - kiali-istio.BASE_DOMAIN
+
+servicegraph:
+  enabled: true
+  ingress:
+    enabled: INGRESS_ENABLED
+    hosts:
+      - servicegraph-istio.BASE_DOMAIN
