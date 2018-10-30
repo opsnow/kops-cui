@@ -1,0 +1,46 @@
+{{- if .Values.canary.enabled -}}
+apiVersion: extensions/v1beta1
+kind: Deployment
+metadata:
+  name: {{ template "fullname" . }}-canary
+  labels:
+    draft: {{ default "draft-app" .Values.draft }}
+    chart: "{{ .Chart.Name }}-{{ .Chart.Version | replace "+" "_" }}"
+    app: {{ template "fullname" . }}
+spec:
+  replicas: {{ .Values.replicaCount }}
+  template:
+    metadata:
+      annotations:
+        buildID: {{ .Values.buildID }}
+      labels:
+        app: {{ template "fullname" . }}
+        version: canary
+    spec:
+      containers:
+      - name: {{ .Chart.Name }}
+        image: "{{ .Values.image.repository }}:{{ .Values.image.tag }}"
+        imagePullPolicy: {{ .Values.image.pullPolicy }}
+        ports:
+        - containerPort: {{ .Values.service.internalPort }}
+        resources:
+{{ toYaml .Values.resources | indent 10 }}
+        readinessProbe:
+{{ toYaml .Values.readinessProbe | indent 10 }}
+        livenessProbe:
+{{ toYaml .Values.livenessProbe | indent 10 }}
+        env:
+          - name: PROFILE
+            value: {{ .Values.profile }}
+{{ if or .Values.configmap.enabled .Values.secret.enabled }}
+        envFrom:
+{{ end }}
+{{ if .Values.configmap.enabled }}
+          - configMapRef:
+              name: {{ template "fullname" . }}
+{{ end }}
+{{ if .Values.secret.enabled }}
+          - secretRef:
+              name: {{ template "fullname" . }}
+{{ end }}
+{{ end }}
