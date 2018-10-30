@@ -1066,8 +1066,6 @@ kops_delete() {
     kops delete cluster --name=${KOPS_CLUSTER_NAME} --state=s3://${KOPS_STATE_STORE} --yes
     echo
 
-    # delete_record
-
     delete_kops_config
 
     rm -rf ~/.kube ~/.helm ~/.draft
@@ -1599,10 +1597,7 @@ helm_install() {
     # for jenkins
     if [ "${NAME}" == "jenkins" ]; then
         # admin password
-        question "Enter admin password [password] : "
-        PASSWORD=${ANSWER:-password}
-        _result "password: ${PASSWORD}"
-        _replace "s|AdminPassword: .*|AdminPassword: ${PASSWORD}|" ${CHART}
+        read_admin_password ${CHART}
 
         echo
         ${SHELL_DIR}/jenkins/jobs.sh ${CHART}
@@ -1612,10 +1607,7 @@ helm_install() {
     # for grafana
     if [ "${NAME}" == "grafana" ]; then
         # admin password
-        question "Enter admin password [password] : "
-        PASSWORD=${ANSWER:-password}
-        _result "password: ${PASSWORD}"
-        _replace "s|adminPassword: .*|adminPassword: ${PASSWORD}|" ${CHART}
+        read_admin_password ${CHART}
 
         # ldap
         question "Enter grafana LDAP secret : "
@@ -1842,6 +1834,9 @@ apply_istio() {
         _replace "s/BASE_DOMAIN/${BASE_DOMAIN}/g" ${CHART}
     fi
 
+    # admin password
+    read_admin_password ${CHART}
+
     VERSION=$(curl -s https://api.github.com/repos/${NAME}/${NAME}/releases/latest | jq -r '.tag_name')
 
     ISTIO_TMP=/tmp/kops-cui-istio
@@ -1900,7 +1895,7 @@ apply_sample() {
     fi
 
     # has configmap
-    COUNT=$(kubectl get configmap -n ${NAMESPACE} | grep ${NAME}-${NAMESPACE} | wc -l | xargs)
+    COUNT=$(kubectl get configmap -n ${NAMESPACE} 2>&1 | grep ${NAME}-${NAMESPACE} | wc -l | xargs)
     if [ "x${COUNT}" != "x0" ]; then
         _replace "s/CONFIGMAP_ENABLED/true/" ${CHART}
     else
@@ -1908,22 +1903,24 @@ apply_sample() {
     fi
 
     # has secret
-    COUNT=$(kubectl get secret -n ${NAMESPACE} | grep ${NAME}-${NAMESPACE} | wc -l | xargs)
+    COUNT=$(kubectl get secret -n ${NAMESPACE} 2>&1 | grep ${NAME}-${NAMESPACE} | wc -l | xargs)
     if [ "x${COUNT}" != "x0" ]; then
         _replace "s/SECRET_ENABLED/true/" ${CHART}
     else
         _replace "s/SECRET_ENABLED/false/" ${CHART}
     fi
 
+    SAMPLE_DIR=${SHELL_DIR}/charts/sample/${NAME}
+
     # helm install
-    _command "helm upgrade --install ${NAME} ${SHELL_DIR}/charts/sample/${NAME} --namespace ${NAMESPACE} --values ${CHART}"
-    helm upgrade --install ${NAME} ${SHELL_DIR}/charts/sample/${NAME} --namespace ${NAMESPACE} --values ${CHART}
+    _command "helm upgrade --install ${NAME}-${NAMESPACE} ${SAMPLE_DIR} --namespace ${NAMESPACE} --values ${CHART}"
+    helm upgrade --install ${NAME}-${NAMESPACE} ${SAMPLE_DIR} --namespace ${NAMESPACE} --values ${CHART}
 
     # waiting 2
-    waiting_pod "${NAMESPACE}" "${NAME}"
+    waiting_pod "${NAMESPACE}" "${NAME}-${NAMESPACE}"
 
-    _command "helm history ${NAME}"
-    helm history ${NAME}
+    _command "helm history ${NAME}-${NAMESPACE}"
+    helm history ${NAME}-${NAMESPACE}
     echo
 
     _command "kubectl get deploy,pod,svc,ing -n ${NAMESPACE}"
@@ -1931,15 +1928,28 @@ apply_sample() {
 
     if [ ! -z ${INGRESS} ]; then
         if [ -z ${BASE_DOMAIN} ]; then
-            get_elb_domain ${NAME} ${NAMESPACE}
+            get_elb_domain ${NAME}-${NAMESPACE} ${NAMESPACE}
 
             echo
             _result "${NAME}: http://${ELB_DOMAIN}"
         else
             echo
-            _result "${NAME}: https://${NAME}.${BASE_DOMAIN}"
+            _result "${NAME}: https://${NAME}-${NAMESPACE}.${BASE_DOMAIN}"
         fi
     fi
+}
+
+read_admin_password() {
+    CHART=${1}
+
+    # admin password
+    question "Enter admin password [password] : "
+
+    PASSWORD=${ANSWER:-password}
+
+    # _result "password: ${PASSWORD}"
+
+    _replace "s/PASSWORD/${PASSWORD}/g" ${CHART}
 }
 
 get_template() {

@@ -3,7 +3,7 @@
 nameOverride: grafana
 
 adminUser: admin
-adminPassword: password
+adminPassword: PASSWORD
 
 service:
   type: SERVICE_TYPE

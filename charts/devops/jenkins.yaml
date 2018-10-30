@@ -9,7 +9,7 @@ Master:
   # Image: quay.io/nalbam/jenkins
   # ImageTag: latest
   AdminUser: admin
-  AdminPassword: password
+  AdminPassword: PASSWORD
   resources:
     requests:
       cpu: 1000m
