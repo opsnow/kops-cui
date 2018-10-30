@@ -151,11 +151,9 @@ press_enter() {
             addons_menu
             ;;
         monitor)
-            # monitor_menu
             charts_menu "monitor"
             ;;
         devops)
-            # devops_menu
             charts_menu "devops"
             ;;
         sample)
@@ -693,12 +691,14 @@ addons_menu() {
             sample_menu
             ;;
         12)
-            # monitor_menu
             charts_menu "monitor"
             ;;
         13)
-            # devops_menu
             charts_menu "devops"
+            ;;
+        14)
+            apply_istio
+            press_enter addons
             ;;
         *)
             cluster_menu
@@ -1695,7 +1695,7 @@ helm_install() {
             echo
             get_elb_domain ${NAME} ${NAMESPACE}
             echo
-            _result "${NAME}: https://${ELB_DOMAIN}"
+            _result "${NAME}: http://${ELB_DOMAIN}"
         else
             echo
             _result "${NAME}: https://${DOMAIN}"
@@ -1823,6 +1823,54 @@ create_cluster_role_binding() {
     fi
 }
 
+apply_istio() {
+    NAME="istio"
+    NAMESPACE="istio-system"
+
+    helm_check
+
+    CHART=$(mktemp /tmp/kops-cui-${NAME}.XXXXXX.yaml)
+    get_template charts/istio/${NAME}.yaml ${CHART}
+
+    # ingress
+    if [ -z ${BASE_DOMAIN} ]; then
+        _replace "s/SERVICE_TYPE/LoadBalancer/g" ${CHART}
+        _replace "s/INGRESS_ENABLED/false/g" ${CHART}
+    else
+        _replace "s/SERVICE_TYPE/ClusterIP/g" ${CHART}
+        _replace "s/INGRESS_ENABLED/true/g" ${CHART}
+        _replace "s/BASE_DOMAIN/${BASE_DOMAIN}/g" ${CHART}
+    fi
+
+    VERSION=$(curl -s https://api.github.com/repos/${NAME}/${NAME}/releases/latest | jq -r '.tag_name')
+
+    ISTIO_TMP=/tmp/kops-cui-istio
+    mkdir -p ${ISTIO_TMP}
+
+    # istio download
+    if [ ! -d ${ISTIO_TMP}/${NAME}-${VERSION} ]; then
+        pushd ${ISTIO_TMP}
+        curl -sL https://git.io/getLatestIstio | sh -
+        popd
+    fi
+
+    ISTIO_DIR=${ISTIO_TMP}/${NAME}-${VERSION}/install/kubernetes/helm/istio
+
+    # helm install
+    _command "helm upgrade --install ${NAME} ${ISTIO_DIR} --namespace ${NAMESPACE} --values ${CHART}"
+    helm upgrade --install ${NAME} ${ISTIO_DIR} --namespace ${NAMESPACE} --values ${CHART}
+
+    # waiting 2
+    waiting_pod "${NAMESPACE}" "${NAME}"
+
+    _command "helm history ${NAME}"
+    helm history ${NAME}
+    echo
+
+    _command "kubectl get deploy,pod,svc,ing -n ${NAMESPACE}"
+    kubectl get deploy,pod,svc,ing -n ${NAMESPACE}
+}
+
 apply_sample() {
     NAME=${1}
     NAMESPACE=${2}
@@ -1868,14 +1916,14 @@ apply_sample() {
     fi
 
     # helm install
-    _command "helm upgrade --install ${NAME}-${NAMESPACE} ${SHELL_DIR}/charts/sample/${NAME} --namespace ${NAMESPACE} --values ${CHART}"
-    helm upgrade --install ${NAME}-${NAMESPACE} ${SHELL_DIR}/charts/sample/${NAME} --namespace ${NAMESPACE} --values ${CHART}
+    _command "helm upgrade --install ${NAME} ${SHELL_DIR}/charts/sample/${NAME} --namespace ${NAMESPACE} --values ${CHART}"
+    helm upgrade --install ${NAME} ${SHELL_DIR}/charts/sample/${NAME} --namespace ${NAMESPACE} --values ${CHART}
 
     # waiting 2
     waiting_pod "${NAMESPACE}" "${NAME}"
 
-    _command "helm history ${NAME}-${NAMESPACE}"
-    helm history ${NAME}-${NAMESPACE}
+    _command "helm history ${NAME}"
+    helm history ${NAME}
     echo
 
     _command "kubectl get deploy,pod,svc,ing -n ${NAMESPACE}"
@@ -1886,10 +1934,10 @@ apply_sample() {
             get_elb_domain ${NAME} ${NAMESPACE}
 
             echo
-            _result "${NAME}: https://${ELB_DOMAIN}"
+            _result "${NAME}: http://${ELB_DOMAIN}"
         else
             echo
-            _result "${NAME}: https://${NAME}-${NAMESPACE}.${BASE_DOMAIN}"
+            _result "${NAME}: https://${NAME}.${BASE_DOMAIN}"
         fi
     fi
 }
