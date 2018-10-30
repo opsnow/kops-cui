@@ -1,7 +1,8 @@
+{{- if .Values.canary.enabled -}}
 apiVersion: extensions/v1beta1
 kind: Deployment
 metadata:
-  name: {{ template "fullname" . }}
+  name: {{ template "fullname" . }}-canary
   labels:
     draft: {{ default "draft-app" .Values.draft }}
     chart: "{{ .Chart.Name }}-{{ .Chart.Version | replace "+" "_" }}"
@@ -14,7 +15,7 @@ spec:
         buildID: {{ .Values.buildID }}
       labels:
         app: {{ template "fullname" . }}
-        version: master
+        version: canary
     spec:
       containers:
       - name: {{ .Chart.Name }}
@@ -41,4 +42,5 @@ spec:
 {{ if .Values.secret.enabled }}
           - secretRef:
               name: {{ template "fullname" . }}
+{{ end }}
 {{ end }}

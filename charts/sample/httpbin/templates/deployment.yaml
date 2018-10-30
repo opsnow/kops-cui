@@ -13,7 +13,7 @@ spec:
       labels:
         draft: {{ default "draft-app" .Values.draft }}
         app: {{ template "fullname" . }}
-        version: {{ .Values.image.tag }}
+        version: master
     spec:
       containers:
       - name: {{ .Chart.Name }}
