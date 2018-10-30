@@ -3,6 +3,8 @@ image:
   repository: docker.io/citizenstig/httpbin
   tag: latest
   pullPolicy: Always
+istio:
+  enabled: false
 service:
   type: ClusterIP
   externalPort: 80
