@@ -1599,10 +1599,7 @@ helm_install() {
     # for jenkins
     if [ "${NAME}" == "jenkins" ]; then
         # admin password
-        question "Enter admin password [password] : "
-        PASSWORD=${ANSWER:-password}
-        _result "password: ${PASSWORD}"
-        _replace "s|AdminPassword: .*|AdminPassword: ${PASSWORD}|" ${CHART}
+        read_admin_password ${CHART}
 
         echo
         ${SHELL_DIR}/jenkins/jobs.sh ${CHART}
@@ -1612,10 +1609,7 @@ helm_install() {
     # for grafana
     if [ "${NAME}" == "grafana" ]; then
         # admin password
-        question "Enter admin password [password] : "
-        PASSWORD=${ANSWER:-password}
-        _result "password: ${PASSWORD}"
-        _replace "s|adminPassword: .*|adminPassword: ${PASSWORD}|" ${CHART}
+        read_admin_password ${CHART}
 
         # ldap
         question "Enter grafana LDAP secret : "
@@ -1842,6 +1836,9 @@ apply_istio() {
         _replace "s/BASE_DOMAIN/${BASE_DOMAIN}/g" ${CHART}
     fi
 
+    # admin password
+    read_admin_password ${CHART}
+
     VERSION=$(curl -s https://api.github.com/repos/${NAME}/${NAME}/releases/latest | jq -r '.tag_name')
 
     ISTIO_TMP=/tmp/kops-cui-istio
@@ -1940,6 +1937,19 @@ apply_sample() {
             _result "${NAME}: https://${NAME}.${BASE_DOMAIN}"
         fi
     fi
+}
+
+read_admin_password() {
+    CHART=${1}
+
+    # admin password
+    question "Enter admin password [password] : "
+
+    PASSWORD=${ANSWER:-password}
+
+    # _result "password: ${PASSWORD}"
+
+    _replace "s/PASSWORD/${PASSWORD}/g" ${CHART}
 }
 
 get_template() {

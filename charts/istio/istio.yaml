@@ -1,10 +1,31 @@
 # istio
 
-grafana:
-  enabled: true
-
 ingress:
   enabled: true
+
+grafana:
+  enabled: true
+  security:
+    enabled: true
+    adminUser: admin
+    adminPassword: PASSWORD
+
+kiali:
+  enabled: true
+  dashboard:
+    username: admin
+    passphrase: PASSWORD
+  ingress:
+    enabled: INGRESS_ENABLED
+    hosts:
+      - kiali-istio.BASE_DOMAIN
+
+servicegraph:
+  enabled: true
+  ingress:
+    enabled: INGRESS_ENABLED
+    hosts:
+      - servicegraph-istio.BASE_DOMAIN
 
 tracing:
   enabled: true
@@ -17,17 +38,3 @@ tracing:
       enabled: INGRESS_ENABLED
       hosts:
         - jaeger-istio.BASE_DOMAIN
-
-kiali:
-  enabled: true
-  ingress:
-    enabled: INGRESS_ENABLED
-    hosts:
-      - kiali-istio.BASE_DOMAIN
-
-servicegraph:
-  enabled: true
-  ingress:
-    enabled: INGRESS_ENABLED
-    hosts:
-      - servicegraph-istio.BASE_DOMAIN
