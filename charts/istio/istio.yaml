@@ -19,8 +19,8 @@ kiali:
   dashboard:
     username: admin
     passphrase: PASSWORD
-    # grafanaURL: grafana-istio.BASE_DOMAIN
-    # jaegerURL: jaeger-istio.BASE_DOMAIN
+    grafanaURL: grafana-istio.BASE_DOMAIN
+    jaegerURL: jaeger-istio.BASE_DOMAIN
 
 servicegraph:
   enabled: true
