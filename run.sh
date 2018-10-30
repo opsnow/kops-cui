@@ -1060,17 +1060,17 @@ kops_secret() {
 }
 
 kops_delete() {
-    delete_efs
+    # delete_efs
 
     _command "kops delete cluster --name=${KOPS_CLUSTER_NAME} --state=s3://${KOPS_STATE_STORE} --yes"
-    kops delete cluster --name=${KOPS_CLUSTER_NAME} --state=s3://${KOPS_STATE_STORE} --yes
+    # kops delete cluster --name=${KOPS_CLUSTER_NAME} --state=s3://${KOPS_STATE_STORE} --yes
     echo
 
-    # delete_record
+    # TODO delete_record
 
-    delete_kops_config
+    # delete_kops_config
 
-    rm -rf ~/.kube ~/.helm ~/.draft
+    # rm -rf ~/.kube ~/.helm ~/.draft
 }
 
 get_elb_domain() {
