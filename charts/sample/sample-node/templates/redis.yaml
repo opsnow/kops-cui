@@ -14,10 +14,13 @@ spec:
       labels:
         draft: {{ default "draft-app" .Values.draft }}
         app: {{ template "fullname" . }}-redis
+        version: {{ .Values.image.tag }}
     spec:
       containers:
       - name: master
         image: redis
+        ports:
+        - containerPort: 6379
         resources:
           requests:
             cpu: 100m
@@ -25,8 +28,6 @@ spec:
           limits:
             cpu: 200m
             memory: 256Mi
-        ports:
-        - containerPort: 6379
 
 ---
 
