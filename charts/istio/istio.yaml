@@ -12,13 +12,15 @@ grafana:
 
 kiali:
   enabled: true
-  dashboard:
-    username: admin
-    passphrase: PASSWORD
   ingress:
     enabled: INGRESS_ENABLED
     hosts:
       - kiali-istio.BASE_DOMAIN
+  dashboard:
+    username: admin
+    passphrase: PASSWORD
+    # grafanaURL: grafana-istio.BASE_DOMAIN
+    # jaegerURL: jaeger-istio.BASE_DOMAIN
 
 servicegraph:
   enabled: true

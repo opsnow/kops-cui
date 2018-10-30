@@ -1895,7 +1895,7 @@ apply_sample() {
     fi
 
     # has configmap
-    COUNT=$(kubectl get configmap -n ${NAMESPACE} | grep ${NAME}-${NAMESPACE} | wc -l | xargs)
+    COUNT=$(kubectl get configmap -n ${NAMESPACE} 2>&1 | grep ${NAME}-${NAMESPACE} | wc -l | xargs)
     if [ "x${COUNT}" != "x0" ]; then
         _replace "s/CONFIGMAP_ENABLED/true/" ${CHART}
     else
@@ -1903,22 +1903,24 @@ apply_sample() {
     fi
 
     # has secret
-    COUNT=$(kubectl get secret -n ${NAMESPACE} | grep ${NAME}-${NAMESPACE} | wc -l | xargs)
+    COUNT=$(kubectl get secret -n ${NAMESPACE} 2>&1 | grep ${NAME}-${NAMESPACE} | wc -l | xargs)
     if [ "x${COUNT}" != "x0" ]; then
         _replace "s/SECRET_ENABLED/true/" ${CHART}
     else
         _replace "s/SECRET_ENABLED/false/" ${CHART}
     fi
 
+    SAMPLE_DIR=${SHELL_DIR}/charts/sample/${NAME}
+
     # helm install
-    _command "helm upgrade --install ${NAME} ${SHELL_DIR}/charts/sample/${NAME} --namespace ${NAMESPACE} --values ${CHART}"
-    helm upgrade --install ${NAME} ${SHELL_DIR}/charts/sample/${NAME} --namespace ${NAMESPACE} --values ${CHART}
+    _command "helm upgrade --install ${NAME}-${NAMESPACE} ${SAMPLE_DIR} --namespace ${NAMESPACE} --values ${CHART}"
+    helm upgrade --install ${NAME}-${NAMESPACE} ${SAMPLE_DIR} --namespace ${NAMESPACE} --values ${CHART}
 
     # waiting 2
-    waiting_pod "${NAMESPACE}" "${NAME}"
+    waiting_pod "${NAMESPACE}" "${NAME}-${NAMESPACE}"
 
-    _command "helm history ${NAME}"
-    helm history ${NAME}
+    _command "helm history ${NAME}-${NAMESPACE}"
+    helm history ${NAME}-${NAMESPACE}
     echo
 
     _command "kubectl get deploy,pod,svc,ing -n ${NAMESPACE}"
@@ -1926,13 +1928,13 @@ apply_sample() {
 
     if [ ! -z ${INGRESS} ]; then
         if [ -z ${BASE_DOMAIN} ]; then
-            get_elb_domain ${NAME} ${NAMESPACE}
+            get_elb_domain ${NAME}-${NAMESPACE} ${NAMESPACE}
 
             echo
             _result "${NAME}: http://${ELB_DOMAIN}"
         else
             echo
-            _result "${NAME}: https://${NAME}.${BASE_DOMAIN}"
+            _result "${NAME}: https://${NAME}-${NAMESPACE}.${BASE_DOMAIN}"
         fi
     fi
 }
