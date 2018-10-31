@@ -29,7 +29,7 @@
       },
       "id": 43,
       "panels": [],
-      "title": "Usage : $Group - $Deployment",
+      "title": "Usage : $Group : $Deployment",
       "type": "row"
     },
     {
