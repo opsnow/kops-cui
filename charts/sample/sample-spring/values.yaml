@@ -38,7 +38,7 @@ ingress:
   basedomain: 127.0.0.1.nip.io
 hpa:
   enabled: true
-  min: 1
+  min: 2
   max: 10
   cpu: 65
   mem: 65

@@ -1,4 +1,4 @@
-{{- if .Values.hpa.enabled -}}
+{{ if .Values.hpa.enabled }}
 apiVersion: autoscaling/v2beta1
 kind: HorizontalPodAutoscaler
 metadata:
@@ -9,7 +9,7 @@ metadata:
     app: {{ template "fullname" . }}
 spec:
   scaleTargetRef:
-    apiVersion: extensions/v1beta1
+    apiVersion: apps/v1
     kind: Deployment
     name: {{ template "fullname" . }}
   minReplicas: {{ .Values.hpa.min }}
@@ -19,8 +19,4 @@ spec:
     resource:
       name: cpu
       targetAverageUtilization: {{ .Values.hpa.cpu }}
-  # - type: Resource
-  #   resource:
-  #     name: memory
-  #     targetAverageUtilization: {{ .Values.hpa.mem }}
-{{- end -}}
+{{ end }}
