@@ -1,4 +1,5 @@
-{{- if .Values.istio.enabled -}}
+{{ if .Values.istio.enabled }}
+{{ if not .Values.canary.enabled }}
 apiVersion: networking.istio.io/v1alpha3
 kind: DestinationRule
 metadata:
@@ -12,13 +13,19 @@ spec:
   trafficPolicy:
     connectionPool:
       tcp:
-        maxConnections: 1
+        maxConnections: 100
       http:
-        http1MaxPendingRequests: 1
-        maxRequestsPerConnection: 1
+        http1MaxPendingRequests: 1024
+        http2MaxRequests: 1024
+        maxRequestsPerConnection: 10
     outlierDetection:
-      consecutiveErrors: 1
-      interval: 1s
-      baseEjectionTime: 1m
-      maxEjectionPercent: 100
+      consecutiveErrors: 5
+      interval: 10s
+      baseEjectionTime: 30s
+      maxEjectionPercent: 10
+  subsets:
+  - name: master
+    labels:
+      version: master
+{{ end }}
 {{ end }}

@@ -3,11 +3,6 @@ image:
   repository: nalbam/sample-node
   tag: alpine
   pullPolicy: Always
-canary:
-  enabled: false
-  tag: alpine
-istio:
-  enabled: false
 service:
   type: ClusterIP
   externalPort: 80
