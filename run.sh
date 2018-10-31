@@ -1655,12 +1655,13 @@ helm_install() {
 
     # chart version
     CHART_VERSION=$(cat ${CHART} | grep chart-version | awk '{print $3}')
-    _result "stable/${NAME} ${CHART_VERSION}"
 
     # if [ -z ${CHART_VERSION} ] || [ "${CHART_VERSION}" == "latest" ]; then
     #     # https://kubernetes-charts.storage.googleapis.com/
     #     CHART_VERSION=${CHART_VERSION:-latest}
     # fi
+
+    echo
 
     # helm install
     if [ -z ${CHART_VERSION} ] || [ "${CHART_VERSION}" == "latest" ]; then
