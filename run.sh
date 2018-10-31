@@ -1599,9 +1599,7 @@ helm_install() {
         # admin password
         read_admin_password ${CHART}
 
-        echo
         ${SHELL_DIR}/jenkins/jobs.sh ${CHART}
-        echo
     fi
 
     # for grafana
@@ -1657,6 +1655,7 @@ helm_install() {
 
     # chart version
     CHART_VERSION=$(cat ${CHART} | grep chart-version | awk '{print $3}')
+    _result "stable/${NAME} ${CHART_VERSION}"
 
     # if [ -z ${CHART_VERSION} ] || [ "${CHART_VERSION}" == "latest" ]; then
     #     # https://kubernetes-charts.storage.googleapis.com/
