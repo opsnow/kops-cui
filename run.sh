@@ -1598,8 +1598,8 @@ helm_install() {
     if [ "${NAME}" == "jenkins" ]; then
         # admin password
         read_admin_password ${CHART}
-        echo
 
+        echo
         ${SHELL_DIR}/jenkins/jobs.sh ${CHART}
         echo
     fi
@@ -1608,7 +1608,6 @@ helm_install() {
     if [ "${NAME}" == "grafana" ]; then
         # admin password
         read_admin_password ${CHART}
-        echo
 
         # ldap
         question "Enter grafana LDAP secret : "
@@ -1947,8 +1946,6 @@ read_admin_password() {
     question "Enter admin password [password] : "
 
     PASSWORD=${ANSWER:-password}
-
-    # _result "password: ${PASSWORD}"
 
     _replace "s/PASSWORD/${PASSWORD}/g" ${CHART}
 }
