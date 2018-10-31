@@ -1598,17 +1598,14 @@ helm_install() {
     if [ "${NAME}" == "jenkins" ]; then
         # admin password
         read_admin_password ${CHART}
-        echo
 
         ${SHELL_DIR}/jenkins/jobs.sh ${CHART}
-        echo
     fi
 
     # for grafana
     if [ "${NAME}" == "grafana" ]; then
         # admin password
         read_admin_password ${CHART}
-        echo
 
         # ldap
         question "Enter grafana LDAP secret : "
@@ -1658,6 +1655,7 @@ helm_install() {
 
     # chart version
     CHART_VERSION=$(cat ${CHART} | grep chart-version | awk '{print $3}')
+    _result "stable/${NAME} ${CHART_VERSION}"
 
     # if [ -z ${CHART_VERSION} ] || [ "${CHART_VERSION}" == "latest" ]; then
     #     # https://kubernetes-charts.storage.googleapis.com/
@@ -1947,8 +1945,6 @@ read_admin_password() {
     question "Enter admin password [password] : "
 
     PASSWORD=${ANSWER:-password}
-
-    # _result "password: ${PASSWORD}"
 
     _replace "s/PASSWORD/${PASSWORD}/g" ${CHART}
 }
