@@ -175,6 +175,9 @@ press_enter() {
         sample)
             sample_menu
             ;;
+        istio)
+            istio_menu
+            ;;
         state)
             state_store
             ;;
@@ -723,11 +726,50 @@ addons_menu() {
             charts_menu "devops"
             ;;
         14)
-            apply_istio
-            press_enter addons
+            istio_menu
             ;;
         *)
             cluster_menu
+            ;;
+    esac
+}
+
+istio_menu() {
+    title
+
+    _echo "1. install"
+    echo
+    _echo "2. injection show"
+    _echo "3. injection enable"
+    _echo "4. injection disable"
+    echo
+    _echo "9. remove"
+
+    question
+
+    case ${ANSWER} in
+        1)
+            istio_install
+            press_enter istio
+            ;;
+        2)
+            istio_injection
+            press_enter istio
+            ;;
+        3)
+            istio_injection "enable"
+            press_enter istio
+            ;;
+        4)
+            istio_injection "disable"
+            press_enter istio
+            ;;
+        9)
+            istio_delete
+            press_enter istio
+            ;;
+        *)
+            addons_menu
             ;;
     esac
 }
@@ -1778,7 +1820,7 @@ create_cluster_role_binding() {
     kubectl describe secret ${SECRET} -n ${NAMESPACE} | grep 'token:'
 }
 
-apply_istio() {
+istio_install() {
     NAME="istio"
     NAMESPACE="istio-system"
 
@@ -1818,9 +1860,8 @@ apply_istio() {
     _command "helm upgrade --install ${NAME} ${ISTIO_DIR} --namespace ${NAMESPACE} --values ${CHART}"
     helm upgrade --install ${NAME} ${ISTIO_DIR} --namespace ${NAMESPACE} --values ${CHART}
 
-    ISTIO=true
-
     # save config (ISTIO)
+    ISTIO=true
     save_kops_config true
 
     # waiting 2
@@ -1831,6 +1872,73 @@ apply_istio() {
 
     _command "kubectl get deploy,pod,svc,ing -n ${NAMESPACE}"
     kubectl get deploy,pod,svc,ing -n ${NAMESPACE}
+}
+
+istio_injection() {
+    CMD=$1
+
+    if [ -z ${CMD} ]; then
+        _command "kubectl get ns --show-labels"
+        kubectl get ns --show-labels
+        return
+    fi
+
+    LIST=$(mktemp /tmp/kops-cui-ns-list.XXXXXX)
+
+    # find sample
+    kubectl get ns | grep -v "NAME" | awk '{print $1}' > ${LIST}
+
+    # select
+    select_one
+
+    if [ -z ${SELECTED} ]; then
+        istio_menu
+        return
+    fi
+
+    # istio-injection
+    if [ "${CMD}" == "enable" ]; then
+        kubectl label namespace ${SELECTED} istio-injection=enabled
+    else
+        kubectl label namespace ${SELECTED} istio-injection-
+    fi
+
+    press_enter istio
+}
+
+istio_delete() {
+    NAME="istio"
+    NAMESPACE="istio-system"
+
+    helm_check
+
+    ISTIO_TMP=/tmp/kops-cui-istio
+    mkdir -p ${ISTIO_TMP}
+
+    VERSION=$(curl -s https://api.github.com/repos/${NAME}/${NAME}/releases/latest | jq -r '.tag_name')
+
+    # istio download
+    if [ ! -d ${ISTIO_TMP}/${NAME}-${VERSION} ]; then
+        pushd ${ISTIO_TMP}
+        curl -sL https://git.io/getLatestIstio | sh -
+        popd
+    fi
+
+    ISTIO_DIR=${ISTIO_TMP}/${NAME}-${VERSION}/install/kubernetes/helm/istio
+
+    # helm delete
+    _command "helm delete --purge ${NAME}"
+    helm delete --purge ${NAME}
+
+    # save config (ISTIO)
+    ISTIO=
+    save_kops_config true
+
+    _command "kubectl delete -f ${ISTIO_DIR}/templates/crds.yaml"
+    kubectl delete -f ${ISTIO_DIR}/templates/crds.yaml
+
+    _command "kubectl delete namespace ${NAMESPACE}"
+    kubectl delete namespace ${NAMESPACE}
 }
 
 apply_sample() {
