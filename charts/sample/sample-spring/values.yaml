@@ -1,4 +1,4 @@
-replicaCount: 1
+replicaCount: 2
 image:
   repository: nalbam/sample-spring
   tag: alpine
@@ -39,7 +39,7 @@ ingress:
 hpa:
   enabled: true
   min: 2
-  max: 10
+  max: 5
   cpu: 65
   mem: 65
 profile: default
