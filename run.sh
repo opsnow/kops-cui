@@ -233,18 +233,18 @@ waiting_for() {
 }
 
 waiting_pod() {
-    NAMESPACE=${1}
-    NAME=${2}
+    _NS=${1}
+    _NM=${2}
     SEC=${3:-10}
 
     echo
-    _command "kubectl get pod -n ${NAMESPACE} | grep ${NAME}"
+    _command "kubectl get pod -n ${_NS} | grep ${_NM}"
 
     TMP=$(mktemp /tmp/kops-cui-waiting-pod.XXXXXX)
 
     IDX=0
     while [ 1 ]; do
-        kubectl get pod -n ${NAMESPACE} | grep ${NAME} | head -1 > ${TMP}
+        kubectl get pod -n ${_NS} | grep ${_NM} | head -1 > ${TMP}
         cat ${TMP}
 
         READY=$(cat ${TMP} | awk '{print $2}' | cut -d'/' -f1)
