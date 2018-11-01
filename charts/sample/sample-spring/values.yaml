@@ -7,7 +7,7 @@ canary:
   enabled: false
   tag: alpine
 istio:
-  enabled: false
+  enabled: true
 service:
   type: ClusterIP
   externalPort: 80
