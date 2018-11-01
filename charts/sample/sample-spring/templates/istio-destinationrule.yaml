@@ -4,10 +4,6 @@ apiVersion: networking.istio.io/v1alpha3
 kind: DestinationRule
 metadata:
   name: {{ template "fullname" . }}
-  labels:
-    draft: {{ default "draft-app" .Values.draft }}
-    chart: "{{ .Chart.Name }}-{{ .Chart.Version | replace "+" "_" }}"
-    app: {{ template "fullname" . }}
 spec:
   host: {{ template "fullname" . }}
   trafficPolicy:
