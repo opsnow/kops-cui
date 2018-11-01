@@ -58,6 +58,14 @@ _read() {
     fi
 }
 
+_read_pwd() {
+    if [ -z ${TPUT} ] && [ ! -z $2 ]; then
+        read -s -p "${L_PAD}$(tput setaf $2)$1$(tput sgr0)" PASSWORD
+    else
+        read -s -p "${L_PAD}$1" PASSWORD
+    fi
+}
+
 _replace() {
     if [ "${OS_NAME}" == "darwin" ]; then
         sed -i "" -e "$1" $2
@@ -103,6 +111,14 @@ question() {
             ANSWER=
         fi
     fi
+}
+
+password() {
+    Q=${1:-"Enter your password : "}
+
+    echo
+    _read_pwd "$Q" 6
+    echo
 }
 
 logo() {
@@ -1943,11 +1959,9 @@ read_admin_password() {
     CHART=${1}
 
     # admin password
-    question "Enter admin password [password] : "
+    password "Enter admin password [password] : "
 
-    PASSWORD=${ANSWER:-password}
-
-    _replace "s/PASSWORD/${PASSWORD}/g" ${CHART}
+    _replace "s/PASSWORD/${PASSWORD:-password}/g" ${CHART}
 }
 
 get_template() {
