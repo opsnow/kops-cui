@@ -1,6 +1,5 @@
 dev
 demo
-bespin
 sample
 stage
 prod

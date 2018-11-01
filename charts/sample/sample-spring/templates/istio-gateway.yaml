@@ -1,0 +1,47 @@
+{{ if .Values.istio.enabled }}
+apiVersion: networking.istio.io/v1alpha3
+kind: Gateway
+metadata:
+  name: {{ template "fullname" . }}-gateway
+spec:
+  selector:
+    istio: ingressgateway # use istio default controller
+  servers:
+  - port:
+      number: 80
+      name: http
+      protocol: HTTP
+    hosts:
+    - "{{ .Release.Name }}.istio-{{ .Values.ingress.basedomain }}"
+  # - port:
+  #     number: 443
+  #     name: https
+  #     protocol: HTTPS
+  #   hosts:
+  #   - {{ .Release.Name }}.{{ .Values.ingress.basedomain }}
+---
+apiVersion: networking.istio.io/v1alpha3
+kind: VirtualService
+metadata:
+  name: {{ template "fullname" . }}-gateway
+spec:
+  hosts:
+  - "{{ .Release.Name }}.istio-{{ .Values.ingress.basedomain }}"
+  gateways:
+  - {{ template "fullname" . }}-gateway
+  http:
+  - route:
+    - destination:
+        host: {{ template "fullname" . }}
+        port:
+          number: {{ .Values.service.internalPort }}
+    # match:
+    # - uri:
+    #     exact: /productpage
+    # - uri:
+    #     exact: /login
+    # - uri:
+    #     exact: /logout
+    # - uri:
+    #     prefix: /api/v1/products
+{{ end }}
