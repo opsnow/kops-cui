@@ -151,11 +151,9 @@ press_enter() {
             addons_menu
             ;;
         monitor)
-            # monitor_menu
             charts_menu "monitor"
             ;;
         devops)
-            # devops_menu
             charts_menu "devops"
             ;;
         sample)
@@ -235,18 +233,18 @@ waiting_for() {
 }
 
 waiting_pod() {
-    NAMESPACE=${1}
-    NAME=${2}
+    _NS=${1}
+    _NM=${2}
     SEC=${3:-10}
 
     echo
-    _command "kubectl get pod -n ${NAMESPACE} | grep ${NAME}"
+    _command "kubectl get pod -n ${_NS} | grep ${_NM}"
 
     TMP=$(mktemp /tmp/kops-cui-waiting-pod.XXXXXX)
 
     IDX=0
     while [ 1 ]; do
-        kubectl get pod -n ${NAMESPACE} | grep ${NAME} | head -1 > ${TMP}
+        kubectl get pod -n ${_NS} | grep ${_NM} | head -1 > ${TMP}
         cat ${TMP}
 
         READY=$(cat ${TMP} | awk '{print $2}' | cut -d'/' -f1)
@@ -313,7 +311,6 @@ run() {
     NEED_TOOL=
     command -v jq > /dev/null      || export NEED_TOOL=jq
     command -v git > /dev/null     || export NEED_TOOL=git
-    command -v wget > /dev/null    || export NEED_TOOL=wget
     command -v aws > /dev/null     || export NEED_TOOL=awscli
     command -v kubectl > /dev/null || export NEED_TOOL=kubectl
     command -v kops > /dev/null    || export NEED_TOOL=kops
@@ -694,12 +691,14 @@ addons_menu() {
             sample_menu
             ;;
         12)
-            # monitor_menu
             charts_menu "monitor"
             ;;
         13)
-            # devops_menu
             charts_menu "devops"
+            ;;
+        14)
+            apply_istio
+            press_enter addons
             ;;
         *)
             cluster_menu
@@ -713,7 +712,7 @@ sample_menu() {
     LIST=$(mktemp /tmp/kops-cui-sample-list.XXXXXX)
 
     # find sample
-    ls ${SHELL_DIR}/sample | sort | sed 's/.yaml//' > ${LIST}
+    ls ${SHELL_DIR}/charts/sample | grep yaml | sort | sed 's/.yaml//' > ${LIST}
 
     # select
     select_one
@@ -724,7 +723,7 @@ sample_menu() {
     fi
 
     # sample install
-    if [ "${SELECTED}" == "configmap" ] || [ "${SELECTED}" == "redis" ]; then
+    if [ "${SELECTED}" == "configmap" ]; then
         apply_sample ${SELECTED} default
     else
         apply_sample ${SELECTED} default true
@@ -933,6 +932,10 @@ read_cluster_name() {
 kops_get() {
     _command "kops get --name=${KOPS_CLUSTER_NAME} --state=s3://${KOPS_STATE_STORE}"
     kops get --name=${KOPS_CLUSTER_NAME} --state=s3://${KOPS_STATE_STORE}
+    echo
+
+    _command "kubectl get no"
+    kubectl get no
 }
 
 kops_create() {
@@ -1062,8 +1065,6 @@ kops_delete() {
     _command "kops delete cluster --name=${KOPS_CLUSTER_NAME} --state=s3://${KOPS_STATE_STORE} --yes"
     kops delete cluster --name=${KOPS_CLUSTER_NAME} --state=s3://${KOPS_STATE_STORE} --yes
     echo
-
-    # delete_record
 
     delete_kops_config
 
@@ -1596,23 +1597,15 @@ helm_install() {
     # for jenkins
     if [ "${NAME}" == "jenkins" ]; then
         # admin password
-        question "Enter admin password [password] : "
-        PASSWORD=${ANSWER:-password}
-        _result "password: ${PASSWORD}"
-        _replace "s|AdminPassword: .*|AdminPassword: ${PASSWORD}|" ${CHART}
+        read_admin_password ${CHART}
 
-        echo
         ${SHELL_DIR}/jenkins/jobs.sh ${CHART}
-        echo
     fi
 
     # for grafana
     if [ "${NAME}" == "grafana" ]; then
         # admin password
-        question "Enter admin password [password] : "
-        PASSWORD=${ANSWER:-password}
-        _result "password: ${PASSWORD}"
-        _replace "s|adminPassword: .*|adminPassword: ${PASSWORD}|" ${CHART}
+        read_admin_password ${CHART}
 
         # ldap
         question "Enter grafana LDAP secret : "
@@ -1668,6 +1661,8 @@ helm_install() {
     #     CHART_VERSION=${CHART_VERSION:-latest}
     # fi
 
+    echo
+
     # helm install
     if [ -z ${CHART_VERSION} ] || [ "${CHART_VERSION}" == "latest" ]; then
         _command "helm upgrade --install ${NAME} stable/${NAME} --namespace ${NAMESPACE} --values ${CHART}"
@@ -1692,7 +1687,7 @@ helm_install() {
             echo
             get_elb_domain ${NAME} ${NAMESPACE}
             echo
-            _result "${NAME}: https://${ELB_DOMAIN}"
+            _result "${NAME}: http://${ELB_DOMAIN}"
         else
             echo
             _result "${NAME}: https://${DOMAIN}"
@@ -1820,10 +1815,63 @@ create_cluster_role_binding() {
     fi
 }
 
+apply_istio() {
+    NAME="istio"
+    NAMESPACE="istio-system"
+
+    helm_check
+
+    CHART=$(mktemp /tmp/kops-cui-${NAME}.XXXXXX.yaml)
+    get_template charts/istio/${NAME}.yaml ${CHART}
+
+    # ingress
+    if [ -z ${BASE_DOMAIN} ]; then
+        _replace "s/SERVICE_TYPE/LoadBalancer/g" ${CHART}
+        _replace "s/INGRESS_ENABLED/false/g" ${CHART}
+    else
+        _replace "s/SERVICE_TYPE/ClusterIP/g" ${CHART}
+        _replace "s/INGRESS_ENABLED/true/g" ${CHART}
+        _replace "s/BASE_DOMAIN/${BASE_DOMAIN}/g" ${CHART}
+    fi
+
+    # admin password
+    read_admin_password ${CHART}
+
+    VERSION=$(curl -s https://api.github.com/repos/${NAME}/${NAME}/releases/latest | jq -r '.tag_name')
+
+    ISTIO_TMP=/tmp/kops-cui-istio
+    mkdir -p ${ISTIO_TMP}
+
+    # istio download
+    if [ ! -d ${ISTIO_TMP}/${NAME}-${VERSION} ]; then
+        pushd ${ISTIO_TMP}
+        curl -sL https://git.io/getLatestIstio | sh -
+        popd
+    fi
+
+    ISTIO_DIR=${ISTIO_TMP}/${NAME}-${VERSION}/install/kubernetes/helm/istio
+
+    # helm install
+    _command "helm upgrade --install ${NAME} ${ISTIO_DIR} --namespace ${NAMESPACE} --values ${CHART}"
+    helm upgrade --install ${NAME} ${ISTIO_DIR} --namespace ${NAMESPACE} --values ${CHART}
+
+    # waiting 2
+    waiting_pod "${NAMESPACE}" "${NAME}"
+
+    _command "helm history ${NAME}"
+    helm history ${NAME}
+    echo
+
+    _command "kubectl get deploy,pod,svc,ing -n ${NAMESPACE}"
+    kubectl get deploy,pod,svc,ing -n ${NAMESPACE}
+}
+
 apply_sample() {
     NAME=${1}
     NAMESPACE=${2}
     INGRESS=${3}
+
+    helm_check
 
     if [ ! -z ${INGRESS} ]; then
         if [ -z ${BASE_DOMAIN} ]; then
@@ -1831,40 +1879,75 @@ apply_sample() {
         fi
     fi
 
-    SAMPLE=$(mktemp /tmp/kops-cui-${NAME}.XXXXXX.yaml)
-    get_template sample/${NAME}.yaml ${SAMPLE}
+    CHART=$(mktemp /tmp/kops-cui-${NAME}.XXXXXX.yaml)
+    get_template charts/sample/${NAME}.yaml ${CHART}
 
+    # ingress
     if [ ! -z ${INGRESS} ]; then
-        if [ -z ${BASE_DOMAIN} ]; then
-            _replace "s/# type: SERVICE_TYPE/type: LoadBalancer/" ${SAMPLE}
+        if [ -z ${BASE_DOMAIN} ] || [ "${INGRESS}" == "false" ]; then
+            _replace "s/SERVICE_TYPE/LoadBalancer/" ${CHART}
+            _replace "s/INGRESS_ENABLED/false/" ${CHART}
         else
-            DOMAIN="${NAME}-${NAMESPACE}.${BASE_DOMAIN}"
-
-            _replace "s/# type: SERVICE_TYPE/type: ClusterIP/" ${SAMPLE}
-            _replace "s/INGRESS_DOMAIN/${DOMAIN}/" ${SAMPLE}
+            _replace "s/SERVICE_TYPE/ClusterIP/" ${CHART}
+            _replace "s/INGRESS_ENABLED/true/" ${CHART}
+            _replace "s/BASE_DOMAIN/${BASE_DOMAIN}/" ${CHART}
         fi
     fi
 
-    _command "kubectl apply -f ${SAMPLE}"
-    kubectl apply -f ${SAMPLE}
+    # has configmap
+    COUNT=$(kubectl get configmap -n ${NAMESPACE} 2>&1 | grep ${NAME}-${NAMESPACE} | wc -l | xargs)
+    if [ "x${COUNT}" != "x0" ]; then
+        _replace "s/CONFIGMAP_ENABLED/true/" ${CHART}
+    else
+        _replace "s/CONFIGMAP_ENABLED/false/" ${CHART}
+    fi
 
-    waiting 2
-    # waiting_pod "${NAMESPACE}" "${NAME}"
+    # has secret
+    COUNT=$(kubectl get secret -n ${NAMESPACE} 2>&1 | grep ${NAME}-${NAMESPACE} | wc -l | xargs)
+    if [ "x${COUNT}" != "x0" ]; then
+        _replace "s/SECRET_ENABLED/true/" ${CHART}
+    else
+        _replace "s/SECRET_ENABLED/false/" ${CHART}
+    fi
+
+    SAMPLE_DIR=${SHELL_DIR}/charts/sample/${NAME}
+
+    # helm install
+    _command "helm upgrade --install ${NAME}-${NAMESPACE} ${SAMPLE_DIR} --namespace ${NAMESPACE} --values ${CHART}"
+    helm upgrade --install ${NAME}-${NAMESPACE} ${SAMPLE_DIR} --namespace ${NAMESPACE} --values ${CHART}
+
+    # waiting 2
+    waiting_pod "${NAMESPACE}" "${NAME}-${NAMESPACE}"
+
+    _command "helm history ${NAME}-${NAMESPACE}"
+    helm history ${NAME}-${NAMESPACE}
+    echo
 
     _command "kubectl get deploy,pod,svc,ing -n ${NAMESPACE}"
     kubectl get deploy,pod,svc,ing -n ${NAMESPACE}
 
     if [ ! -z ${INGRESS} ]; then
         if [ -z ${BASE_DOMAIN} ]; then
-            get_elb_domain ${NAME} ${NAMESPACE}
+            get_elb_domain ${NAME}-${NAMESPACE} ${NAMESPACE}
 
             echo
-            _result "${NAME}: https://${ELB_DOMAIN}"
+            _result "${NAME}: http://${ELB_DOMAIN}"
         else
             echo
-            _result "${NAME}: https://${DOMAIN}"
+            _result "${NAME}: https://${NAME}-${NAMESPACE}.${BASE_DOMAIN}"
         fi
     fi
+}
+
+read_admin_password() {
+    CHART=${1}
+
+    # admin password
+    question "Enter admin password [password] : "
+
+    PASSWORD=${ANSWER:-password}
+
+    _replace "s/PASSWORD/${PASSWORD}/g" ${CHART}
 }
 
 get_template() {

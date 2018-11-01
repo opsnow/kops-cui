@@ -12,6 +12,14 @@ ingress:
   hosts:
     - INGRESS_DOMAIN
 
+resources:
+  requests:
+    cpu: 1000m
+    memory: 3072Mi
+  limits:
+    cpu: 2000m
+    memory: 5120Mi
+
 readinessProbe:
   initialDelaySeconds: 300
   periodSeconds: 30

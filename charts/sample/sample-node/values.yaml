@@ -1,0 +1,46 @@
+replicaCount: 1
+image:
+  repository: nalbam/sample-node
+  tag: alpine
+  pullPolicy: Always
+service:
+  type: ClusterIP
+  externalPort: 80
+  internalPort: 3000
+resources:
+  requests:
+    cpu: 100m
+    memory: 128Mi
+  limits:
+    cpu: 200m
+    memory: 256Mi
+readinessProbe:
+  httpGet:
+    path: /
+    port: 3000
+  initialDelaySeconds: 30
+  periodSeconds: 15
+  failureThreshold: 6
+livenessProbe:
+  httpGet:
+    path: /
+    port: 3000
+  initialDelaySeconds: 30
+  periodSeconds: 15
+  failureThreshold: 6
+ingress:
+  enabled: false
+  basedomain: 127.0.0.1.nip.io
+hpa:
+  enabled: true
+  min: 2
+  max: 5
+  cpu: 65
+  mem: 65
+profile: default
+redis:
+  enabled: true
+configmap:
+  enabled: false
+secret:
+  enabled: false

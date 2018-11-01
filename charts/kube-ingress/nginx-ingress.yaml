@@ -9,6 +9,8 @@ controller:
   #   targetCPUUtilizationPercentage: 50
   #   targetMemoryUtilizationPercentage: 50
   service:
+    labels:
+      app: nginx-ingress
     annotations:
       # replace with the correct value of the generated certificate in the AWS console
       service.beta.kubernetes.io/aws-load-balancer-ssl-cert: ""

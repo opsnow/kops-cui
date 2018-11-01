@@ -1,0 +1,20 @@
+{{ if .Values.istio.enabled }}
+{{ if not .Values.canary.enabled }}
+apiVersion: networking.istio.io/v1alpha3
+kind: VirtualService
+metadata:
+  name: {{ template "fullname" . }}
+  labels:
+    draft: {{ default "draft-app" .Values.draft }}
+    chart: "{{ .Chart.Name }}-{{ .Chart.Version | replace "+" "_" }}"
+    app: {{ template "fullname" . }}
+spec:
+  hosts:
+    - {{ template "fullname" . }}
+  http:
+  - route:
+    - destination:
+        host: {{ template "fullname" . }}
+        subset: master
+{{ end }}
+{{ end }}

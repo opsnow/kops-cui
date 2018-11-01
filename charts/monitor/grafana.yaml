@@ -3,7 +3,7 @@
 nameOverride: grafana
 
 adminUser: admin
-adminPassword: password
+adminPassword: PASSWORD
 
 service:
   type: SERVICE_TYPE
@@ -20,7 +20,7 @@ persistence:
   accessModes:
     - ReadWriteOnce
   size: 5Gi
-#  #:EFS:storageClass: "efs"
+  #:EFS:storageClassName: "efs"
 
 datasources:
   datasources.yaml:

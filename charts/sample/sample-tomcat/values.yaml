@@ -1,0 +1,44 @@
+replicaCount: 1
+image:
+  repository: nalbam/sample-tomcat
+  tag: alpine
+  pullPolicy: Always
+service:
+  type: ClusterIP
+  externalPort: 80
+  internalPort: 8080
+resources:
+  requests:
+    cpu: 500m
+    memory: 1024Mi
+  limits:
+    cpu: 1000m
+    memory: 2048Mi
+readinessProbe:
+  httpGet:
+    path: /
+    port: 8080
+  initialDelaySeconds: 60
+  periodSeconds: 15
+  failureThreshold: 6
+livenessProbe:
+  httpGet:
+    path: /
+    port: 8080
+  initialDelaySeconds: 60
+  periodSeconds: 15
+  failureThreshold: 6
+ingress:
+  enabled: true
+  basedomain: 127.0.0.1.nip.io
+hpa:
+  enabled: true
+  min: 1
+  max: 5
+  cpu: 65
+  mem: 65
+profile: default
+configmap:
+  enabled: false
+secret:
+  enabled: false

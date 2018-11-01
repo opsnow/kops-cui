@@ -9,7 +9,14 @@ Master:
   # Image: quay.io/nalbam/jenkins
   # ImageTag: latest
   AdminUser: admin
-  AdminPassword: password
+  AdminPassword: PASSWORD
+  resources:
+    requests:
+      cpu: 1000m
+      memory: 2048Mi
+    limits:
+      cpu: 2000m
+      memory: 4096Mi
   JavaOpts: "-Dorg.apache.commons.jelly.tags.fmt.timeZone=Asia/Seoul"
   ServiceType: SERVICE_TYPE
   HostName: INGRESS_DOMAIN

@@ -1,0 +1,8 @@
+# chart-version: latest
+
+service:
+  type: SERVICE_TYPE
+
+ingress:
+  enabled: INGRESS_ENABLED
+  basedomain: BASE_DOMAIN

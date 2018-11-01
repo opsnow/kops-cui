@@ -16,9 +16,22 @@
   "editable": true,
   "gnetId": null,
   "graphTooltip": 0,
-  "iteration": 1540351972019,
+  "iteration": 1540965293151,
   "links": [],
   "panels": [
+    {
+      "collapsed": false,
+      "gridPos": {
+        "h": 1,
+        "w": 24,
+        "x": 0,
+        "y": 0
+      },
+      "id": 43,
+      "panels": [],
+      "title": "Usage : $Group : $Deployment",
+      "type": "row"
+    },
     {
       "cacheTimeout": null,
       "colorBackground": false,
@@ -43,7 +56,7 @@
         "h": 5,
         "w": 6,
         "x": 0,
-        "y": 0
+        "y": 1
       },
       "id": 31,
       "interval": null,
@@ -82,7 +95,7 @@
       "tableColumn": "",
       "targets": [
         {
-          "expr": "sum (rate (container_cpu_usage_seconds_total{pod_name=~\"^$Group-.*\",pod_name=~\"^$Deployment-[a-z0-9]+-[a-z0-9]+\"}[2m])) / sum (kube_pod_container_resource_requests_cpu_cores{pod=~\"^$Group-.*\",pod=~\"^$Deployment-[a-z0-9]+-[a-z0-9]+\"}) * 100",
+          "expr": "sum (rate (container_cpu_usage_seconds_total{image!=\"\",name=~\"^k8s_.*\",pod_name=~\"^$Group.*\",pod_name=~\"^$Deployment-[a-z0-9]+-[a-z0-9]+\"}[2m])) / sum (kube_pod_container_resource_requests_cpu_cores{pod=~\"^$Group.*\",pod=~\"^$Deployment-[a-z0-9]+-[a-z0-9]+\"}) * 100",
           "format": "time_series",
           "interval": "",
           "intervalFactor": 1,
@@ -124,7 +137,7 @@
         "h": 5,
         "w": 6,
         "x": 6,
-        "y": 0
+        "y": 1
       },
       "id": 33,
       "interval": null,
@@ -163,7 +176,7 @@
       "tableColumn": "",
       "targets": [
         {
-          "expr": "sum (container_memory_working_set_bytes{pod_name=~\"^$Group-.*\",pod_name=~\"^$Deployment-[a-z0-9]+-[a-z0-9]+\"}) / sum (kube_pod_container_resource_requests_memory_bytes{pod=~\"^$Group-.*\"}) * 100",
+          "expr": "sum (container_memory_working_set_bytes{image!=\"\",name=~\"^k8s_.*\",pod_name=~\"^$Group.*\",pod_name=~\"^$Deployment-[a-z0-9]+-[a-z0-9]+\"}) / sum (kube_pod_container_resource_requests_memory_bytes{pod=~\"^$Group.*\",pod=~\"^$Deployment-[a-z0-9]+-[a-z0-9]+\"}) * 100",
           "format": "time_series",
           "intervalFactor": 1,
           "refId": "A"
@@ -187,14 +200,14 @@
       "bars": false,
       "dashLength": 10,
       "dashes": false,
-      "datasource": null,
+      "datasource": "Prometheus",
       "decimals": 0,
       "fill": 0,
       "gridPos": {
         "h": 7,
         "w": 12,
         "x": 12,
-        "y": 0
+        "y": 1
       },
       "id": 27,
       "legend": {
@@ -220,15 +233,29 @@
       "seriesOverrides": [],
       "spaceLength": 10,
       "stack": false,
-      "steppedLine": false,
+      "steppedLine": true,
       "targets": [
         {
-          "expr": "kube_deployment_status_replicas{deployment=~\"^$Group-.*\",deployment=~\"^$Deployment\"}",
+          "expr": "sum( kube_deployment_status_replicas_updated{deployment=~\"^$Group.*\",deployment=~\"^$Deployment\"} )",
           "format": "time_series",
           "interval": "",
           "intervalFactor": 1,
-          "legendFormat": "{{ deployment }}",
+          "legendFormat": "updated",
           "refId": "A"
+        },
+        {
+          "expr": "sum( kube_deployment_status_replicas_available{deployment=~\"^$Group.*\",deployment=~\"^$Deployment\"} )",
+          "format": "time_series",
+          "intervalFactor": 1,
+          "legendFormat": "available",
+          "refId": "B"
+        },
+        {
+          "expr": "sum( kube_deployment_status_replicas_unavailable{deployment=~\"^$Group.*\",deployment=~\"^$Deployment\"} )",
+          "format": "time_series",
+          "intervalFactor": 1,
+          "legendFormat": "unavailable",
+          "refId": "C"
         }
       ],
       "thresholds": [],
@@ -281,7 +308,7 @@
         "#d44a3a"
       ],
       "datasource": "Prometheus",
-      "decimals": 2,
+      "decimals": 3,
       "format": "none",
       "gauge": {
         "maxValue": 100,
@@ -294,7 +321,7 @@
         "h": 2,
         "w": 3,
         "x": 0,
-        "y": 5
+        "y": 6
       },
       "id": 35,
       "interval": null,
@@ -316,7 +343,7 @@
       "postfix": " cores",
       "postfixFontSize": "30%",
       "prefix": "",
-      "prefixFontSize": "50%",
+      "prefixFontSize": "30%",
       "rangeMaps": [
         {
           "from": "null",
@@ -333,7 +360,7 @@
       "tableColumn": "",
       "targets": [
         {
-          "expr": "sum (rate (container_cpu_usage_seconds_total{pod_name=~\"^$Group-.*\",pod_name=~\"^$Deployment-[a-z0-9]+-[a-z0-9]+\"}[2m]))",
+          "expr": "sum (rate (container_cpu_usage_seconds_total{image!=\"\",name=~\"^k8s_.*\",pod_name=~\"^$Group.*\",pod_name=~\"^$Deployment-[a-z0-9]+-[a-z0-9]+\"}[2m]))",
           "format": "time_series",
           "intervalFactor": 1,
           "refId": "A"
@@ -342,7 +369,7 @@
       "thresholds": "",
       "title": "Used",
       "type": "singlestat",
-      "valueFontSize": "80%",
+      "valueFontSize": "50%",
       "valueMaps": [
         {
           "op": "=",
@@ -361,8 +388,8 @@
         "rgba(237, 129, 40, 0.89)",
         "#d44a3a"
       ],
-      "datasource": null,
-      "decimals": 2,
+      "datasource": "Prometheus",
+      "decimals": 3,
       "format": "none",
       "gauge": {
         "maxValue": 100,
@@ -375,7 +402,7 @@
         "h": 2,
         "w": 3,
         "x": 3,
-        "y": 5
+        "y": 6
       },
       "id": 37,
       "interval": null,
@@ -397,7 +424,7 @@
       "postfix": " cores",
       "postfixFontSize": "30%",
       "prefix": "",
-      "prefixFontSize": "50%",
+      "prefixFontSize": "30%",
       "rangeMaps": [
         {
           "from": "null",
@@ -414,7 +441,7 @@
       "tableColumn": "",
       "targets": [
         {
-          "expr": "sum (kube_pod_container_resource_requests_cpu_cores{pod=~\"^$Group-.*\",pod=~\"^$Deployment-[a-z0-9]+-[a-z0-9]+\"})",
+          "expr": "sum (kube_pod_container_resource_requests_cpu_cores{pod=~\"^$Group.*\",pod=~\"^$Deployment-[a-z0-9]+-[a-z0-9]+\"})",
           "format": "time_series",
           "intervalFactor": 1,
           "refId": "A"
@@ -423,7 +450,7 @@
       "thresholds": "",
       "title": "Request",
       "type": "singlestat",
-      "valueFontSize": "80%",
+      "valueFontSize": "50%",
       "valueMaps": [
         {
           "op": "=",
@@ -444,7 +471,7 @@
       ],
       "datasource": "Prometheus",
       "decimals": 2,
-      "format": "decbytes",
+      "format": "bytes",
       "gauge": {
         "maxValue": 100,
         "minValue": 0,
@@ -456,7 +483,7 @@
         "h": 2,
         "w": 3,
         "x": 6,
-        "y": 5
+        "y": 6
       },
       "id": 39,
       "interval": null,
@@ -495,7 +522,7 @@
       "tableColumn": "",
       "targets": [
         {
-          "expr": "sum (container_memory_working_set_bytes{pod_name=~\"^$Group-.*\",pod_name=~\"^$Deployment-[a-z0-9]+-[a-z0-9]+\"})",
+          "expr": "sum (container_memory_working_set_bytes{image!=\"\",name=~\"^k8s_.*\",pod_name=~\"^$Group.*\",pod_name=~\"^$Deployment-[a-z0-9]+-[a-z0-9]+\"})",
           "format": "time_series",
           "intervalFactor": 1,
           "refId": "A"
@@ -523,7 +550,7 @@
         "rgba(237, 129, 40, 0.89)",
         "#d44a3a"
       ],
-      "datasource": null,
+      "datasource": "Prometheus",
       "decimals": 2,
       "format": "bytes",
       "gauge": {
@@ -537,7 +564,7 @@
         "h": 2,
         "w": 3,
         "x": 9,
-        "y": 5
+        "y": 6
       },
       "id": 41,
       "interval": null,
@@ -576,7 +603,7 @@
       "tableColumn": "",
       "targets": [
         {
-          "expr": "sum (kube_pod_container_resource_requests_memory_bytes{pod=~\"^$Group-.*\",pod=~\"^$Deployment-[a-z0-9]+-[a-z0-9]+\"})",
+          "expr": "sum (kube_pod_container_resource_requests_memory_bytes{pod=~\"^$Group.*\",pod=~\"^$Deployment-[a-z0-9]+-[a-z0-9]+\"})",
           "format": "time_series",
           "intervalFactor": 1,
           "refId": "A"
@@ -610,7 +637,7 @@
         "h": 7,
         "w": 12,
         "x": 0,
-        "y": 7
+        "y": 8
       },
       "height": "",
       "id": 17,
@@ -643,7 +670,7 @@
       "steppedLine": false,
       "targets": [
         {
-          "expr": "sum (rate (container_cpu_usage_seconds_total{image!=\"\",name=~\"^k8s_.*\",pod_name=~\"^$Group-.*\",pod_name=~\"^$Deployment-[a-z0-9]+-[a-z0-9]+\"}[2m])) by (pod_name)",
+          "expr": "sum (rate (container_cpu_usage_seconds_total{image!=\"\",name=~\"^k8s_.*\",pod_name=~\"^$Group.*\",pod_name=~\"^$Deployment-[a-z0-9]+-[a-z0-9]+\"}[2m])) by (pod_name)",
           "format": "time_series",
           "interval": "",
           "intervalFactor": 1,
@@ -710,7 +737,7 @@
         "h": 7,
         "w": 12,
         "x": 12,
-        "y": 7
+        "y": 8
       },
       "id": 25,
       "isNew": true,
@@ -742,7 +769,7 @@
       "steppedLine": false,
       "targets": [
         {
-          "expr": "sum (container_memory_working_set_bytes{image!=\"\",name=~\"^k8s_.*\",pod_name=~\"^$Group-.*\",pod_name=~\"^$Deployment-[a-z0-9]+-[a-z0-9]+\"}) by (pod_name)",
+          "expr": "sum (container_memory_working_set_bytes{image!=\"\",name=~\"^k8s_.*\",pod_name=~\"^$Group.*\",pod_name=~\"^$Deployment-[a-z0-9]+-[a-z0-9]+\"}) by (pod_name)",
           "format": "time_series",
           "interval": "",
           "intervalFactor": 1,
@@ -808,7 +835,7 @@
         "h": 6,
         "w": 24,
         "x": 0,
-        "y": 14
+        "y": 15
       },
       "id": 16,
       "isNew": true,
@@ -840,7 +867,7 @@
       "steppedLine": false,
       "targets": [
         {
-          "expr": "sum (rate (container_network_receive_bytes_total{image!=\"\",name=~\"^k8s_.*\",pod_name=~\"^$Group-.*\",pod_name=~\"^$Deployment-[a-z0-9]+-[a-z0-9]+\"}[2m])) by (pod_name)",
+          "expr": "sum (rate (container_network_receive_bytes_total{image!=\"\",name=~\"^k8s_.*\",pod_name=~\"^$Group.*\",pod_name=~\"^$Deployment-[a-z0-9]+-[a-z0-9]+\"}[2m])) by (pod_name)",
           "format": "time_series",
           "interval": "",
           "intervalFactor": 1,
@@ -850,7 +877,7 @@
           "step": 10
         },
         {
-          "expr": "- sum (rate (container_network_transmit_bytes_total{image!=\"\",name=~\"^k8s_.*\",pod_name=~\"^$Group-.*\",pod_name=~\"^$Deployment-[a-z0-9]+-[a-z0-9]+\"}[2m])) by (pod_name)",
+          "expr": "- sum (rate (container_network_transmit_bytes_total{image!=\"\",name=~\"^k8s_.*\",pod_name=~\"^$Group.*\",pod_name=~\"^$Deployment-[a-z0-9]+-[a-z0-9]+\"}[2m])) by (pod_name)",
           "format": "time_series",
           "interval": "",
           "intervalFactor": 1,
@@ -858,6 +885,20 @@
           "metric": "network",
           "refId": "B",
           "step": 10
+        },
+        {
+          "expr": "sum (rate (container_network_receive_bytes_total{image!=\"\",name=~\"^k8s_.*\",pod_name=~\"^$Group.*\",pod_name=~\"^$Deployment-[a-z0-9]+-[a-z0-9]+\"}[2m]))",
+          "format": "time_series",
+          "intervalFactor": 1,
+          "legendFormat": "-> {{ $Deployment }}",
+          "refId": "C"
+        },
+        {
+          "expr": "- sum (rate (container_network_transmit_bytes_total{image!=\"\",name=~\"^k8s_.*\",pod_name=~\"^$Group.*\",pod_name=~\"^$Deployment-[a-z0-9]+-[a-z0-9]+\"}[2m]))",
+          "format": "time_series",
+          "intervalFactor": 1,
+          "legendFormat": "<- {{ $Deployment }}",
+          "refId": "D"
         }
       ],
       "thresholds": [],
@@ -927,7 +968,7 @@
         "options": [],
         "query": "label_values(kube_deployment_labels, deployment)",
         "refresh": 1,
-        "regex": "/([a-z]+)-.*-[dev|stage|prod]/",
+        "regex": "/([a-z]+)/",
         "skipUrlSync": false,
         "sort": 1,
         "tagValuesQuery": "",
@@ -939,18 +980,17 @@
       {
         "allValue": ".*",
         "current": {
-          "tags": [],
-          "text": "kube-dns",
-          "value": "kube-dns"
+          "text": "All",
+          "value": "$__all"
         },
         "datasource": "Prometheus",
         "hide": 0,
-        "includeAll": false,
+        "includeAll": true,
         "label": null,
         "multi": false,
         "name": "Deployment",
         "options": [],
-        "query": "label_values(kube_deployment_labels{deployment=~\"^$Group-.*\"}, deployment)",
+        "query": "label_values(kube_deployment_labels{deployment=~\"^$Group.*\"}, deployment)",
         "refresh": 2,
         "regex": "",
         "skipUrlSync": false,

@@ -52,6 +52,7 @@ POS=$(grep -n "jenkins-jobs -- start" ${CHART} | cut -d':' -f1)
 
 sed "${POS}q" ${CHART} >> ${CHART_TMP}
 
+echo
 echo "  Jobs: |-" >> ${CHART_TMP}
 while read JOB; do
     echo "> ${JOB}"

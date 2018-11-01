@@ -1,8 +1,6 @@
+dev
 demo
-anakin
 bespin
-kamino
-chewie
-falcon
-obiwan
 sample
+stage
+prod
