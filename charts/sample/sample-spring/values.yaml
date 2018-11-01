@@ -4,7 +4,7 @@ image:
   tag: alpine
   pullPolicy: Always
 canary:
-  enabled: false
+  enabled: true
   tag: alpine
 istio:
   enabled: true
