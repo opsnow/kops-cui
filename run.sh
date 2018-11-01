@@ -27,6 +27,8 @@ BASE_DOMAIN=
 
 EFS_FILE_SYSTEM_ID=
 
+ISTIO=
+
 cloud=aws
 master_size=c4.large
 master_count=1
@@ -77,14 +79,12 @@ _replace() {
 _result() {
     echo
     _echo "# $@" 4
-    echo
 }
 
 _command() {
     if [ ! -z ${DEBUG_MODE} ]; then
         echo
         _echo "$ $@" 3
-        echo
     fi
 }
 
@@ -106,10 +106,8 @@ _exit() {
 }
 
 question() {
-    Q=${1:-"Enter your choice : "}
-
     echo
-    _read "$Q" 6
+    _read "${1:-"Enter your choice : "}" 6
 
     if [ ! -z ${2} ]; then
         if ! [[ ${ANSWER} =~ ${2} ]]; then
@@ -119,10 +117,8 @@ question() {
 }
 
 password() {
-    Q=${1:-"Enter your password : "}
-
     echo
-    _read_pwd "$Q" 6
+    _read_pwd "${1:-"Enter your password : "}" 6
 }
 
 logo() {
@@ -197,17 +193,18 @@ select_one() {
     SELECTED=
     COUNT=$(cat ${LIST} | wc -l | xargs)
 
-    # select
     if [ "${COUNT}" == "x0" ]; then
         return
-    elif [ "${COUNT}" != "x1" ]; then
+    fi
+    if [ "${COUNT}" != "x1" ]; then
         COUNT="1-${COUNT}"
     fi
 
+    # select
     question "Enter your choice (${COUNT}) : " "^[0-9]+$"
 
     # answer
-    if [ -z ${ANSWER} ]; then
+    if [ -z ${ANSWER} ] || [ "x${ANSWER}" == "x0" ]; then
         return
     fi
     # TEST='^[0-9]+$'
@@ -681,11 +678,9 @@ addons_menu() {
             ;;
         3)
             helm_install kubernetes-dashboard kube-system false
-            echo
+
             create_cluster_role_binding cluster-admin kube-system dashboard-admin
-            echo
-            SECRET=$(kubectl get secret -n kube-system | grep dashboard-admin-token | awk '{print $1}')
-            kubectl describe secret ${SECRET} -n kube-system | grep 'token:'
+
             press_enter addons
             ;;
         4)
@@ -711,7 +706,6 @@ addons_menu() {
             press_enter addons
             ;;
         7)
-            # helm_efs_provisioner
             helm_install efs-provisioner kube-system
             press_enter addons
             ;;
@@ -831,6 +825,7 @@ save_kops_config() {
     echo "ROOT_DOMAIN=${ROOT_DOMAIN}" >> ${CONFIG}
     echo "BASE_DOMAIN=${BASE_DOMAIN}" >> ${CONFIG}
     echo "EFS_FILE_SYSTEM_ID=${EFS_FILE_SYSTEM_ID}" >> ${CONFIG}
+    echo "ISTIO=${ISTIO}" >> ${CONFIG}
 
     . ${CONFIG}
 
@@ -852,6 +847,7 @@ clear_kops_config() {
     export ROOT_DOMAIN=
     export BASE_DOMAIN=
     export EFS_FILE_SYSTEM_ID=
+    export ISTIO=
 
     save_kops_config
 }
@@ -903,38 +899,22 @@ read_state_store() {
 }
 
 read_cluster_list() {
-    CLUSTER_LIST=$(mktemp /tmp/kops-cui-kops-cluster-list.XXXXXX)
+    # cluster list
+    LIST=$(mktemp /tmp/kops-cui-kops-cluster-list.XXXXXX)
 
     _command "kops get cluster --state=s3://${KOPS_STATE_STORE}"
-    kops get cluster --state=s3://${KOPS_STATE_STORE} | grep -v "NAME" > ${CLUSTER_LIST}
+    kops get cluster --state=s3://${KOPS_STATE_STORE} | grep -v "NAME" | awk '{print $1}' > ${LIST}
 
-    IDX=0
-    while read VAR; do
-        ARR=(${VAR})
-        IDX=$(( ${IDX} + 1 ))
+    # select
+    select_one
 
-        _echo "${IDX}. ${ARR[0]}"
-    done < ${CLUSTER_LIST}
+    KOPS_CLUSTER_NAME="${SELECTED}"
 
-    if [ "x${IDX}" == "x0" ]; then
+    if [ "${KOPS_CLUSTER_NAME}" == "" ]; then
         read_cluster_name
-    else
-        echo
-        _echo "0. new"
-
-        question "Enter cluster (0-${IDX})[1] : "
-
-        ANSWER=${ANSWER:-1}
-
-        if [ "x${ANSWER}" == "x0" ]; then
-            read_cluster_name
-        else
-            ARR=($(sed -n ${ANSWER}p ${CLUSTER_LIST}))
-            KOPS_CLUSTER_NAME="${ARR[0]}"
-        fi
     fi
 
-    if [ -z ${KOPS_CLUSTER_NAME} ]; then
+    if [ "${KOPS_CLUSTER_NAME}" == "" ]; then
         clear_kops_config
         _error
     fi
@@ -1159,7 +1139,7 @@ get_ingress_nip_io() {
         ELB_IP=$(dig +short ${ELB_DOMAIN} | head -n 1)
 
         if [ ! -z ${ELB_IP} ]; then
-            BASE_DOMAIN="apps.${ELB_IP}.nip.io"
+            BASE_DOMAIN="${ELB_IP}.nip.io"
             break
         fi
 
@@ -1179,37 +1159,16 @@ get_ingress_nip_io() {
 }
 
 read_root_domain() {
-    HOST_LIST=$(mktemp /tmp/kops-cui-hosted-zones.XXXXXX)
+    # domain list
+    LIST=$(mktemp /tmp/kops-cui-hosted-zones.XXXXXX)
 
-    _command "aws route53 list-hosted-zones | jq -r '.HostedZones[] | .Name'"
-    aws route53 list-hosted-zones | jq -r '.HostedZones[] | .Name' > ${HOST_LIST}
+    _command "aws route53 list-hosted-zones | jq -r '.HostedZones[] | .Name' | sed 's/.$//'"
+    aws route53 list-hosted-zones | jq -r '.HostedZones[] | .Name' | sed 's/.$//' > ${LIST}
 
-    IDX=0
-    while read VAR; do
-        IDX=$(( ${IDX} + 1 ))
+    # select
+    select_one
 
-        _echo "${IDX}. $(echo ${VAR} | sed 's/.$//')"
-    done < ${HOST_LIST}
-
-    if [ "${IDX}" != "0" ]; then
-        echo
-        _echo "0. nip.io"
-
-        question "Enter root domain (0-${IDX})[0] : "
-
-        if [ "x${ANSWER}" == "x0" ]; then
-            ROOT_DOMAIN=
-        elif [ ! -z ${ANSWER} ]; then
-            TEST='^[0-9]+$'
-            if ! [[ ${ANSWER} =~ ${TEST} ]]; then
-                ROOT_DOMAIN=${ANSWER}
-            else
-                ROOT_DOMAIN=$(sed -n ${ANSWER}p ${HOST_LIST} | sed 's/.$//')
-            fi
-        fi
-
-        _result "${ROOT_DOMAIN}"
-    fi
+    ROOT_DOMAIN="${SELECTED}"
 }
 
 get_ssl_cert_arn() {
@@ -1441,6 +1400,9 @@ create_efs() {
 
     _result "EFS_FILE_SYSTEM_ID=${EFS_FILE_SYSTEM_ID}"
 
+    # save config (EFS_FILE_SYSTEM_ID)
+    save_kops_config true
+
     echo "Waiting for the state of the EFS to be available."
     waiting_for isEFSAvailable
 
@@ -1467,8 +1429,6 @@ create_efs() {
 
     echo "Waiting for the state of the EFS mount targets to be available."
     waiting_for isMountTargetAvailable
-
-    save_kops_config true
 }
 
 delete_efs() {
@@ -1642,6 +1602,13 @@ helm_install() {
         _replace "s/EFS_FILE_SYSTEM_ID/${EFS_FILE_SYSTEM_ID}/" ${CHART}
     fi
 
+    # for istio
+    if [ ! -z ${ISTIO} ]; then
+        _replace "s/ISTIO_ENABLED/true/" ${CHART}
+    else
+        _replace "s/ISTIO_ENABLED/false/" ${CHART}
+    fi
+
     # ingress
     if [ ! -z ${INGRESS} ]; then
         if [ -z ${BASE_DOMAIN} ] || [ "${INGRESS}" == "false" ]; then
@@ -1688,7 +1655,11 @@ helm_install() {
 
             _result "${NAME}: http://${ELB_DOMAIN}"
         else
-            _result "${NAME}: https://${DOMAIN}"
+            if [ -z ${ROOT_DOMAIN} ]; then
+                _result "${NAME}: http://${DOMAIN}"
+            else
+                _result "${NAME}: https://${DOMAIN}"
+            fi
         fi
     fi
 }
@@ -1802,6 +1773,9 @@ create_cluster_role_binding() {
         _command "kubectl create clusterrolebinding ${ROLL}:${NAMESPACE}:${ACCOUNT} --clusterrole=${ROLL} --serviceaccount=${NAMESPACE}:${ACCOUNT}"
         kubectl create clusterrolebinding ${ROLL}:${NAMESPACE}:${ACCOUNT} --clusterrole=${ROLL} --serviceaccount=${NAMESPACE}:${ACCOUNT}
     fi
+
+    SECRET=$(kubectl get secret -n ${NAMESPACE} | grep ${ACCOUNT}-token | awk '{print $1}')
+    kubectl describe secret ${SECRET} -n ${NAMESPACE} | grep 'token:'
 }
 
 apply_istio() {
@@ -1809,6 +1783,18 @@ apply_istio() {
     NAMESPACE="istio-system"
 
     helm_check
+
+    ISTIO_TMP=/tmp/kops-cui-istio
+    mkdir -p ${ISTIO_TMP}
+
+    VERSION=$(curl -s https://api.github.com/repos/${NAME}/${NAME}/releases/latest | jq -r '.tag_name')
+
+    # istio download
+    if [ ! -d ${ISTIO_TMP}/${NAME}-${VERSION} ]; then
+        pushd ${ISTIO_TMP}
+        curl -sL https://git.io/getLatestIstio | sh -
+        popd
+    fi
 
     CHART=$(mktemp /tmp/kops-cui-${NAME}.XXXXXX.yaml)
     get_template charts/istio/${NAME}.yaml ${CHART}
@@ -1823,18 +1809,6 @@ apply_istio() {
         _replace "s/BASE_DOMAIN/${BASE_DOMAIN}/g" ${CHART}
     fi
 
-    ISTIO_TMP=/tmp/kops-cui-istio
-    mkdir -p ${ISTIO_TMP}
-
-    VERSION=$(curl -s https://api.github.com/repos/${NAME}/${NAME}/releases/latest | jq -r '.tag_name')
-
-    # istio download
-    if [ ! -d ${ISTIO_TMP}/${NAME}-${VERSION} ]; then
-        pushd ${ISTIO_TMP}
-        curl -sL https://git.io/getLatestIstio | sh -
-        popd
-    fi
-
     # admin password
     read_password ${CHART}
 
@@ -1843,6 +1817,11 @@ apply_istio() {
     # helm install
     _command "helm upgrade --install ${NAME} ${ISTIO_DIR} --namespace ${NAMESPACE} --values ${CHART}"
     helm upgrade --install ${NAME} ${ISTIO_DIR} --namespace ${NAMESPACE} --values ${CHART}
+
+    ISTIO=true
+
+    # save config (ISTIO)
+    save_kops_config true
 
     # waiting 2
     waiting_pod "${NAMESPACE}" "${NAME}"
@@ -1898,6 +1877,13 @@ apply_sample() {
         _replace "s/SECRET_ENABLED/false/" ${CHART}
     fi
 
+    # for istio
+    if [ ! -z ${ISTIO} ]; then
+        _replace "s/ISTIO_ENABLED/true/" ${CHART}
+    else
+        _replace "s/ISTIO_ENABLED/false/" ${CHART}
+    fi
+
     SAMPLE_DIR=${SHELL_DIR}/charts/sample/${NAME}
 
     # helm install
@@ -1919,7 +1905,13 @@ apply_sample() {
 
             _result "${NAME}: http://${ELB_DOMAIN}"
         else
-            _result "${NAME}: https://${NAME}-${NAMESPACE}.${BASE_DOMAIN}"
+            DOMAIN="${NAME}-${NAMESPACE}.${BASE_DOMAIN}"
+
+            if [ -z ${ROOT_DOMAIN} ]; then
+                _result "${NAME}: http://${DOMAIN}"
+            else
+                _result "${NAME}: https://${DOMAIN}"
+            fi
         fi
     fi
 }

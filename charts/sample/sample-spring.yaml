@@ -12,3 +12,9 @@ configmap:
 
 secret:
   enabled: SECRET_ENABLED
+
+canary:
+  enabled: false
+
+istio:
+  enabled: ISTIO_ENABLED
