@@ -2,6 +2,11 @@
 
 nameOverride: efs-provisioner
 
+image:
+  repository: quay.io/external_storage/efs-provisioner
+  tag: v1.0.0-k8s1.10
+  pullPollicy: IfNotPresent
+
 efsProvisioner:
   efsFileSystemId: EFS_FILE_SYSTEM_ID
   awsRegion: AWS_REGION
