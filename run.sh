@@ -196,10 +196,10 @@ select_one() {
     SELECTED=
     COUNT=$(cat ${LIST} | wc -l | xargs)
 
-    if [ "${COUNT}" == "x0" ]; then
+    if [ "x${COUNT}" == "x0" ]; then
         return
     fi
-    if [ "${COUNT}" != "x1" ]; then
+    if [ "x${COUNT}" != "x1" ]; then
         COUNT="1-${COUNT}"
     fi
 
