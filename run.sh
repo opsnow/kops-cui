@@ -959,7 +959,10 @@ read_cluster_name() {
     select_one
 
     if [ "${SELECTED}" == "" ]; then
-        _error
+        DEFAULT="dev"
+        question "Enter cluster name [${DEFAULT}] : "
+
+        SELECTED=${ANSWER:-${DEFAULT}}
     fi
 
     KOPS_CLUSTER_NAME="${SELECTED}.k8s.local"
