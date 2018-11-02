@@ -224,7 +224,7 @@ waiting() {
     progress start
 
     IDX=0
-    while [ 1 ]; do
+    while true; do
         if [ "${IDX}" == "${SEC}" ]; then
             break
         fi
@@ -263,7 +263,7 @@ waiting_pod() {
     TMP=$(mktemp /tmp/kops-cui-waiting-pod.XXXXXX)
 
     IDX=0
-    while [ 1 ]; do
+    while true; do
         kubectl get pod -n ${_NS} | grep ${_NM} | head -1 > ${TMP}
         cat ${TMP}
 
@@ -296,17 +296,6 @@ progress() {
     else
         printf '.'
         sleep 2
-    fi
-}
-
-isElapsed() {
-    SEC=${1}
-    IDX=${2}
-
-    if [ "${IDX}" == "${SEC}" ]; then
-        return 0;
-    else
-        return -1;
     fi
 }
 
@@ -506,7 +495,7 @@ cluster_menu() {
             press_enter cluster
             ;;
         x)
-            kops_exit
+            _success "Good bye!"
             ;;
         *)
             cluster_menu
@@ -792,9 +781,9 @@ sample_menu() {
 
     # sample install
     if [ "${SELECTED}" == "configmap" ]; then
-        apply_sample ${SELECTED} default
+        sample_install ${SELECTED} default
     else
-        apply_sample ${SELECTED} default true
+        sample_install ${SELECTED} default true
     fi
 
     press_enter sample
@@ -1099,7 +1088,7 @@ kops_secret() {
 }
 
 kops_delete() {
-    delete_efs
+    efs_delete
 
     _command "kops delete cluster --name=${KOPS_CLUSTER_NAME} --state=s3://${KOPS_STATE_STORE} --yes"
     kops delete cluster --name=${KOPS_CLUSTER_NAME} --state=s3://${KOPS_STATE_STORE} --yes
@@ -1121,7 +1110,7 @@ get_elb_domain() {
     progress start
 
     IDX=0
-    while [ 1 ]; do
+    while true; do
         # ELB Domain 을 획득
         if [ -z $2 ]; then
             ELB_DOMAIN=$(kubectl get svc --all-namespaces -o wide | grep LoadBalancer | grep $1 | head -1 | awk '{print $5}')
@@ -1149,9 +1138,11 @@ get_elb_domain() {
 }
 
 get_ingress_elb_name() {
+    POD="${1:-nginx-ingress}"
+
     ELB_NAME=
 
-    get_elb_domain "nginx-ingress"
+    get_elb_domain "${POD}"
 
     if [ -z ${ELB_DOMAIN} ]; then
         return
@@ -1164,9 +1155,11 @@ get_ingress_elb_name() {
 }
 
 get_ingress_nip_io() {
+    POD="${1:-nginx-ingress}"
+
     ELB_IP=
 
-    get_elb_domain "nginx-ingress"
+    get_elb_domain "${POD}"
 
     if [ -z ${ELB_DOMAIN} ]; then
         return
@@ -1177,7 +1170,7 @@ get_ingress_nip_io() {
     progress start
 
     IDX=0
-    while [ 1 ]; do
+    while true; do
         ELB_IP=$(dig +short ${ELB_DOMAIN} | head -n 1)
 
         if [ ! -z ${ELB_IP} ]; then
@@ -1210,17 +1203,21 @@ read_root_domain() {
     # select
     select_one
 
-    ROOT_DOMAIN="${SELECTED}"
+    ROOT_DOMAIN=${SELECTED}
 }
 
 get_ssl_cert_arn() {
+    if [ -z ${BASE_DOMAIN} ]; then
+        return
+    fi
+
     # get certificate arn
     _command "aws acm list-certificates | DOMAIN="*.${BASE_DOMAIN}" jq -r '.CertificateSummaryList[] | select(.DomainName==env.DOMAIN) | .CertificateArn'"
     SSL_CERT_ARN=$(aws acm list-certificates | DOMAIN="*.${BASE_DOMAIN}" jq -r '.CertificateSummaryList[] | select(.DomainName==env.DOMAIN) | .CertificateArn')
 }
 
 set_record_cname() {
-    if [ -z ${BASE_DOMAIN} ]; then
+    if [ -z ${ROOT_DOMAIN} ] || [ -z ${BASE_DOMAIN} ] || [ -z ${SSL_CERT_ARN} ]; then
         return
     fi
 
@@ -1236,13 +1233,25 @@ set_record_cname() {
     _command "aws route53 list-hosted-zones | ROOT_DOMAIN="${ROOT_DOMAIN}." jq -r '.HostedZones[] | select(.Name==env.ROOT_DOMAIN) | .Id' | cut -d'/' -f3"
     ZONE_ID=$(aws route53 list-hosted-zones | ROOT_DOMAIN="${ROOT_DOMAIN}." jq -r '.HostedZones[] | select(.Name==env.ROOT_DOMAIN) | .Id' | cut -d'/' -f3)
 
+    if [ -z ${ZONE_ID} ]; then
+        return
+    fi
+
     # domain validate name
     _command "aws acm describe-certificate --certificate-arn ${SSL_CERT_ARN} | jq -r '.Certificate.DomainValidationOptions[].ResourceRecord | .Name'"
     CERT_DNS_NAME=$(aws acm describe-certificate --certificate-arn ${SSL_CERT_ARN} | jq -r '.Certificate.DomainValidationOptions[].ResourceRecord | .Name')
 
+    if [ -z ${CERT_DNS_NAME} ]; then
+        return
+    fi
+
     # domain validate value
     _command "aws acm describe-certificate --certificate-arn ${SSL_CERT_ARN} | jq -r '.Certificate.DomainValidationOptions[].ResourceRecord | .Value'"
     CERT_DNS_VALUE=$(aws acm describe-certificate --certificate-arn ${SSL_CERT_ARN} | jq -r '.Certificate.DomainValidationOptions[].ResourceRecord | .Value')
+
+    if [ -z ${CERT_DNS_VALUE} ]; then
+        return
+    fi
 
     # record sets
     RECORD=$(mktemp /tmp/kops-cui-record-sets-cname.XXXXXX.json)
@@ -1255,14 +1264,12 @@ set_record_cname() {
     cat ${RECORD}
 
     # update route53 record
-    if [ ! -z ${ZONE_ID} ]; then
-        _command "aws route53 change-resource-record-sets --hosted-zone-id ${ZONE_ID} --change-batch file://${RECORD}"
-        aws route53 change-resource-record-sets --hosted-zone-id ${ZONE_ID} --change-batch file://${RECORD}
-    fi
+    _command "aws route53 change-resource-record-sets --hosted-zone-id ${ZONE_ID} --change-batch file://${RECORD}"
+    aws route53 change-resource-record-sets --hosted-zone-id ${ZONE_ID} --change-batch file://${RECORD}
 }
 
 set_record_alias() {
-    if [ -z ${BASE_DOMAIN} ] || [ -z ${ELB_NAME} ]; then
+    if [ -z ${ROOT_DOMAIN} ] || [ -z ${BASE_DOMAIN} ] || [ -z ${ELB_NAME} ]; then
         return
     fi
 
@@ -1270,13 +1277,25 @@ set_record_alias() {
     _command "aws route53 list-hosted-zones | ROOT_DOMAIN="${ROOT_DOMAIN}." jq -r '.HostedZones[] | select(.Name==env.ROOT_DOMAIN) | .Id' | cut -d'/' -f3"
     ZONE_ID=$(aws route53 list-hosted-zones | ROOT_DOMAIN="${ROOT_DOMAIN}." jq -r '.HostedZones[] | select(.Name==env.ROOT_DOMAIN) | .Id' | cut -d'/' -f3)
 
+    if [ -z ${ZONE_ID} ]; then
+        return
+    fi
+
     # ELB 에서 Hosted Zone ID 를 획득
     _command "aws elb describe-load-balancers --load-balancer-name ${ELB_NAME} | jq -r '.LoadBalancerDescriptions[] | .CanonicalHostedZoneNameID'"
     ELB_ZONE_ID=$(aws elb describe-load-balancers --load-balancer-name ${ELB_NAME} | jq -r '.LoadBalancerDescriptions[] | .CanonicalHostedZoneNameID')
 
+    if [ -z ${ELB_ZONE_ID} ]; then
+        return
+    fi
+
     # ELB 에서 DNS Name 을 획득
     _command "aws elb describe-load-balancers --load-balancer-name ${ELB_NAME} | jq -r '.LoadBalancerDescriptions[] | .DNSName'"
     ELB_DNS_NAME=$(aws elb describe-load-balancers --load-balancer-name ${ELB_NAME} | jq -r '.LoadBalancerDescriptions[] | .DNSName')
+
+    if [ -z ${ELB_DNS_NAME} ]; then
+        return
+    fi
 
     # record sets
     RECORD=$(mktemp /tmp/kops-cui-record-sets-alias.XXXXXX.json)
@@ -1290,20 +1309,22 @@ set_record_alias() {
     cat ${RECORD}
 
     # update route53 record
-    if [ ! -z ${ZONE_ID} ]; then
-        _command "aws route53 change-resource-record-sets --hosted-zone-id ${ZONE_ID} --change-batch file://${RECORD}"
-        aws route53 change-resource-record-sets --hosted-zone-id ${ZONE_ID} --change-batch file://${RECORD}
-    fi
+    _command "aws route53 change-resource-record-sets --hosted-zone-id ${ZONE_ID} --change-batch file://${RECORD}"
+    aws route53 change-resource-record-sets --hosted-zone-id ${ZONE_ID} --change-batch file://${RECORD}
 }
 
-delete_record() {
-    if [ -z ${BASE_DOMAIN} ]; then
+set_record_delete() {
+    if [ -z ${BASE_DOMAIN} ] || [ -z ${BASE_DOMAIN} ]; then
         return
     fi
 
     # Route53 에서 해당 도메인의 Hosted Zone ID 를 획득
     _command "aws route53 list-hosted-zones | ROOT_DOMAIN="${ROOT_DOMAIN}." jq -r '.HostedZones[] | select(.Name==env.ROOT_DOMAIN) | .Id' | cut -d'/' -f3"
     ZONE_ID=$(aws route53 list-hosted-zones | ROOT_DOMAIN="${ROOT_DOMAIN}." jq -r '.HostedZones[] | select(.Name==env.ROOT_DOMAIN) | .Id' | cut -d'/' -f3)
+
+    if [ -z ${ZONE_ID} ]; then
+        return
+    fi
 
     # record sets
     RECORD=$(mktemp /tmp/kops-cui-record-sets-delete.XXXXXX.json)
@@ -1315,9 +1336,57 @@ delete_record() {
     cat ${RECORD}
 
     # update route53 record
-    if [ ! -z ${ZONE_ID} ]; then
-        _command "aws route53 change-resource-record-sets --hosted-zone-id ${ZONE_ID} --change-batch file://${RECORD}"
-        aws route53 change-resource-record-sets --hosted-zone-id ${ZONE_ID} --change-batch file://${RECORD}
+    _command "aws route53 change-resource-record-sets --hosted-zone-id ${ZONE_ID} --change-batch file://${RECORD}"
+    aws route53 change-resource-record-sets --hosted-zone-id ${ZONE_ID} --change-batch file://${RECORD}
+}
+
+set_base_domain() {
+    POD="${1:-nginx-ingress}"
+
+    _result "Pending ELB..."
+
+    if [ -z ${BASE_DOMAIN} ]; then
+        get_ingress_nip_io ${POD}
+    else
+        get_ingress_elb_name ${POD}
+
+        set_record_alias
+    fi
+}
+
+get_base_domain() {
+    ROOT_DOMAIN=
+    BASE_DOMAIN=
+
+    read_root_domain
+
+    # ingress domain
+    if [ ! -z ${ROOT_DOMAIN} ]; then
+        WORD=$(echo ${KOPS_CLUSTER_NAME} | cut -d'.' -f1)
+
+        DEFAULT="${WORD}.${ROOT_DOMAIN}"
+        question "Enter your ingress domain [${DEFAULT}] : "
+
+        BASE_DOMAIN=${ANSWER:-${DEFAULT}}
+    fi
+
+    CHART=$(mktemp /tmp/kops-cui-${NAME}.XXXXXX.yaml)
+    get_template charts/${NAMESPACE}/${NAME}.yaml ${CHART}
+
+    # certificate
+    if [ ! -z ${BASE_DOMAIN} ]; then
+        get_ssl_cert_arn
+
+        if [ -z ${SSL_CERT_ARN} ]; then
+            set_record_cname
+        fi
+        if [ -z ${SSL_CERT_ARN} ]; then
+            _error "Certificate ARN does not exists. [*.${BASE_DOMAIN}][${REGION}]"
+        fi
+
+        _result "CertificateArn: ${SSL_CERT_ARN}"
+
+        _replace "s@aws-load-balancer-ssl-cert:.*@aws-load-balancer-ssl-cert: ${SSL_CERT_ARN}@" ${CHART}
     fi
 }
 
@@ -1376,7 +1445,7 @@ isMountTargetDeleted() {
     fi
 }
 
-create_efs() {
+efs_create() {
     # get the security group id
     K8S_NODE_SG_ID=$(aws ec2 describe-security-groups --filters "Name=group-name,Values=nodes.${KOPS_CLUSTER_NAME}" | jq -r '.SecurityGroups[0].GroupId')
     if [ -z ${K8S_NODE_SG_ID} ]; then
@@ -1473,7 +1542,7 @@ create_efs() {
     waiting_for isMountTargetAvailable
 }
 
-delete_efs() {
+efs_delete() {
     if [ -z ${EFS_FILE_SYSTEM_ID} ]; then
         return
     fi
@@ -1510,39 +1579,7 @@ helm_nginx_ingress() {
 
     helm_check
 
-    ROOT_DOMAIN=
-    BASE_DOMAIN=
-
-    read_root_domain
-
-    # ingress domain
-    if [ ! -z ${ROOT_DOMAIN} ]; then
-        WORD=$(echo ${KOPS_CLUSTER_NAME} | cut -d'.' -f1)
-
-        DEFAULT="${WORD}.${ROOT_DOMAIN}"
-        question "Enter your ingress domain [${DEFAULT}] : "
-
-        BASE_DOMAIN=${ANSWER:-${DEFAULT}}
-    fi
-
-    CHART=$(mktemp /tmp/kops-cui-${NAME}.XXXXXX.yaml)
-    get_template charts/${NAMESPACE}/${NAME}.yaml ${CHART}
-
-    # certificate
-    if [ ! -z ${BASE_DOMAIN} ]; then
-        get_ssl_cert_arn
-
-        if [ -z ${SSL_CERT_ARN} ]; then
-            set_record_cname
-        fi
-        if [ -z ${SSL_CERT_ARN} ]; then
-            _error "Certificate ARN does not exists. [*.${BASE_DOMAIN}][${REGION}]"
-        fi
-
-        _result "CertificateArn: ${SSL_CERT_ARN}"
-
-        _replace "s@aws-load-balancer-ssl-cert:.*@aws-load-balancer-ssl-cert: ${SSL_CERT_ARN}@" ${CHART}
-    fi
+    get_base_domain
 
     # chart version
     CHART_VERSION=$(cat ${CHART} | grep chart-version | awk '{print $3}')
@@ -1556,6 +1593,10 @@ helm_nginx_ingress() {
         helm upgrade --install ${NAME} stable/${NAME} --namespace ${NAMESPACE} --values ${CHART} --version ${CHART_VERSION}
     fi
 
+    # save config (INGRESS)
+    INGRESS=true
+    save_kops_config true
+
     # waiting 2
     waiting_pod "${NAMESPACE}" "${NAME}" 20
 
@@ -1565,17 +1606,7 @@ helm_nginx_ingress() {
     _command "kubectl get deploy,pod,svc -n ${NAMESPACE}"
     kubectl get deploy,pod,svc -n ${NAMESPACE}
 
-    _result "Pending ELB..."
-
-    if [ -z ${BASE_DOMAIN} ]; then
-        get_ingress_nip_io
-    else
-        get_ingress_elb_name
-
-        set_record_alias
-    fi
-
-    save_kops_config true
+    set_base_domain ${NAME}
 }
 
 helm_install() {
@@ -1586,7 +1617,7 @@ helm_install() {
 
     # for efs-provisioner
     if [ "${NAME}" == "efs-provisioner" ]; then
-        create_efs
+        efs_create
     fi
 
     create_namespace ${NAMESPACE}
@@ -1824,7 +1855,11 @@ istio_install() {
     NAME="istio"
     NAMESPACE="istio-system"
 
+    create_namespace ${NAMESPACE}
+
     helm_check
+
+    # get_base_domain
 
     ISTIO_TMP=/tmp/kops-cui-istio
     mkdir -p ${ISTIO_TMP}
@@ -1870,8 +1905,13 @@ istio_install() {
     _command "helm history ${NAME}"
     helm history ${NAME}
 
-    _command "kubectl get deploy,pod,svc,ing -n ${NAMESPACE}"
-    kubectl get deploy,pod,svc,ing -n ${NAMESPACE}
+    _command "kubectl get deploy,pod,svc -n ${NAMESPACE}"
+    kubectl get deploy,pod,svc -n ${NAMESPACE}
+
+    # set_base_domain "istio-ingressgateway"
+
+    _command "kubectl get ing -n ${NAMESPACE}"
+    kubectl get ing -n ${NAMESPACE}
 }
 
 istio_injection() {
@@ -1941,7 +1981,7 @@ istio_delete() {
     kubectl delete namespace ${NAMESPACE}
 }
 
-apply_sample() {
+sample_install() {
     NAME=${1}
     NAMESPACE=${2}
     INGRESS=${3}
@@ -2079,13 +2119,6 @@ update_self() {
     popd
 
     _result "Please restart!"
-    _exit 0
-}
-
-kops_exit() {
-    rm -rf /tmp/kops-cui-*
-
-    _result "Good bye!"
     _exit 0
 }
 
