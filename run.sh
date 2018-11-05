@@ -152,6 +152,7 @@ title() {
 }
 
 press_enter() {
+    _result "$(date)"
     echo
     _read "Press Enter to continue..." 5
     echo
