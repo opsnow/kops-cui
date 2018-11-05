@@ -789,9 +789,9 @@ sample_menu() {
 
     # sample install
     if [ "${SELECTED}" == "configmap" ]; then
-        sample_install ${SELECTED} default
+        sample_install ${SELECTED} dev
     else
-        sample_install ${SELECTED} default true
+        sample_install ${SELECTED} dev true
     fi
 
     press_enter sample
