@@ -33,10 +33,10 @@ tracing:
       - jaeger.local
       - jaeger-istio.BASE_DOMAIN
 
-# servicegraph:
-#   enabled: true
-#   ingress:
-#     enabled: INGRESS_ENABLED
-#     hosts:
-#     - servicegraph.local
-#     - servicegraph-istio.BASE_DOMAIN
+servicegraph:
+  enabled: true
+  ingress:
+    enabled: INGRESS_ENABLED
+    hosts:
+    - servicegraph.local
+    - servicegraph-istio.BASE_DOMAIN
