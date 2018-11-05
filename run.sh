@@ -8,7 +8,7 @@ THIS_VERSION=v0.0.0
 
 DEBUG_MODE=true
 
-L_PAD="$(printf %3s)"
+L_PAD="$(printf %2s)"
 
 CONFIG=
 
@@ -128,7 +128,6 @@ logo() {
 
     # figlet kops cui
     echo
-    echo
     _echo "  _                                _  " 3
     _echo " | | _____  _ __  ___    ___ _   _(_) " 3
     _echo " | |/ / _ \| '_ \/ __|  / __| | | | | " 3
@@ -143,7 +142,6 @@ title() {
         tput clear
     fi
 
-    echo
     echo
     _echo "KOPS CUI" 3
     echo
@@ -191,7 +189,7 @@ select_one() {
     IDX=0
     while read VAL; do
         IDX=$(( ${IDX} + 1 ))
-        printf "%4s. %s\n" "${IDX}" "${VAL}";
+        printf "%3s. %s\n" "${IDX}" "${VAL}";
     done < ${LIST}
 
     SELECTED=
@@ -291,7 +289,7 @@ waiting_pod() {
 
 progress() {
     if [ "$1" == "start" ]; then
-        printf '%3s'
+        printf '%2s'
     elif [ "$1" == "end" ]; then
         printf '.\n'
     else
