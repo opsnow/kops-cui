@@ -363,8 +363,10 @@ cluster_menu() {
     title
 
     if [ "x${CLUSTER}" == "x0" ]; then
+        echo
         _echo "1. Create Cluster"
     else
+        echo
         _echo "1. Get Cluster"
         _echo "2. Edit Cluster"
         _echo "3. Update Cluster"
@@ -377,9 +379,11 @@ cluster_menu() {
         echo
         _echo "11. Addons.."
     fi
+
     echo
     _echo "21. update self"
     _echo "22. update tools"
+
     echo
     _echo "x. Exit"
 
