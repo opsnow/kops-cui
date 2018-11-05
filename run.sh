@@ -1031,6 +1031,8 @@ kops_edit() {
     _command "kops get ig --name=${KOPS_CLUSTER_NAME} --state=s3://${KOPS_STATE_STORE}"
     kops get ig --name=${KOPS_CLUSTER_NAME} --state=s3://${KOPS_STATE_STORE} | grep -v "NAME" > ${IG_LIST}
 
+    echo
+
     IDX=0
     while read VAR; do
         ARR=(${VAR})
