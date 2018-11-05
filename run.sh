@@ -152,6 +152,7 @@ title() {
 }
 
 press_enter() {
+    _result "$(date)"
     echo
     _read "Press Enter to continue..." 5
     echo
@@ -204,7 +205,7 @@ select_one() {
     fi
 
     # select
-    question "Enter your choice (${COUNT}) : " "^[0-9]+$"
+    question "${1:-"Select one"} (${COUNT}) : " "^[0-9]+$"
 
     # answer
     if [ -z ${ANSWER} ] || [ "x${ANSWER}" == "x0" ]; then
@@ -485,6 +486,15 @@ cluster_menu() {
             fi
 
             addons_menu
+            ;;
+        12)
+            if [ "x${CLUSTER}" == "x0" ]; then
+                cluster_menu
+                return
+            fi
+
+            elb_security
+            press_enter cluster
             ;;
         21)
             update_self
@@ -1393,6 +1403,59 @@ get_base_domain() {
     fi
 }
 
+elb_security() {
+    LIST=$(mktemp /tmp/kops-cui-elb-list.XXXXXX)
+
+    # elb list
+    _command "kubectl get svc --all-namespaces | grep LoadBalancer"
+    kubectl get svc --all-namespaces | grep LoadBalancer \
+        | awk '{printf "%-20s %-30s %s\n", $1, $2, $5}' > ${LIST}
+
+    # select
+    select_one
+
+    if [ "${SELECTED}" == "" ]; then
+        return
+    fi
+
+    ELB_NAME=$(echo "${SELECTED}" | awk '{print $3}' | cut -d'-' -f1 | xargs)
+
+    if [ "${ELB_NAME}" == "" ]; then
+        return
+    fi
+
+    # security groups
+    _command "aws elb describe-load-balancers --load-balancer-name ${ELB_NAME}"
+    aws elb describe-load-balancers --load-balancer-name ${ELB_NAME} \
+        | jq -r '.LoadBalancerDescriptions[].SecurityGroups[]' > ${LIST}
+
+    # select
+    select_one
+
+    if [ "${SELECTED}" == "" ]; then
+        return
+    fi
+
+    # ingress rules
+    _command "aws ec2 describe-security-groups --group-ids ${SELECTED}"
+    aws ec2 describe-security-groups --group-ids ${SELECTED} \
+        | jq -r '.SecurityGroups[].IpPermissions[] | "\(.IpProtocol) \(.FromPort) \(.IpRanges[].CidrIp)"' > ${LIST}
+
+    # select
+    select_one
+
+    if [ "${SELECTED}" == "" ]; then
+        return
+    fi
+
+    # aws ec2 describe-security-groups --group-ids ${SELECTED} | jq '.SecurityGroups[].IpPermissions'
+
+    # aws ec2 authorize-security-group-ingress --group-id ${SELECTED} --protocol tcp --port 8080 --cidr 203.0.113.0/24
+
+    # aws ec2 revoke-security-group-ingress --group-id ${SELECTED} --protocol tcp --port 8080 --cidr 203.0.113.0/24
+
+}
+
 isEFSAvailable() {
     FILE_SYSTEMS=$(aws efs describe-file-systems --creation-token ${KOPS_CLUSTER_NAME} --region ${REGION})
     FILE_SYSTEM_LENGH=$(echo ${FILE_SYSTEMS} | jq -r '.FileSystems | length')
@@ -1564,7 +1627,7 @@ efs_delete() {
     EFS_SG_ID=$(aws ec2 describe-security-groups --filters "Name=group-name,Values=efs-sg.${KOPS_CLUSTER_NAME}" | jq -r '.SecurityGroups[0].GroupId')
     if [ -n ${EFS_SG_ID} ]; then
         echo "Deleting the security group for mount targets"
-        aws ec2 delete-security-group --group-id=${EFS_SG_ID}
+        aws ec2 delete-security-group --group-id ${EFS_SG_ID}
     fi
 
     # delete efs
