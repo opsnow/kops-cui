@@ -1031,6 +1031,8 @@ kops_edit() {
     _command "kops get ig --name=${KOPS_CLUSTER_NAME} --state=s3://${KOPS_STATE_STORE}"
     kops get ig --name=${KOPS_CLUSTER_NAME} --state=s3://${KOPS_STATE_STORE} | grep -v "NAME" > ${IG_LIST}
 
+    echo
+
     IDX=0
     while read VAR; do
         ARR=(${VAR})
@@ -1267,7 +1269,7 @@ set_record_cname() {
     fi
 
     # record sets
-    RECORD=$(mktemp /tmp/kops-cui-record-sets-cname.XXXXXX.json)
+    RECORD=$(mktemp /tmp/kops-cui-record-sets-cname.XXXXXX)
     get_template templates/record-sets-cname.json ${RECORD}
 
     # replace
@@ -1311,7 +1313,7 @@ set_record_alias() {
     fi
 
     # record sets
-    RECORD=$(mktemp /tmp/kops-cui-record-sets-alias.XXXXXX.json)
+    RECORD=$(mktemp /tmp/kops-cui-record-sets-alias.XXXXXX)
     get_template templates/record-sets-alias.json ${RECORD}
 
     # replace
@@ -1340,7 +1342,7 @@ set_record_delete() {
     fi
 
     # record sets
-    RECORD=$(mktemp /tmp/kops-cui-record-sets-delete.XXXXXX.json)
+    RECORD=$(mktemp /tmp/kops-cui-record-sets-delete.XXXXXX)
     get_template templates/record-sets-delete.json ${RECORD}
 
     # replace
@@ -1383,7 +1385,7 @@ get_base_domain() {
         BASE_DOMAIN=${ANSWER:-${DEFAULT}}
     fi
 
-    CHART=$(mktemp /tmp/kops-cui-${NAME}.XXXXXX.yaml)
+    CHART=$(mktemp /tmp/kops-cui-${NAME}.XXXXXX)
     get_template charts/${NAMESPACE}/${NAME}.yaml ${CHART}
 
     # certificate
@@ -1690,7 +1692,7 @@ helm_install() {
 
     helm_check
 
-    CHART=$(mktemp /tmp/kops-cui-${NAME}.XXXXXX.yaml)
+    CHART=$(mktemp /tmp/kops-cui-${NAME}.XXXXXX)
     get_template charts/${NAMESPACE}/${NAME}.yaml ${CHART}
 
     _replace "s/AWS_REGION/${REGION}/" ${CHART}
@@ -1742,7 +1744,7 @@ helm_install() {
     fi
 
     # for istio
-    if [ ! -z ${ISTIO} ]; then
+    if [ "${ISTIO}" == "true" ]; then
         _replace "s/ISTIO_ENABLED/true/" ${CHART}
     else
         _replace "s/ISTIO_ENABLED/false/" ${CHART}
@@ -1939,7 +1941,7 @@ istio_install() {
         popd
     fi
 
-    CHART=$(mktemp /tmp/kops-cui-${NAME}.XXXXXX.yaml)
+    CHART=$(mktemp /tmp/kops-cui-${NAME}.XXXXXX)
     get_template charts/istio/${NAME}.yaml ${CHART}
 
     # ingress
@@ -2060,7 +2062,7 @@ sample_install() {
         fi
     fi
 
-    CHART=$(mktemp /tmp/kops-cui-${NAME}.XXXXXX.yaml)
+    CHART=$(mktemp /tmp/kops-cui-${NAME}.XXXXXX)
     get_template charts/sample/${NAME}.yaml ${CHART}
 
     # ingress
@@ -2092,7 +2094,7 @@ sample_install() {
     fi
 
     # for istio
-    if [ ! -z ${ISTIO} ]; then
+    if [ "${ISTIO}" == "true" ]; then
         _replace "s/ISTIO_ENABLED/true/" ${CHART}
     else
         _replace "s/ISTIO_ENABLED/false/" ${CHART}
@@ -2144,7 +2146,7 @@ read_password() {
 get_template() {
     rm -rf ${2}
     if [ -f ${SHELL_DIR}/${1} ]; then
-        cp -rf ${SHELL_DIR}/${1} ${2}
+        cat ${SHELL_DIR}/${1} > ${2}
     else
         curl -sL https://raw.githubusercontent.com/opsnow/kops-cui/master/${1} > ${2}
     fi
