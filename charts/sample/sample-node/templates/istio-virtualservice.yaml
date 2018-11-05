@@ -1,0 +1,16 @@
+{{ if .Values.istio.enabled }}
+{{ if not .Values.canary.enabled }}
+apiVersion: networking.istio.io/v1alpha3
+kind: VirtualService
+metadata:
+  name: {{ template "fullname" . }}
+spec:
+  hosts:
+    - {{ template "fullname" . }}
+  http:
+  - route:
+    - destination:
+        host: {{ template "fullname" . }}
+        subset: master
+{{ end }}
+{{ end }}

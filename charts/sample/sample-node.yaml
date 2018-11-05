@@ -14,3 +14,6 @@ configmap:
 
 secret:
   enabled: SECRET_ENABLED
+
+istio:
+  enabled: ISTIO_ENABLED
