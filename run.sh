@@ -134,7 +134,6 @@ logo() {
     _echo " |   < (_) | |_) \__ \ | (__| |_| | | " 3
     _echo " |_|\_\___/| .__/|___/  \___|\__,_|_| " 3
     _echo "           |_|                        " 3
-    echo
 }
 
 title() {
@@ -146,7 +145,6 @@ title() {
     _echo "KOPS CUI" 3
     echo
     _echo "${KOPS_STATE_STORE} > ${KOPS_CLUSTER_NAME}" 4
-    echo
 }
 
 press_enter() {
@@ -519,6 +517,7 @@ create_menu() {
     get_master_zones
     get_node_zones
 
+    echo
     _echo "   cloud=${cloud}"
     _echo "   name=${KOPS_CLUSTER_NAME}"
     _echo "   state=s3://${KOPS_STATE_STORE}"
@@ -650,6 +649,7 @@ create_menu() {
 addons_menu() {
     title
 
+    echo
     _echo "1. helm init"
     echo
     _echo "2. nginx-ingress"
@@ -734,6 +734,7 @@ addons_menu() {
 istio_menu() {
     title
 
+    echo
     _echo "1. install"
     echo
     _echo "2. injection show"
