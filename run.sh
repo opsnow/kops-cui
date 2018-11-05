@@ -1640,12 +1640,12 @@ efs_delete() {
 }
 
 helm_nginx_ingress() {
+    helm_check
+
     NAME="nginx-ingress"
     NAMESPACE=${1:-kube-ingress}
 
     create_namespace ${NAMESPACE}
-
-    helm_check
 
     get_base_domain
 
@@ -1678,6 +1678,8 @@ helm_nginx_ingress() {
 }
 
 helm_install() {
+    helm_check
+
     NAME=${1}
     NAMESPACE=${2}
     INGRESS=${3}
@@ -1689,8 +1691,6 @@ helm_install() {
     fi
 
     create_namespace ${NAMESPACE}
-
-    helm_check
 
     CHART=$(mktemp /tmp/kops-cui-${NAME}.XXXXXX)
     get_template charts/${NAMESPACE}/${NAME}.yaml ${CHART}
@@ -1920,12 +1920,12 @@ create_cluster_role_binding() {
 }
 
 istio_install() {
+    helm_check
+
     NAME="istio"
     NAMESPACE="istio-system"
 
     create_namespace ${NAMESPACE}
-
-    helm_check
 
     # get_base_domain
 
@@ -2050,11 +2050,11 @@ istio_delete() {
 }
 
 sample_install() {
+    helm_check
+
     NAME=${1}
     NAMESPACE=${2}
     INGRESS=${3}
-
-    helm_check
 
     if [ ! -z ${INGRESS} ]; then
         if [ -z ${BASE_DOMAIN} ]; then
