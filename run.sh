@@ -2018,8 +2018,6 @@ istio_delete() {
     NAME="istio"
     NAMESPACE="istio-system"
 
-    helm_check
-
     ISTIO_TMP=/tmp/kops-cui-istio
     mkdir -p ${ISTIO_TMP}
 
