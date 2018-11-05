@@ -2062,6 +2062,9 @@ sample_install() {
     CHART=$(mktemp /tmp/kops-cui-${NAME}.XXXXXX)
     get_template charts/sample/${NAME}.yaml ${CHART}
 
+    # profile
+    _replace "s/profile:.*/profile: ${NAMESPACE}/" ${CHART}
+
     # ingress
     if [ ! -z ${INGRESS} ]; then
         if [ -z ${BASE_DOMAIN} ] || [ "${INGRESS}" == "false" ]; then
