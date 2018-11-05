@@ -1,5 +1,7 @@
 # chart-version: latest
 
+profile: default
+
 service:
   type: SERVICE_TYPE
 
