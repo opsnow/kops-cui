@@ -1078,8 +1078,8 @@ kops_validate() {
     _command "kops validate cluster --name=${KOPS_CLUSTER_NAME} --state=s3://${KOPS_STATE_STORE}"
     kops validate cluster --name=${KOPS_CLUSTER_NAME} --state=s3://${KOPS_STATE_STORE}
 
-    _command "kubectl get node -o wide"
-    kubectl get node -o wide
+    _command "kubectl get node"
+    kubectl get node
 
     _command "kubectl get pod -n kube-system"
     kubectl get pod -n kube-system
