@@ -1014,7 +1014,7 @@ kops_create() {
     fi
 
     if [ ! -z ${KOPS_TERRAFORM} ]; then
-        OUT_PATH="terraform-${KOPS_CLUSTER_NAME}"
+        OUT_PATH="terraform-${cloud}-${KOPS_CLUSTER_NAME}"
 
         mkdir -p ${OUT_PATH}
 
