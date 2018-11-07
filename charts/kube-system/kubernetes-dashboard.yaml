@@ -1,3 +1,4 @@
+# chart-repo: stable/kubernetes-dashboard
 # chart-version: latest
 
 nameOverride: kubernetes-dashboard

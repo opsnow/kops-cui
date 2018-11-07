@@ -1,3 +1,4 @@
+# chart-repo: stable/cluster-autoscaler
 # chart-version: latest
 
 nameOverride: cluster-autoscaler
