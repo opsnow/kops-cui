@@ -1,3 +1,4 @@
+# chart-repo: stable/sonarqube
 # chart-version: latest
 
 nameOverride: sonarqube
