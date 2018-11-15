@@ -1,5 +1,5 @@
-{{ if .Values.istio.enabled }}
-{{ if not .Values.canary.enabled }}
+{{ if and (not (empty .Values.istio)) (not (empty .Values.canary)) }}
+{{ if and (.Values.istio.enabled) (not .Values.canary.enabled) }}
 apiVersion: networking.istio.io/v1alpha3
 kind: DestinationRule
 metadata:

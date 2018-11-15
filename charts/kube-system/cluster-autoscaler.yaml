@@ -1,9 +1,11 @@
 # chart-repo: stable/cluster-autoscaler
 # chart-version: latest
+# chart-ingress: false
 
 nameOverride: cluster-autoscaler
 
 autoDiscovery:
+  enabled: true
   clusterName: CLUSTER_NAME
 
 awsRegion: AWS_REGION
@@ -15,9 +17,8 @@ extraArgs:
   expander: least-waste
   skip-nodes-with-local-storage: false
   skip-nodes-with-system-pods: false
+  scale-down-enabled: true
   # scan-interval: 10s
-  # min-replica-count: 2
-  # scale-down-enabled: true
   # scale-down-delay: 10m
   # scale-down-unneeded-time: 10m
   # scale-down-utilization-threshold: 0.5
@@ -33,6 +34,9 @@ nodeSelector:
 tolerations:
   - effect: NoSchedule
     key: node-role.kubernetes.io/master
+
+# sslCertPath: /etc/kubernetes/pki/ca.crt
+sslCertPath: /etc/ssl/certs/ca-bundle.crt
 
 rbac:
   create: true

@@ -1,5 +1,6 @@
 # chart-repo: stable/grafana
 # chart-version: latest
+# chart-ingress: true
 # chart-pvc: grafana ReadWriteOnce 5Gi
 
 nameOverride: grafana

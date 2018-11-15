@@ -1,5 +1,6 @@
 # chart-repo: httpbin
 # chart-version: latest
+# chart-ingress: true
 
 service:
   type: SERVICE_TYPE
