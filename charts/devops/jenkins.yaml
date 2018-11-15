@@ -1,5 +1,6 @@
 # chart-repo: stable/jenkins
 # chart-version: latest
+# chart-ingress: true
 # chart-pvc: jenkins ReadWriteOnce 8Gi
 
 # nameOverride: jenkins

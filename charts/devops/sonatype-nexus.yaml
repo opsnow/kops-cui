@@ -1,5 +1,6 @@
 # chart-repo: stable/sonatype-nexus
 # chart-version: latest
+# chart-ingress: true
 # chart-pvc: sonatype-nexus-data ReadWriteOnce 30Gi
 
 nexus:

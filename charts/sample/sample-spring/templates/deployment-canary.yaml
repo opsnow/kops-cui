@@ -1,4 +1,5 @@
-{{ if .Values.canary.enabled }}
+{{ if and (not (empty .Values.istio)) (not (empty .Values.canary)) }}
+{{ if and (.Values.istio.enabled) (.Values.canary.enabled) }}
 apiVersion: apps/v1
 kind: Deployment
 metadata:
@@ -45,5 +46,6 @@ spec:
 {{ if .Values.secret.enabled }}
           - secretRef:
               name: {{ template "fullname" . }}
+{{ end }}
 {{ end }}
 {{ end }}

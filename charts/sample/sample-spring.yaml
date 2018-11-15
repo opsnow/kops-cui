@@ -1,5 +1,6 @@
 # chart-repo: sample-spring
 # chart-version: latest
+# chart-ingress: true
 
 profile: default
 
@@ -21,3 +22,4 @@ istio:
 
 canary:
   enabled: false
+  tag: alpine

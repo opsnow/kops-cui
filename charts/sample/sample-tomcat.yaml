@@ -1,5 +1,6 @@
 # chart-repo: sample-tomcat
 # chart-version: latest
+# chart-ingress: true
 
 profile: default
 
