@@ -41,7 +41,7 @@ while read JOB; do
         else
             echo "${LINE}" >> ${XML}
         fi
-    done < ${SHELL_DIR}/jobs/${JOB}/job.xml
+    done < ${SHELL_DIR}/jobs/${JOB}/config.xml
 done < ${JOB_LIST}
 
 # job list
@@ -53,7 +53,7 @@ POS=$(grep -n "jenkins-jobs -- start" ${CHART} | cut -d':' -f1)
 sed "${POS}q" ${CHART} >> ${CHART_TMP}
 
 echo
-echo "  Jobs: |-" >> ${CHART_TMP}
+echo "  Jobs:" >> ${CHART_TMP}
 while read JOB; do
     echo "> ${JOB}"
 
