@@ -1,5 +1,6 @@
 # chart-repo: stable/sonatype-nexus
 # chart-version: latest
+# chart-pvc: sonatype-nexus-data ReadWriteOnce 30Gi
 
 nexus:
   # imageName: quay.io/travelaudience/docker-nexus
@@ -44,6 +45,7 @@ persistence:
   accessMode: ReadWriteOnce
   storageSize: 30Gi
   #:EFS:storageClass: "efs"
+  existingClaim: sonatype-nexus-data
 
 resources:
   requests:

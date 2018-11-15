@@ -1,5 +1,7 @@
 # chart-repo: stable/prometheus
 # chart-version: latest
+# chart-pvc: prometheus-server ReadWriteOnce 8Gi
+# chart-pvc: prometheus-alertmanager ReadWriteOnce 2Gi
 
 nameOverride: prometheus
 
@@ -18,6 +20,7 @@ server:
       - ReadWriteOnce
     size: 8Gi
     #:EFS:storageClass: "efs"
+    existingClaim: prometheus-server
 
 alertmanager:
   persistentVolume:
@@ -26,3 +29,4 @@ alertmanager:
       - ReadWriteOnce
     size: 2Gi
     #:EFS:storageClass: "efs"
+    existingClaim: prometheus-alertmanager

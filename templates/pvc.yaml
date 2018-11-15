@@ -1,0 +1,15 @@
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  labels:
+    app: PVC_NAME
+    release: PVC_NAME
+  name: PVC_NAME
+spec:
+  accessModes:
+  - PVC_ACCESS_MODE
+  resources:
+    requests:
+      storage: PVC_SIZE
+  #:EFS:storageClassName: "efs"
+  #:PV:volumeName: PV_NAME
