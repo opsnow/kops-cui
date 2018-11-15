@@ -1,5 +1,6 @@
 # chart-repo: stable/docker-registry
 # chart-version: latest
+# chart-pvc: docker-registry ReadWriteOnce 20Gi
 
 nameOverride: docker-registry
 
@@ -21,3 +22,4 @@ persistence:
   accessMode: ReadWriteOnce
   size: 20Gi
   #:EFS:storageClass: "efs"
+  existingClaim: docker-registry

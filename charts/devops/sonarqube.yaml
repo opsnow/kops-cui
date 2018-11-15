@@ -1,5 +1,7 @@
 # chart-repo: stable/sonarqube
 # chart-version: latest
+# chart-pvc: sonarqube-sonarqube ReadWriteOnce 10Gi
+# chart-pvc: sonarqube-postgresql ReadWriteOnce 8Gi
 
 nameOverride: sonarqube
 
@@ -34,6 +36,7 @@ persistence:
   accessMode: ReadWriteOnce
   size: 10Gi
   #:EFS:storageClass: "efs"
+  existingClaim: sonarqube-sonarqube
 
 postgresql:
   persistence:
@@ -41,3 +44,4 @@ postgresql:
     accessMode: ReadWriteOnce
     size: 8Gi
     #:EFS:storageClass: "efs"
+    existingClaim: sonarqube-postgresql

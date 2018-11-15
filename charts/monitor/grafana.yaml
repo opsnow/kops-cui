@@ -1,5 +1,6 @@
 # chart-repo: stable/grafana
 # chart-version: latest
+# chart-pvc: grafana ReadWriteOnce 5Gi
 
 nameOverride: grafana
 
@@ -22,6 +23,7 @@ persistence:
     - ReadWriteOnce
   size: 5Gi
   #:EFS:storageClassName: "efs"
+  existingClaim: grafana
 
 datasources:
   datasources.yaml:

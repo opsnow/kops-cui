@@ -1,5 +1,6 @@
 # chart-repo: stable/chartmuseum
 # chart-version: latest
+# chart-pvc: chartmuseum ReadWriteOnce 8Gi
 
 fullnameOverride: chartmuseum
 
@@ -25,3 +26,4 @@ persistence:
   accessMode: ReadWriteOnce
   size: 8Gi
   #:EFS:storageClass: "efs"
+  existingClaim: chartmuseum

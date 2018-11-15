@@ -1775,6 +1775,19 @@ helm_install() {
     #     CHART_VERSION=${CHART_VERSION:-latest}
     # fi
 
+    # check exist persistent volume
+    PVC_LIST=$(mktemp /tmp/pvc-${NAME}.XXXXXX.yaml)
+    cat ${CHART} | grep chart-pvc | awk '{print $3,$4,$5}' > ${PVC_LIST}
+    while IFS='' read -r line || [[ -n "$line" ]]; do
+        ARR=(${line})
+        check_exist_pv ${NAMESPACE} ${ARR[0]} ${ARR[1]} ${ARR[2]}
+        RELEASED=$?
+        if [ "${RELEASED}" -gt "0" ]; then
+            echo "  To use an existing volume, remove the PV's '.claimRef.uid' attribute to make the PV an 'Available' status and try again."
+            return;
+        fi
+    done < "${PVC_LIST}"
+
     # helm install
     if [ -z ${CHART_VERSION} ] || [ "${CHART_VERSION}" == "latest" ]; then
         _command "helm upgrade --install ${NAME} stable/${NAME} --namespace ${NAMESPACE} --values ${CHART}"
@@ -1805,6 +1818,91 @@ helm_install() {
                 _result "${NAME}: https://${DOMAIN}"
             fi
         fi
+    fi
+}
+
+check_exist_pv() {
+    NAMESPACE=${1}
+    PVC_NAME=${2}
+    PVC_ACCESS_MODE=${3}
+    PVC_SIZE=${4}
+
+    PV_NAMES=$(kubectl get pv | grep ${PVC_NAME} | awk '{print $1}')
+    for PvName in ${PV_NAMES}; do
+        if [ "$(kubectl get pv -o json ${PvName} | jq -r '.spec.claimRef.name')" == "${PVC_NAME}" ]; then
+            PV_NAME=${PvName}
+        fi
+    done
+
+    if [ -z ${PV_NAME} ]; then
+        echo "No PersistentVolume."
+        # Create a new pvc
+        create_pvc ${NAMESPACE} ${PVC_NAME} ${PVC_ACCESS_MODE} ${PVC_SIZE}
+    else
+        PV_JSON=$(mktemp /tmp/kops-cui-pv-${PVC_NAME}.XXXXXX)
+
+        _command "kubectl get pv -o json ${PV_NAME}"
+        kubectl get pv -o json ${PV_NAME} > ${PV_JSON}
+
+        PV_STATUS=$(cat ${PV_JSON} | jq -r '.status.phase')
+        echo "PV is in '${PV_STATUS}' status."
+        
+        if [ "${PV_STATUS}" == "Available" ]; then
+            # If PVC for PV is not present, create PVC
+            PVC_TMP=$(kubectl get pvc -n ${NAMESPACE} ${PVC_NAME} | grep ${PVC_NAME} | awk '{print $1}')
+            if [ "${PVC_NAME}" != "${PVC_TMP}" ]; then
+                # create a static PVC 
+                create_pvc ${NAMESPACE} ${PVC_NAME} ${PVC_ACCESS_MODE} ${PVC_SIZE} ${PV_NAME}
+            fi
+        elif [ "${PV_STATUS}" == "Released" ]; then
+            return 1
+        fi
+    fi
+}
+
+create_pvc() {
+    NAMESPACE=${1}
+    PVC_NAME=${2}
+    PVC_ACCESS_MODE=${3}
+    PVC_SIZE=${4}
+    PV_NAME=${5}
+
+    PVC=$(mktemp /tmp/kops-cui-pvc-${PVC_NAME}.XXXXXX.yaml)
+    get_template templates/pvc.yaml ${PVC}
+
+    _replace "s/PVC_NAME/${PVC_NAME}/" ${PVC}
+    _replace "s/PVC_ACCESS_MODE/${PVC_ACCESS_MODE}/" ${PVC}
+    _replace "s/PVC_SIZE/${PVC_SIZE}/" ${PVC}
+
+    # for efs-provisioner
+    if [ ! -z ${EFS_FILE_SYSTEM_ID} ]; then
+        _replace "s/#:EFS://" ${PVC}
+    fi
+
+    # for static pvc
+    if [ ! -z ${PV_NAME} ]; then
+        _replace "s/#:PV://" ${PVC}
+        _replace "s/PV_NAME/${PV_NAME}/" ${PVC}
+    fi
+    
+    echo ${PVC}
+
+    _command "kubectl create -n ${NAMESPACE} -f ${PVC}"
+    kubectl create -n ${NAMESPACE} -f ${PVC}
+
+    waiting_for isBound ${NAMESPACE} ${PVC_NAME}
+
+    _command "kubectl get pvc,pv -n ${NAMESPACE}"
+    kubectl get pvc,pv -n ${NAMESPACE}
+}
+
+isBound() {
+    NAMESPACE=${1}
+    PVC_NAME=${2}
+
+    PVC_STATUS=$(kubectl get pvc -n ${NAMESPACE} ${PVC_NAME} -o json | jq -r '.status.phase')
+    if [ "${PVC_STATUS}" != "Bound" ]; then 
+        return 1;
     fi
 }
 
