@@ -441,10 +441,6 @@ save_kops_config() {
     echo "KOPS_STATE_STORE=${KOPS_STATE_STORE}" >> ${CONFIG}
     echo "KOPS_CLUSTER_NAME=${KOPS_CLUSTER_NAME}" >> ${CONFIG}
     echo "KOPS_TERRAFORM=${KOPS_TERRAFORM}" >> ${CONFIG}
-    echo "ROOT_DOMAIN=${ROOT_DOMAIN}" >> ${CONFIG}
-    echo "BASE_DOMAIN=${BASE_DOMAIN}" >> ${CONFIG}
-    echo "EFS_FILE_SYSTEM_ID=${EFS_FILE_SYSTEM_ID}" >> ${CONFIG}
-    echo "ISTIO=${ISTIO}" >> ${CONFIG}
 
     . ${CONFIG}
 
@@ -463,10 +459,6 @@ clear_kops_config() {
     export KOPS_STATE_STORE=
     export KOPS_CLUSTER_NAME=
     export KOPS_TERRAFORM=
-    export ROOT_DOMAIN=
-    export BASE_DOMAIN=
-    export EFS_FILE_SYSTEM_ID=
-    export ISTIO=
 
     save_kops_config
 }
