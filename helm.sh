@@ -277,6 +277,9 @@ config_save() {
     echo "EFS_ID=${EFS_ID}" >> ${CONFIG}
     echo "ISTIO=${ISTIO}" >> ${CONFIG}
 
+    _command "save ${THIS_NAME}-config"
+    cat ${CONFIG}
+
     ENCODED=$(mktemp /tmp/${THIS_NAME}-config-encoded.XXXXXX)
     cat ${CONFIG} | base64 > ${ENCODED}
 
@@ -286,6 +289,8 @@ config_save() {
     while read VAL; do
         echo "    ${VAL}" >> ${CHART}
     done < ${ENCODED}
+
+    _replace "s/REPLACE-ME/${THIS_NAME}-config/" ${CHART}
 
     kubectl apply -f ${CHART} -n default
 }
@@ -298,6 +303,7 @@ config_load() {
 
         kubectl get cm ${THIS_NAME}-config -n default -o json | jq -r '.data.config' | base64 -d > ${CONFIG}
 
+        _command "load ${THIS_NAME}-config"
         cat ${CONFIG}
 
         . ${CONFIG}
@@ -315,15 +321,15 @@ helm_nginx_ingress() {
     get_base_domain
 
     # chart version
-    CHART_VERSION=$(cat ${CHART} | grep chart-version | awk '{print $3}')
+    VERSION=$(cat ${CHART} | grep chart-version | awk '{print $3}')
 
     # helm install
-    if [ -z ${CHART_VERSION} ] || [ "${CHART_VERSION}" == "latest" ]; then
+    if [ -z ${VERSION} ] || [ "${VERSION}" == "latest" ]; then
         _command "helm upgrade --install ${NAME} stable/${NAME} --namespace ${NAMESPACE} --values ${CHART}"
         helm upgrade --install ${NAME} stable/${NAME} --namespace ${NAMESPACE} --values ${CHART}
     else
-        _command "helm upgrade --install ${NAME} stable/${NAME} --namespace ${NAMESPACE} --values ${CHART} --version ${CHART_VERSION}"
-        helm upgrade --install ${NAME} stable/${NAME} --namespace ${NAMESPACE} --values ${CHART} --version ${CHART_VERSION}
+        _command "helm upgrade --install ${NAME} stable/${NAME} --namespace ${NAMESPACE} --values ${CHART} --version ${VERSION}"
+        helm upgrade --install ${NAME} stable/${NAME} --namespace ${NAMESPACE} --values ${CHART} --version ${VERSION}
     fi
 
     # save config (INGRESS)
@@ -419,6 +425,14 @@ helm_install() {
     fi
     _replace "s/ISTIO_ENABLED/${ISTIO_ENABLED}/" ${CHART}
 
+    # chart version
+    VERSION=$(cat ${CHART} | grep chart-version | awk '{print $3}')
+
+    # if [ -z ${VERSION} ] || [ "${VERSION}" == "latest" ]; then
+    #     # https://kubernetes-charts.storage.googleapis.com/
+    #     VERSION=${VERSION:-latest}
+    # fi
+
     # ingress
     INGRESS=$(cat ${CHART} | grep chart-ingress | awk '{print $3}')
     DOMAIN=
@@ -436,21 +450,26 @@ helm_install() {
         fi
     fi
 
-    # chart version
-    CHART_VERSION=$(cat ${CHART} | grep chart-version | awk '{print $3}')
-
-    # if [ -z ${CHART_VERSION} ] || [ "${CHART_VERSION}" == "latest" ]; then
-    #     # https://kubernetes-charts.storage.googleapis.com/
-    #     CHART_VERSION=${CHART_VERSION:-latest}
-    # fi
+    # check exist persistent volume
+    PVC_LIST=$(mktemp /tmp/${THIS_NAME}-pvc-${NAME}.XXXXXX.yaml)
+    cat ${CHART} | grep chart-pvc | awk '{print $3,$4,$5}' > ${PVC_LIST}
+    while IFS='' read -r line || [[ -n "$line" ]]; do
+        ARR=(${line})
+        check_exist_pv ${NAMESPACE} ${ARR[0]} ${ARR[1]} ${ARR[2]}
+        RELEASED=$?
+        if [ "${RELEASED}" -gt "0" ]; then
+            echo "  To use an existing volume, remove the PV's '.claimRef.uid' attribute to make the PV an 'Available' status and try again."
+            return;
+        fi
+    done < "${PVC_LIST}"
 
     # helm install
-    if [ -z ${CHART_VERSION} ] || [ "${CHART_VERSION}" == "latest" ]; then
+    if [ -z ${VERSION} ] || [ "${VERSION}" == "latest" ]; then
         _command "helm upgrade --install ${NAME} stable/${NAME} --namespace ${NAMESPACE} --values ${CHART}"
         helm upgrade --install ${NAME} stable/${NAME} --namespace ${NAMESPACE} --values ${CHART}
     else
-        _command "helm upgrade --install ${NAME} stable/${NAME} --namespace ${NAMESPACE} --values ${CHART} --version ${CHART_VERSION}"
-        helm upgrade --install ${NAME} stable/${NAME} --namespace ${NAMESPACE} --values ${CHART} --version ${CHART_VERSION}
+        _command "helm upgrade --install ${NAME} stable/${NAME} --namespace ${NAMESPACE} --values ${CHART} --version ${VERSION}"
+        helm upgrade --install ${NAME} stable/${NAME} --namespace ${NAMESPACE} --values ${CHART} --version ${VERSION}
     fi
 
     # waiting 2
@@ -596,12 +615,11 @@ create_cluster_role_binding() {
 }
 
 elb_security() {
-    LIST=$(mktemp /tmp/kops-cui-elb-list.XXXXXX)
+    LIST=$(mktemp /tmp/${THIS_NAME}-elb-list.XXXXXX)
 
     # elb list
     _command "kubectl get svc --all-namespaces | grep LoadBalancer"
-    kubectl get svc --all-namespaces | grep LoadBalancer \
-        | awk '{printf "%-20s %-30s %s\n", $1, $2, $5}' > ${LIST}
+    kubectl get svc --all-namespaces | grep LoadBalancer | awk '{printf "%-20s %-30s %s\n", $1, $2, $5}' > ${LIST}
 
     # select
     select_one
@@ -648,8 +666,94 @@ elb_security() {
 
 }
 
+check_exist_pv() {
+    NAMESPACE=${1}
+    PVC_NAME=${2}
+    PVC_ACCESS_MODE=${3}
+    PVC_SIZE=${4}
+    PV_NAME=
+
+    PV_NAMES=$(kubectl get pv | grep ${PVC_NAME} | awk '{print $1}')
+    for PvName in ${PV_NAMES}; do
+        if [ "$(kubectl get pv ${PvName} -o json | jq -r '.spec.claimRef.name')" == "${PVC_NAME}" ]; then
+            PV_NAME=${PvName}
+        fi
+    done
+
+    if [ -z ${PV_NAME} ]; then
+        echo "No PersistentVolume."
+        # Create a new pvc
+        create_pvc ${NAMESPACE} ${PVC_NAME} ${PVC_ACCESS_MODE} ${PVC_SIZE}
+    else
+        PV_JSON=$(mktemp /tmp/${THIS_NAME}-pv-${PVC_NAME}.XXXXXX)
+
+        _command "kubectl get pv -o json ${PV_NAME}"
+        kubectl get pv -o json ${PV_NAME} > ${PV_JSON}
+
+        PV_STATUS=$(cat ${PV_JSON} | jq -r '.status.phase')
+        echo "PV is in '${PV_STATUS}' status."
+
+        if [ "${PV_STATUS}" == "Available" ]; then
+            # If PVC for PV is not present, create PVC
+            PVC_TMP=$(kubectl get pvc -n ${NAMESPACE} ${PVC_NAME} | grep ${PVC_NAME} | awk '{print $1}')
+            if [ "${PVC_NAME}" != "${PVC_TMP}" ]; then
+                # create a static PVC
+                create_pvc ${NAMESPACE} ${PVC_NAME} ${PVC_ACCESS_MODE} ${PVC_SIZE} ${PV_NAME}
+            fi
+        elif [ "${PV_STATUS}" == "Released" ]; then
+            return 1
+        fi
+    fi
+}
+
+create_pvc() {
+    NAMESPACE=${1}
+    PVC_NAME=${2}
+    PVC_ACCESS_MODE=${3}
+    PVC_SIZE=${4}
+    PV_NAME=${5}
+
+    PVC=$(mktemp /tmp/${THIS_NAME}-pvc-${PVC_NAME}.XXXXXX.yaml)
+    get_template templates/pvc.yaml ${PVC}
+
+    _replace "s/PVC_NAME/${PVC_NAME}/" ${PVC}
+    _replace "s/PVC_ACCESS_MODE/${PVC_ACCESS_MODE}/" ${PVC}
+    _replace "s/PVC_SIZE/${PVC_SIZE}/" ${PVC}
+
+    # for efs-provisioner
+    if [ ! -z ${EFS_ID} ]; then
+        _replace "s/#:EFS://" ${PVC}
+    fi
+
+    # for static pvc
+    if [ ! -z ${PV_NAME} ]; then
+        _replace "s/#:PV://" ${PVC}
+        _replace "s/PV_NAME/${PV_NAME}/" ${PVC}
+    fi
+
+    echo ${PVC}
+
+    _command "kubectl create -n ${NAMESPACE} -f ${PVC}"
+    kubectl create -n ${NAMESPACE} -f ${PVC}
+
+    waiting_for isBound ${NAMESPACE} ${PVC_NAME}
+
+    _command "kubectl get pvc,pv -n ${NAMESPACE}"
+    kubectl get pvc,pv -n ${NAMESPACE}
+}
+
+isBound() {
+    NAMESPACE=${1}
+    PVC_NAME=${2}
+
+    PVC_STATUS=$(kubectl get pvc -n ${NAMESPACE} ${PVC_NAME} -o json | jq -r '.status.phase')
+    if [ "${PVC_STATUS}" != "Bound" ]; then
+        return 1;
+    fi
+}
+
 isEFSAvailable() {
-    FILE_SYSTEMS=$(aws efs describe-file-systems --creation-token ${KOPS_CLUSTER_NAME} --region ${REGION})
+    FILE_SYSTEMS=$(aws efs describe-file-systems --creation-token ${CLUSTER_NAME} --region ${REGION})
     FILE_SYSTEM_LENGH=$(echo ${FILE_SYSTEMS} | jq -r '.FileSystems | length')
     if [ ${FILE_SYSTEM_LENGH} -gt 0 ]; then
         STATES=$(echo ${FILE_SYSTEMS} | jq -r '.FileSystems[].LifeCycleState')
@@ -705,18 +809,18 @@ isMountTargetDeleted() {
 
 efs_create() {
     # get the security group id
-    K8S_NODE_SG_ID=$(aws ec2 describe-security-groups --filters "Name=group-name,Values=nodes.${KOPS_CLUSTER_NAME}" | jq -r '.SecurityGroups[0].GroupId')
-    if [ -z ${K8S_NODE_SG_ID} ]; then
+    K8S_NODE_SG_ID=$(aws ec2 describe-security-groups --filters "Name=group-name,Values=nodes.${CLUSTER_NAME}" | jq -r '.SecurityGroups[0].GroupId')
+    if [ -z ${K8S_NODE_SG_ID} ] || [ "${K8S_NODE_SG_ID}" == "null" ]; then
         _error "Not found the security group for the nodes."
     fi
 
     # get vpc id & subent ids
-    VPC_ID=$(aws ec2 describe-security-groups --filters "Name=group-name,Values=nodes.${KOPS_CLUSTER_NAME}" | jq -r '.SecurityGroups[0].VpcId')
-    VPC_PRIVATE_SUBNETS_LENGTH=$(aws ec2 describe-subnets --filters "Name=tag:KubernetesCluster,Values=${KOPS_CLUSTER_NAME}" "Name=tag:SubnetType,Values=Private" | jq '.Subnets | length')
+    VPC_ID=$(aws ec2 describe-security-groups --filters "Name=group-name,Values=nodes.${CLUSTER_NAME}" | jq -r '.SecurityGroups[0].VpcId')
+    VPC_PRIVATE_SUBNETS_LENGTH=$(aws ec2 describe-subnets --filters "Name=tag:KubernetesCluster,Values=${CLUSTER_NAME}" "Name=tag:SubnetType,Values=Private" | jq '.Subnets | length')
     if [ ${VPC_PRIVATE_SUBNETS_LENGTH} -eq 2 ]; then
-        VPC_SUBNETS=$(aws ec2 describe-subnets --filters "Name=tag:KubernetesCluster,Values=${KOPS_CLUSTER_NAME}" "Name=tag:SubnetType,Values=Private" | jq -r '(.Subnets[].SubnetId)')
+        VPC_SUBNETS=$(aws ec2 describe-subnets --filters "Name=tag:KubernetesCluster,Values=${CLUSTER_NAME}" "Name=tag:SubnetType,Values=Private" | jq -r '(.Subnets[].SubnetId)')
     else
-        VPC_SUBNETS=$(aws ec2 describe-subnets --filters "Name=tag:KubernetesCluster,Values=${KOPS_CLUSTER_NAME}" | jq -r '(.Subnets[].SubnetId)')
+        VPC_SUBNETS=$(aws ec2 describe-subnets --filters "Name=tag:KubernetesCluster,Values=${CLUSTER_NAME}" | jq -r '(.Subnets[].SubnetId)')
     fi
 
     if [ -z ${VPC_ID} ]; then
@@ -730,13 +834,13 @@ efs_create() {
     echo
 
     # create a security group for efs mount targets
-    EFS_SG_LENGTH=$(aws ec2 describe-security-groups --filters "Name=group-name,Values=efs-sg.${KOPS_CLUSTER_NAME}" | jq '.SecurityGroups | length')
+    EFS_SG_LENGTH=$(aws ec2 describe-security-groups --filters "Name=group-name,Values=efs-sg.${CLUSTER_NAME}" | jq '.SecurityGroups | length')
     if [ ${EFS_SG_LENGTH} -eq 0 ]; then
         echo "Creating a security group for mount targets"
 
         EFS_SG_ID=$(aws ec2 create-security-group \
             --region ${REGION} \
-            --group-name efs-sg.${KOPS_CLUSTER_NAME} \
+            --group-name efs-sg.${CLUSTER_NAME} \
             --description "Security group for EFS mount targets" \
             --vpc-id ${VPC_ID} | jq -r '.GroupId')
 
@@ -747,24 +851,24 @@ efs_create() {
             --source-group ${K8S_NODE_SG_ID} \
             --region ${REGION}
     else
-        EFS_SG_ID=$(aws ec2 describe-security-groups --filters "Name=group-name,Values=efs-sg.${KOPS_CLUSTER_NAME}" | jq -r '.SecurityGroups[].GroupId')
+        EFS_SG_ID=$(aws ec2 describe-security-groups --filters "Name=group-name,Values=efs-sg.${CLUSTER_NAME}" | jq -r '.SecurityGroups[].GroupId')
     fi
 
     # echo "Security group for mount targets:"
     _result "EFS_SG_ID=${EFS_SG_ID}"
 
     # create an efs
-    EFS_LENGTH=$(aws efs describe-file-systems --creation-token ${KOPS_CLUSTER_NAME} | jq '.FileSystems | length')
+    EFS_LENGTH=$(aws efs describe-file-systems --creation-token ${CLUSTER_NAME} | jq '.FileSystems | length')
     if [ ${EFS_LENGTH} -eq 0 ]; then
         echo "Creating a elastic file system"
 
-        EFS_ID=$(aws efs create-file-system --creation-token ${KOPS_CLUSTER_NAME} --region ${REGION} | jq -r '.FileSystemId')
+        EFS_ID=$(aws efs create-file-system --creation-token ${CLUSTER_NAME} --region ${REGION} | jq -r '.FileSystemId')
         aws efs create-tags \
             --file-system-id ${EFS_ID} \
-            --tags Key=Name,Value=efs.${KOPS_CLUSTER_NAME} \
+            --tags Key=Name,Value=efs.${CLUSTER_NAME} \
             --region ap-northeast-2
     else
-        EFS_ID=$(aws efs describe-file-systems --creation-token ${KOPS_CLUSTER_NAME} --region ${REGION} | jq -r '.FileSystems[].FileSystemId')
+        EFS_ID=$(aws efs describe-file-systems --creation-token ${CLUSTER_NAME} --region ${REGION} | jq -r '.FileSystems[].FileSystemId')
     fi
 
     _result "EFS_ID=${EFS_ID}"
@@ -816,7 +920,7 @@ efs_delete() {
     waiting_for isMountTargetDeleted
 
     # delete security group for efs mount targets
-    EFS_SG_ID=$(aws ec2 describe-security-groups --filters "Name=group-name,Values=efs-sg.${KOPS_CLUSTER_NAME}" | jq -r '.SecurityGroups[0].GroupId')
+    EFS_SG_ID=$(aws ec2 describe-security-groups --filters "Name=group-name,Values=efs-sg.${CLUSTER_NAME}" | jq -r '.SecurityGroups[0].GroupId')
     if [ -n ${EFS_SG_ID} ]; then
         echo "Deleting the security group for mount targets"
         aws ec2 delete-security-group --group-id ${EFS_SG_ID}
@@ -1363,6 +1467,23 @@ get_base_domain() {
 
         _replace "s@aws-load-balancer-ssl-cert:.*@aws-load-balancer-ssl-cert: ${SSL_CERT_ARN}@" ${CHART}
     fi
+}
+
+waiting_for() {
+    echo
+    progress start
+
+    IDX=0
+    while true; do
+        if $@ ${IDX}; then
+            break
+        fi
+        IDX=$(( ${IDX} + 1 ))
+        progress ${IDX}
+    done
+
+    progress end
+    echo
 }
 
 waiting_deploy() {

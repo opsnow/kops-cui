@@ -1826,6 +1826,7 @@ check_exist_pv() {
     PVC_NAME=${2}
     PVC_ACCESS_MODE=${3}
     PVC_SIZE=${4}
+    PV_NAME=
 
     PV_NAMES=$(kubectl get pv | grep ${PVC_NAME} | awk '{print $1}')
     for PvName in ${PV_NAMES}; do
@@ -1846,12 +1847,12 @@ check_exist_pv() {
 
         PV_STATUS=$(cat ${PV_JSON} | jq -r '.status.phase')
         echo "PV is in '${PV_STATUS}' status."
-        
+
         if [ "${PV_STATUS}" == "Available" ]; then
             # If PVC for PV is not present, create PVC
             PVC_TMP=$(kubectl get pvc -n ${NAMESPACE} ${PVC_NAME} | grep ${PVC_NAME} | awk '{print $1}')
             if [ "${PVC_NAME}" != "${PVC_TMP}" ]; then
-                # create a static PVC 
+                # create a static PVC
                 create_pvc ${NAMESPACE} ${PVC_NAME} ${PVC_ACCESS_MODE} ${PVC_SIZE} ${PV_NAME}
             fi
         elif [ "${PV_STATUS}" == "Released" ]; then
@@ -1884,7 +1885,7 @@ create_pvc() {
         _replace "s/#:PV://" ${PVC}
         _replace "s/PV_NAME/${PV_NAME}/" ${PVC}
     fi
-    
+
     echo ${PVC}
 
     _command "kubectl create -n ${NAMESPACE} -f ${PVC}"
@@ -1901,7 +1902,7 @@ isBound() {
     PVC_NAME=${2}
 
     PVC_STATUS=$(kubectl get pvc -n ${NAMESPACE} ${PVC_NAME} -o json | jq -r '.status.phase')
-    if [ "${PVC_STATUS}" != "Bound" ]; then 
+    if [ "${PVC_STATUS}" != "Bound" ]; then
         return 1;
     fi
 }
