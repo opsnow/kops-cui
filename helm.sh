@@ -74,6 +74,12 @@ press_enter() {
         main)
             main_menu
             ;;
+        kube-ingress)
+            charts_menu "kube-ingress"
+            ;;
+        kube-system)
+            charts_menu "kube-system"
+            ;;
         monitor)
             charts_menu "monitor"
             ;;
@@ -95,18 +101,19 @@ main_menu() {
     echo
     _echo "1. helm init"
     echo
-    _echo "2. nginx-ingress"
-    _echo "3. kubernetes-dashboard"
-    _echo "4. heapster (deprecated)"
-    _echo "5. metrics-server"
-    _echo "6. cluster-autoscaler"
-    _echo "7. efs-provisioner"
+    _echo "2. kube-ingress.."
+    _echo "3. kube-system.."
+    _echo "4. monitor.."
+    _echo "5. devops.."
+    _echo "6. sample.."
+    _echo "7. istio.."
     echo
     _echo "9. remove"
+    # echo
+    # _echo "s. security"
     echo
-    _echo "11. sample.."
-    _echo "12. monitor.."
-    _echo "13. devops.."
+    _echo "u. update self"
+    _echo "t. update tools"
     echo
     _echo "x. Exit"
 
@@ -118,57 +125,38 @@ main_menu() {
             press_enter main
             ;;
         2)
-            helm_nginx_ingress kube-ingress
-            press_enter main
+            charts_menu "kube-ingress"
             ;;
         3)
-            helm_install kubernetes-dashboard kube-system
-
-            create_cluster_role_binding cluster-admin kube-system dashboard-admin true
-
-            press_enter main
+            charts_menu "kube-system"
             ;;
         4)
-            helm_install heapster kube-system
-            press_enter main
+            charts_menu "monitor"
             ;;
         5)
-            helm_install metrics-server kube-system
-            echo
-            kubectl get hpa
-            press_enter main
+            charts_menu "devops"
             ;;
         6)
-            helm_install cluster-autoscaler kube-system
-
-            _result "Edit InstanceGroup (node) for Autoscaler"
-
-            echo "spec:"
-            echo "  cloudLabels:"
-            echo "    k8s.io/cluster-autoscaler/enabled: \"\""
-            echo "    kubernetes.io/cluster/${CLUSTER_NAME}: owned"
-
-            press_enter main
+            sample_menu
             ;;
         7)
-            helm_install efs-provisioner kube-system
-            press_enter main
+            istio_menu
             ;;
         9)
             helm_delete
             press_enter main
             ;;
-        11)
-            sample_menu
+        s)
+            elb_security
+            press_enter main
             ;;
-        12)
-            charts_menu "monitor"
+        u)
+            update_self
+            press_enter cluster
             ;;
-        13)
-            charts_menu "devops"
-            ;;
-        14)
-            istio_menu
+        t)
+            update_tools
+            press_enter cluster
             ;;
         x)
             _success "Good bye!"
@@ -242,7 +230,7 @@ sample_menu() {
     press_enter sample
 }
 
-charts_menu () {
+charts_menu() {
     title
 
     NAMESPACE=$1
@@ -260,92 +248,12 @@ charts_menu () {
         return
     fi
 
-    create_cluster_role_binding cluster-admin ${NAMESPACE}
+    # create_cluster_role_binding cluster-admin ${NAMESPACE}
 
     # helm install
     helm_install ${SELECTED} ${NAMESPACE}
 
     press_enter ${NAMESPACE}
-}
-
-config_save() {
-    CONFIG=$(mktemp /tmp/${THIS_NAME}-config.XXXXXX)
-    echo "# ${THIS_NAME} config" > ${CONFIG}
-    echo "CLUSTER_NAME=${CLUSTER_NAME}" >> ${CONFIG}
-    echo "ROOT_DOMAIN=${ROOT_DOMAIN}" >> ${CONFIG}
-    echo "BASE_DOMAIN=${BASE_DOMAIN}" >> ${CONFIG}
-    echo "EFS_ID=${EFS_ID}" >> ${CONFIG}
-    echo "ISTIO=${ISTIO}" >> ${CONFIG}
-
-    _command "save ${THIS_NAME}-config"
-    cat ${CONFIG}
-
-    ENCODED=$(mktemp /tmp/${THIS_NAME}-config-encoded.XXXXXX)
-    cat ${CONFIG} | base64 > ${ENCODED}
-
-    CHART=$(mktemp /tmp/${THIS_NAME}-config-yaml.XXXXXX)
-    get_template templates/config.yaml ${CHART}
-
-    while read VAL; do
-        echo "    ${VAL}" >> ${CHART}
-    done < ${ENCODED}
-
-    _replace "s/REPLACE-ME/${THIS_NAME}-config/" ${CHART}
-
-    kubectl apply -f ${CHART} -n default
-}
-
-config_load() {
-    COUNT=$(kubectl get cm -n default | grep ${THIS_NAME}-config  | wc -l | xargs)
-
-    if [ "x${COUNT}" != "x0" ]; then
-        CONFIG=$(mktemp /tmp/${THIS_NAME}-config.XXXXXX)
-
-        kubectl get cm ${THIS_NAME}-config -n default -o json | jq -r '.data.config' | base64 -d > ${CONFIG}
-
-        _command "load ${THIS_NAME}-config"
-        cat ${CONFIG}
-
-        . ${CONFIG}
-    fi
-}
-
-helm_nginx_ingress() {
-    helm_check
-
-    NAME="nginx-ingress"
-    NAMESPACE=${1:-kube-ingress}
-
-    create_namespace ${NAMESPACE}
-
-    get_base_domain
-
-    # chart version
-    VERSION=$(cat ${CHART} | grep chart-version | awk '{print $3}')
-
-    # helm install
-    if [ -z ${VERSION} ] || [ "${VERSION}" == "latest" ]; then
-        _command "helm upgrade --install ${NAME} stable/${NAME} --namespace ${NAMESPACE} --values ${CHART}"
-        helm upgrade --install ${NAME} stable/${NAME} --namespace ${NAMESPACE} --values ${CHART}
-    else
-        _command "helm upgrade --install ${NAME} stable/${NAME} --namespace ${NAMESPACE} --values ${CHART} --version ${VERSION}"
-        helm upgrade --install ${NAME} stable/${NAME} --namespace ${NAMESPACE} --values ${CHART} --version ${VERSION}
-    fi
-
-    # save config (INGRESS)
-    INGRESS=true
-    config_save
-
-    # waiting 2
-    waiting_pod "${NAMESPACE}" "${NAME}" 20
-
-    _command "helm history ${NAME}"
-    helm history ${NAME}
-
-    _command "kubectl get deploy,pod,svc -n ${NAMESPACE}"
-    kubectl get deploy,pod,svc -n ${NAMESPACE}
-
-    set_base_domain ${NAME}
 }
 
 helm_install() {
@@ -354,11 +262,6 @@ helm_install() {
     NAME=${1}
     NAMESPACE=${2}
 
-    # for efs-provisioner
-    if [ "${NAME}" == "efs-provisioner" ]; then
-        efs_create
-    fi
-
     create_namespace ${NAMESPACE}
 
     CHART=$(mktemp /tmp/${THIS_NAME}-${NAME}.XXXXXX)
@@ -366,6 +269,16 @@ helm_install() {
 
     _replace "s/AWS_REGION/${REGION}/" ${CHART}
     _replace "s/CLUSTER_NAME/${CLUSTER_NAME}/" ${CHART}
+
+    # for nginx-ingress
+    if [ "${NAME}" == "nginx-ingress" ]; then
+        get_base_domain
+    fi
+
+    # for efs-provisioner
+    if [ "${NAME}" == "efs-provisioner" ]; then
+        efs_create
+    fi
 
     # for jenkins
     if [ "${NAME}" == "jenkins" ]; then
@@ -472,6 +385,12 @@ helm_install() {
         helm upgrade --install ${NAME} stable/${NAME} --namespace ${NAMESPACE} --values ${CHART} --version ${VERSION}
     fi
 
+    # nginx-ingress
+    if [ "${NAME}" == "nginx-ingress" ]; then
+        INGRESS=true
+        config_save
+    fi
+
     # waiting 2
     waiting_pod "${NAMESPACE}" "${NAME}"
 
@@ -481,16 +400,27 @@ helm_install() {
     _command "kubectl get deploy,pod,svc,ing,pv -n ${NAMESPACE}"
     kubectl get deploy,pod,svc,ing,pv -n ${NAMESPACE}
 
-    if [ "${INGRESS}" == "true" ]; then
-        if [ -z ${BASE_DOMAIN} ]; then
-            get_elb_domain ${NAME} ${NAMESPACE}
+    # for kubernetes-dashboard
+    if [ "${NAME}" == "kubernetes-dashboard" ]; then
+        create_cluster_role_binding view kube-system dashboard-view true
 
-            _result "${NAME}: http://${ELB_DOMAIN}"
-        else
-            if [ -z ${ROOT_DOMAIN} ]; then
-                _result "${NAME}: http://${DOMAIN}"
+        get_ingress_elb_name "kubernetes-dashboard"
+    fi
+
+    if [ "${NAME}" == "nginx-ingress" ]; then
+        set_base_domain ${NAME}
+    else
+        if [ "${INGRESS}" == "true" ]; then
+            if [ -z ${BASE_DOMAIN} ]; then
+                get_elb_domain ${NAME} ${NAMESPACE}
+
+                _result "${NAME}: http://${ELB_DOMAIN}"
             else
-                _result "${NAME}: https://${DOMAIN}"
+                if [ -z ${ROOT_DOMAIN} ]; then
+                    _result "${NAME}: http://${DOMAIN}"
+                else
+                    _result "${NAME}: https://${DOMAIN}"
+                fi
             fi
         fi
     fi
@@ -516,10 +446,17 @@ helm_delete() {
 
     NAME="$(echo ${SELECTED} | awk '{print $1}')"
 
-    if [ ! -z ${NAME} ]; then
-        _command "helm delete --purge ${NAME}"
-        helm delete --purge ${NAME}
+    if [ "${NAME}" == "" ]; then
+        return
     fi
+
+    # for efs-provisioner
+    if [ "${NAME}" == "efs-provisioner" ]; then
+        efs_delete
+    fi
+
+    _command "helm delete --purge ${NAME}"
+    helm delete --purge ${NAME}
 }
 
 helm_check() {
@@ -931,17 +868,15 @@ efs_delete() {
         echo "Deleting the elastic file system"
         aws efs delete-file-system --file-system-id ${EFS_ID} --region ${REGION}
     fi
+
+    # save config (EFS_ID)
+    EFS_ID=
+    config_save
 }
 
-istio_install() {
-    helm_check
-
+istion_init() {
     NAME="istio"
     NAMESPACE="istio-system"
-
-    create_namespace ${NAMESPACE}
-
-    # get_base_domain
 
     ISTIO_TMP=/tmp/${THIS_NAME}-istio
     mkdir -p ${ISTIO_TMP}
@@ -954,6 +889,16 @@ istio_install() {
         curl -sL https://git.io/getLatestIstio | sh -
         popd
     fi
+
+    ISTIO_DIR=${ISTIO_TMP}/${NAME}-${VERSION}/install/kubernetes/helm/istio
+}
+
+istio_install() {
+    helm_check
+
+    istion_init
+
+    create_namespace ${NAMESPACE}
 
     CHART=$(mktemp /tmp/${THIS_NAME}-${NAME}.XXXXXX)
     get_template charts/istio/${NAME}.yaml ${CHART}
@@ -971,14 +916,12 @@ istio_install() {
     # admin password
     read_password ${CHART}
 
-    ISTIO_DIR=${ISTIO_TMP}/${NAME}-${VERSION}/install/kubernetes/helm/istio
-
     # helm install
     _command "helm upgrade --install ${NAME} ${ISTIO_DIR} --namespace ${NAMESPACE} --values ${CHART}"
     helm upgrade --install ${NAME} ${ISTIO_DIR} --namespace ${NAMESPACE} --values ${CHART}
 
     # for kiali
-    create_cluster_role_binding cluster-admin ${NAMESPACE} kiali-service-account
+    create_cluster_role_binding view ${NAMESPACE} kiali-service-account
 
     # save config (ISTIO)
     ISTIO=true
@@ -1032,22 +975,7 @@ istio_injection() {
 }
 
 istio_delete() {
-    NAME="istio"
-    NAMESPACE="istio-system"
-
-    ISTIO_TMP=/tmp/${THIS_NAME}-istio
-    mkdir -p ${ISTIO_TMP}
-
-    VERSION=$(curl -s https://api.github.com/repos/${NAME}/${NAME}/releases/latest | jq -r '.tag_name')
-
-    # istio download
-    if [ ! -d ${ISTIO_TMP}/${NAME}-${VERSION} ]; then
-        pushd ${ISTIO_TMP}
-        curl -sL https://git.io/getLatestIstio | sh -
-        popd
-    fi
-
-    ISTIO_DIR=${ISTIO_TMP}/${NAME}-${VERSION}/install/kubernetes/helm/istio
+    istion_init
 
     # helm delete
     _command "helm delete --purge ${NAME}"
