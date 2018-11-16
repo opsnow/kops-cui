@@ -906,15 +906,9 @@ efs_delete() {
     fi
 }
 
-istio_install() {
-    helm_check
-
+istion_init() {
     NAME="istio"
     NAMESPACE="istio-system"
-
-    create_namespace ${NAMESPACE}
-
-    # get_base_domain
 
     ISTIO_TMP=/tmp/${THIS_NAME}-istio
     mkdir -p ${ISTIO_TMP}
@@ -927,6 +921,16 @@ istio_install() {
         curl -sL https://git.io/getLatestIstio | sh -
         popd
     fi
+
+    ISTIO_DIR=${ISTIO_TMP}/${NAME}-${VERSION}/install/kubernetes/helm/istio
+}
+
+istio_install() {
+    helm_check
+
+    istion_init
+
+    create_namespace ${NAMESPACE}
 
     CHART=$(mktemp /tmp/${THIS_NAME}-${NAME}.XXXXXX)
     get_template charts/istio/${NAME}.yaml ${CHART}
@@ -943,8 +947,6 @@ istio_install() {
 
     # admin password
     read_password ${CHART}
-
-    ISTIO_DIR=${ISTIO_TMP}/${NAME}-${VERSION}/install/kubernetes/helm/istio
 
     # helm install
     _command "helm upgrade --install ${NAME} ${ISTIO_DIR} --namespace ${NAMESPACE} --values ${CHART}"
@@ -1005,22 +1007,7 @@ istio_injection() {
 }
 
 istio_delete() {
-    NAME="istio"
-    NAMESPACE="istio-system"
-
-    ISTIO_TMP=/tmp/${THIS_NAME}-istio
-    mkdir -p ${ISTIO_TMP}
-
-    VERSION=$(curl -s https://api.github.com/repos/${NAME}/${NAME}/releases/latest | jq -r '.tag_name')
-
-    # istio download
-    if [ ! -d ${ISTIO_TMP}/${NAME}-${VERSION} ]; then
-        pushd ${ISTIO_TMP}
-        curl -sL https://git.io/getLatestIstio | sh -
-        popd
-    fi
-
-    ISTIO_DIR=${ISTIO_TMP}/${NAME}-${VERSION}/install/kubernetes/helm/istio
+    istion_init
 
     # helm delete
     _command "helm delete --purge ${NAME}"
