@@ -104,7 +104,7 @@ select_one() {
     question "${1:-"Select one"} (${COUNT}) : " "^[0-9]+$"
 
     # answer
-    if [ -z ${ANSWER} ] || [ "x${ANSWER}" == "x0" ]; then
+    if [ "x${ANSWER}" == "x" ] || [ "x${ANSWER}" == "x0" ]; then
         return
     fi
     # TEST='^[0-9]+$'
