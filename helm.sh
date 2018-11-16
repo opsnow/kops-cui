@@ -471,10 +471,17 @@ helm_delete() {
 
     NAME="$(echo ${SELECTED} | awk '{print $1}')"
 
-    if [ ! -z ${NAME} ]; then
-        _command "helm delete --purge ${NAME}"
-        helm delete --purge ${NAME}
+    if [ "${NAME}" == "" ]; then
+        return
     fi
+
+    # for efs-provisioner
+    if [ "${NAME}" == "efs-provisioner" ]; then
+        efs_delete
+    fi
+
+    _command "helm delete --purge ${NAME}"
+    helm delete --purge ${NAME}
 }
 
 helm_check() {

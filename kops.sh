@@ -57,7 +57,7 @@ waiting_for() {
 run() {
     logo
 
-    get_kops_config
+    # get_kops_config
 
     mkdir -p ~/.ssh
     mkdir -p ~/.aws
@@ -96,15 +96,17 @@ state_store() {
 
     read_cluster_list
 
-    read_kops_config
+    # read_kops_config
 
-    save_kops_config
+    # save_kops_config
 
     get_kops_cluster
 
     if [ "x${CLUSTER}" != "x0" ]; then
         _command "kubectl config current-context"
         KUBE_CLUSTER_NAME=$(kubectl config current-context)
+
+        _result "${KUBE_CLUSTER_NAME}"
 
         if [ "${KOPS_CLUSTER_NAME}" != "${KUBE_CLUSTER_NAME}" ]; then
             kops_export
@@ -348,8 +350,8 @@ create_menu() {
             create_menu
             ;;
         c)
-            KOPS_TERRAFORM=
-            save_kops_config true
+            # KOPS_TERRAFORM=
+            # save_kops_config true
 
             kops_create
 
@@ -384,8 +386,8 @@ create_menu() {
             cluster_menu
             ;;
         t)
-            KOPS_TERRAFORM=true
-            save_kops_config true
+            # KOPS_TERRAFORM=true
+            # save_kops_config true
 
             kops_create
 
@@ -408,78 +410,7 @@ get_kops_cluster() {
     CLUSTER=$(kops get --name=${KOPS_CLUSTER_NAME} --state=s3://${KOPS_STATE_STORE} | wc -l | xargs)
 }
 
-get_kops_config() {
-    mkdir -p ~/.kops-cui
-
-    CONFIG=~/.kops-cui/config
-
-    if [ -f ${CONFIG} ]; then
-        . ${CONFIG}
-    fi
-}
-
-read_kops_config() {
-    if [ ! -z ${KOPS_CLUSTER_NAME} ]; then
-        _command "aws s3 ls s3://${KOPS_STATE_STORE} | grep ${KOPS_CLUSTER_NAME}.kops-cui | wc -l | xargs"
-        COUNT=$(aws s3 ls s3://${KOPS_STATE_STORE} | grep ${KOPS_CLUSTER_NAME}.kops-cui | wc -l | xargs)
-
-        if [ "x${COUNT}" != "x0" ]; then
-            _command "aws s3 cp s3://${KOPS_STATE_STORE}/${KOPS_CLUSTER_NAME}.kops-cui ${CONFIG}"
-            aws s3 cp s3://${KOPS_STATE_STORE}/${KOPS_CLUSTER_NAME}.kops-cui ${CONFIG} --quiet
-
-            if [ -f ${CONFIG} ]; then
-                . ${CONFIG}
-            fi
-        fi
-    fi
-}
-
-save_kops_config() {
-    S3_SYNC=$1
-
-    echo "# kops config" > ${CONFIG}
-    echo "KOPS_STATE_STORE=${KOPS_STATE_STORE}" >> ${CONFIG}
-    echo "KOPS_CLUSTER_NAME=${KOPS_CLUSTER_NAME}" >> ${CONFIG}
-    echo "KOPS_TERRAFORM=${KOPS_TERRAFORM}" >> ${CONFIG}
-
-    . ${CONFIG}
-
-    if [ ! -z ${DEBUG_MODE} ]; then
-        echo
-        cat ${CONFIG}
-    fi
-
-    if [ ! -z ${S3_SYNC} ] && [ ! -z ${KOPS_CLUSTER_NAME} ]; then
-        _command "aws s3 cp ${CONFIG} s3://${KOPS_STATE_STORE}/${KOPS_CLUSTER_NAME}.kops-cui"
-        aws s3 cp ${CONFIG} s3://${KOPS_STATE_STORE}/${KOPS_CLUSTER_NAME}.kops-cui --quiet
-    fi
-}
-
-clear_kops_config() {
-    export KOPS_STATE_STORE=
-    export KOPS_CLUSTER_NAME=
-    export KOPS_TERRAFORM=
-
-    save_kops_config
-}
-
-delete_kops_config() {
-    if [ ! -z ${KOPS_CLUSTER_NAME} ]; then
-        _command "aws s3 rm s3://${KOPS_STATE_STORE}/${KOPS_CLUSTER_NAME}.kops-cui"
-        aws s3 rm s3://${KOPS_STATE_STORE}/${KOPS_CLUSTER_NAME}.kops-cui --quiet
-    fi
-
-    clear_kops_config
-}
-
 read_state_store() {
-    if [ ! -z ${KOPS_STATE_STORE} ]; then
-        BUCKET=$(aws s3api get-bucket-acl --bucket ${KOPS_STATE_STORE} | jq -r '.Owner.ID')
-        if [ -z ${BUCKET} ]; then
-            clear_kops_config
-        fi
-    fi
-
     if [ -z ${KOPS_STATE_STORE} ]; then
         DEFAULT=$(aws s3 ls | grep kops-state | head -1 | awk '{print $3}')
         if [ -z ${DEFAULT} ]; then
@@ -503,7 +434,7 @@ read_state_store() {
 
         BUCKET=$(aws s3api get-bucket-acl --bucket ${KOPS_STATE_STORE} | jq -r '.Owner.ID')
         if [ -z ${BUCKET} ]; then
-            clear_kops_config
+            # clear_kops_config
             _error
         fi
     fi
@@ -526,7 +457,7 @@ read_cluster_list() {
     fi
 
     if [ "${KOPS_CLUSTER_NAME}" == "" ]; then
-        clear_kops_config
+        # clear_kops_config
         _error
     fi
 }
@@ -673,12 +604,12 @@ kops_secret() {
 }
 
 kops_delete() {
-    efs_delete
+    # efs_delete
 
     _command "kops delete cluster --name=${KOPS_CLUSTER_NAME} --state=s3://${KOPS_STATE_STORE} --yes"
     kops delete cluster --name=${KOPS_CLUSTER_NAME} --state=s3://${KOPS_STATE_STORE} --yes
 
-    delete_kops_config
+    # delete_kops_config
 
     rm -rf ~/.kube ~/.helm ~/.draft
 }
