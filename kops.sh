@@ -234,23 +234,6 @@ cluster_menu() {
                 cluster_menu
             fi
             ;;
-        # 11)
-        #     if [ "x${CLUSTER}" == "x0" ]; then
-        #         cluster_menu
-        #         return
-        #     fi
-
-        #     addons_menu
-        #     ;;
-        12)
-            if [ "x${CLUSTER}" == "x0" ]; then
-                cluster_menu
-                return
-            fi
-
-            elb_security
-            press_enter cluster
-            ;;
         u)
             update_self
             press_enter cluster

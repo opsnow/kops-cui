@@ -106,9 +106,11 @@ main_menu() {
     _echo "4. monitor.."
     _echo "5. devops.."
     _echo "6. sample.."
-    # _echo "7. istio.."
+    _echo "7. istio.."
     echo
     _echo "9. remove"
+    # echo
+    # _echo "s. security"
     echo
     _echo "u. update self"
     _echo "t. update tools"
@@ -142,6 +144,10 @@ main_menu() {
             ;;
         9)
             helm_delete
+            press_enter main
+            ;;
+        s)
+            elb_security
             press_enter main
             ;;
         u)
