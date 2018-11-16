@@ -205,3 +205,43 @@ logo() {
         tput sgr0
     fi
 }
+
+config_save() {
+    CONFIG=$(mktemp /tmp/${THIS_NAME}-config.XXXXXX)
+    echo "# ${THIS_NAME} config" > ${CONFIG}
+    echo "CLUSTER_NAME=${CLUSTER_NAME}" >> ${CONFIG}
+    echo "ROOT_DOMAIN=${ROOT_DOMAIN}" >> ${CONFIG}
+    echo "BASE_DOMAIN=${BASE_DOMAIN}" >> ${CONFIG}
+    echo "EFS_ID=${EFS_ID}" >> ${CONFIG}
+    echo "ISTIO=${ISTIO}" >> ${CONFIG}
+
+    _command "save ${THIS_NAME}-config"
+    cat ${CONFIG}
+
+    ENCODED=$(mktemp /tmp/${THIS_NAME}-config-encoded.XXXXXX)
+    cat ${CONFIG} | base64 > ${ENCODED}
+
+    CHART=$(mktemp /tmp/${THIS_NAME}-config-yaml.XXXXXX)
+    get_template templates/config.yaml ${CHART}
+
+    _replace "s/REPLACE-ME/${THIS_NAME}-config/" ${CHART}
+
+    sed "s/^/    /" ${ENCODED} >> ${CHART}
+
+    kubectl apply -f ${CHART} -n default
+}
+
+config_load() {
+    COUNT=$(kubectl get cm -n default | grep ${THIS_NAME}-config  | wc -l | xargs)
+
+    if [ "x${COUNT}" != "x0" ]; then
+        CONFIG=$(mktemp /tmp/${THIS_NAME}-config.XXXXXX)
+
+        kubectl get cm ${THIS_NAME}-config -n default -o json | jq -r '.data.config' | base64 -d > ${CONFIG}
+
+        _command "load ${THIS_NAME}-config"
+        cat ${CONFIG}
+
+        . ${CONFIG}
+    fi
+}

@@ -587,14 +587,22 @@ kops_secret() {
 }
 
 kops_delete() {
-    # efs_delete
+    efs_delete
 
     _command "kops delete cluster --name=${KOPS_CLUSTER_NAME} --state=s3://${KOPS_STATE_STORE} --yes"
     kops delete cluster --name=${KOPS_CLUSTER_NAME} --state=s3://${KOPS_STATE_STORE} --yes
 
-    # delete_kops_config
-
     rm -rf ~/.kube ~/.helm ~/.draft
+}
+
+efs_delete() {
+    config_load
+
+    if [ "${EFS_ID}" != "" ]; then
+        _result "EFS_ID: ${EFS_ID}"
+
+        _error "Please remove EFS first."
+    fi
 }
 
 run
