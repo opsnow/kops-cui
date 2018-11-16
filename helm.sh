@@ -110,6 +110,9 @@ main_menu() {
     echo
     _echo "9. remove"
     echo
+    _echo "u. update self"
+    _echo "t. update tools"
+    echo
     _echo "x. Exit"
 
     question
@@ -140,6 +143,14 @@ main_menu() {
         9)
             helm_delete
             press_enter main
+            ;;
+        u)
+            update_self
+            press_enter cluster
+            ;;
+        t)
+            update_tools
+            press_enter cluster
             ;;
         x)
             _success "Good bye!"

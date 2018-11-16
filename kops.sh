@@ -136,8 +136,8 @@ cluster_menu() {
     fi
 
     echo
-    _echo "21. update self"
-    _echo "22. update tools"
+    _echo "u. update self"
+    _echo "t. update tools"
 
     echo
     _echo "x. Exit"
@@ -251,11 +251,11 @@ cluster_menu() {
             elb_security
             press_enter cluster
             ;;
-        21)
+        u)
             update_self
             press_enter cluster
             ;;
-        22)
+        t)
             update_tools
             press_enter cluster
             ;;
