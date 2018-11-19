@@ -570,10 +570,13 @@ kops_validate() {
 }
 
 kops_export() {
-    # rm -rf ~/.kube
+    # rm -rf ~/.kube ~/.helm ~/.draft
 
     _command "kops export kubecfg --name ${KOPS_CLUSTER_NAME} --state=s3://${KOPS_STATE_STORE}"
     kops export kubecfg --name ${KOPS_CLUSTER_NAME} --state=s3://${KOPS_STATE_STORE}
+
+    _command "kubectl config use-context ${KOPS_CLUSTER_NAME}"
+    kubectl config use-context ${KOPS_CLUSTER_NAME}
 }
 
 kops_secret() {
@@ -591,6 +594,9 @@ kops_delete() {
 
     _command "kops delete cluster --name=${KOPS_CLUSTER_NAME} --state=s3://${KOPS_STATE_STORE} --yes"
     kops delete cluster --name=${KOPS_CLUSTER_NAME} --state=s3://${KOPS_STATE_STORE} --yes
+
+    _command "kubectl config unset ${KOPS_CLUSTER_NAME}"
+    kubectl config unset ${KOPS_CLUSTER_NAME}
 
     # rm -rf ~/.kube ~/.helm ~/.draft
 }
