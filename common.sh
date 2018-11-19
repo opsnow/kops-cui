@@ -232,6 +232,12 @@ config_save() {
 }
 
 config_load() {
+    COUNT=$(kubectl get pod -n kube-system | wc -l | xargs)
+
+    if [ "x${COUNT}" == "x0" ]; then
+        _error "Unable to connect to the cluster."
+    fi
+
     COUNT=$(kubectl get cm -n default | grep ${THIS_NAME}-config  | wc -l | xargs)
 
     if [ "x${COUNT}" != "x0" ]; then
