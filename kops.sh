@@ -587,6 +587,8 @@ kops_secret() {
 kops_delete() {
     efs_delete
 
+    elb_delete
+
     _command "kops delete cluster --name=${KOPS_CLUSTER_NAME} --state=s3://${KOPS_STATE_STORE} --yes"
     kops delete cluster --name=${KOPS_CLUSTER_NAME} --state=s3://${KOPS_STATE_STORE} --yes
 
@@ -601,6 +603,17 @@ efs_delete() {
 
         _error "Please remove EFS first."
     fi
+}
+
+elb_delete() {
+    LIST=$(mktemp /tmp/${THIS_NAME}-elb-list.XXXXXX)
+
+    kubectl get svc --all-namespaces | grep LoadBalancer | awk '{print $5}' | cut -d'-' -f1 > ${LIST}
+
+    while read VAL; do
+        _command "aws elb delete-load-balancer --load-balancer-name ${VAL}"
+        aws elb delete-load-balancer --load-balancer-name ${VAL}
+    done < ${LIST}
 }
 
 run
