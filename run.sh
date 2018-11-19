@@ -681,7 +681,7 @@ addons_menu() {
             press_enter addons
             ;;
         3)
-            helm_install kubernetes-dashboard kube-system false
+            helm_kubernetes_dashboard kube-system
 
             create_cluster_role_binding cluster-admin kube-system dashboard-admin
 
@@ -1678,6 +1678,37 @@ helm_nginx_ingress() {
     kubectl get deploy,pod,svc -n ${NAMESPACE}
 
     set_base_domain ${NAME}
+}
+
+helm_kubernetes_dashboard() {
+    helm_check
+
+    NAME="kubernetes-dashboard"
+    NAMESPACE=${1:-kube-system}
+
+    create_namespace ${NAMESPACE}
+
+    CHART=$(mktemp /tmp/kops-cui-${NAME}.XXXXXX)
+    get_template charts/${NAMESPACE}/${NAME}.yaml ${CHART}
+
+    DOMAIN="${NAME}-${NAMESPACE}.${BASE_DOMAIN}"
+    _replace "s/INGRESS_DOMAIN/${DOMAIN}/" ${CHART}
+
+    # chart version
+    CHART_VERSION=$(cat ${CHART} | grep chart-version | awk '{print $3}')
+
+    # helm install
+    _command "helm upgrade --install ${NAME} ./charts/custom/${NAME} --namespace ${NAMESPACE} --values ${CHART}"
+    helm upgrade --install ${NAME} ./charts/custom//${NAME} --namespace ${NAMESPACE} --values ${CHART}
+
+    # waiting 2
+    waiting_pod "${NAMESPACE}" "${NAME}" 20
+
+    _command "helm history ${NAME}"
+    helm history ${NAME}
+
+    _command "kubectl get deploy,pod,svc -n ${NAMESPACE}"
+    kubectl get deploy,pod,svc -n ${NAMESPACE}
 }
 
 helm_install() {

@@ -3,23 +3,6 @@
 
 nameOverride: kubernetes-dashboard
 
-# extraArgs:
-#   - --enable-insecure-login=true
-#   - --insecure-bind-address=0.0.0.0
-#   - --insecure-port=9090
-
-service:
-  type: SERVICE_TYPE
-  externalPort: 443
-
 ingress:
-  enabled: INGRESS_ENABLED
-  annotations:
-    kubernetes.io/ingress.class: nginx
-  path: /
   hosts:
     - INGRESS_DOMAIN
-
-# rbac:
-#   create: true
-#   clusterAdminRole: true
