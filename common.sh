@@ -218,7 +218,7 @@ config_save() {
     _command "save ${THIS_NAME}-config"
     cat ${CONFIG}
 
-    ENCODED=${SHELL_DIR}/build/${THIS_NAME}-config-encoded.txt
+    ENCODED=${SHELL_DIR}/build/${THIS_NAME}-config.txt
     cat ${CONFIG} | base64 > ${ENCODED}
 
     CHART=${SHELL_DIR}/build/${THIS_NAME}-config.yaml

@@ -54,7 +54,7 @@ waiting_for() {
     echo
 }
 
-run() {
+prepare() {
     logo
 
     # get_kops_config
@@ -86,20 +86,22 @@ run() {
     fi
 
     REGION="$(aws configure get default.region)"
+}
+
+run() {
+    prepare
 
     state_store
 }
 
 state_store() {
-    logo
-
     read_state_store
 
     read_cluster_list
 
-    # read_kops_config
+    read_kops_config
 
-    # save_kops_config
+    save_kops_config
 
     get_kops_cluster
 
@@ -390,6 +392,55 @@ create_menu() {
 get_kops_cluster() {
     _command "kops get --name=${KOPS_CLUSTER_NAME} --state=s3://${KOPS_STATE_STORE} | wc -l | xargs"
     CLUSTER=$(kops get --name=${KOPS_CLUSTER_NAME} --state=s3://${KOPS_STATE_STORE} | wc -l | xargs)
+}
+
+read_kops_config() {
+    if [ ! -z ${KOPS_CLUSTER_NAME} ]; then
+        _command "aws s3 ls s3://${KOPS_STATE_STORE} | grep ${KOPS_CLUSTER_NAME}.kops-cui | wc -l | xargs"
+        COUNT=$(aws s3 ls s3://${KOPS_STATE_STORE} | grep ${KOPS_CLUSTER_NAME}.kops-cui | wc -l | xargs)
+
+        if [ "x${COUNT}" != "x0" ]; then
+            CONFIG=${SHELL_DIR}/build/${THIS_NAME}-kops-config.sh
+
+            _command "aws s3 cp s3://${KOPS_STATE_STORE}/${KOPS_CLUSTER_NAME}.kops-cui ${CONFIG}"
+            aws s3 cp s3://${KOPS_STATE_STORE}/${KOPS_CLUSTER_NAME}.kops-cui ${CONFIG} --quiet
+
+            if [ -f ${CONFIG} ]; then
+                . ${CONFIG}
+            fi
+        fi
+    fi
+}
+
+save_kops_config() {
+    S3_SYNC=$1
+
+    if [ -z ${EFS_ID} ] && [ ! -z ${EFS_FILE_SYSTEM_ID} ]; then
+        CLUSTER_NAME="${KOPS_CLUSTER_NAME}"
+        EFS_ID="${EFS_FILE_SYSTEM_ID}"
+
+        # save config to cluster
+        config_save
+
+        S3_SYNC=true
+    fi
+
+    CONFIG=${SHELL_DIR}/build/${THIS_NAME}-kops-config.sh
+    echo "# kops config" > ${CONFIG}
+    echo "KOPS_STATE_STORE=${KOPS_STATE_STORE}" >> ${CONFIG}
+    echo "KOPS_CLUSTER_NAME=${KOPS_CLUSTER_NAME}" >> ${CONFIG}
+    echo "KOPS_TERRAFORM=${KOPS_TERRAFORM}" >> ${CONFIG}
+    echo "ROOT_DOMAIN=${ROOT_DOMAIN}" >> ${CONFIG}
+    echo "BASE_DOMAIN=${BASE_DOMAIN}" >> ${CONFIG}
+    echo "EFS_ID=${EFS_ID}" >> ${CONFIG}
+    echo "ISTIO=${ISTIO}" >> ${CONFIG}
+
+    . ${CONFIG}
+
+    if [ ! -z ${S3_SYNC} ] && [ ! -z ${KOPS_CLUSTER_NAME} ]; then
+        _command "aws s3 cp ${CONFIG} s3://${KOPS_STATE_STORE}/${KOPS_CLUSTER_NAME}.kops-cui"
+        aws s3 cp ${CONFIG} s3://${KOPS_STATE_STORE}/${KOPS_CLUSTER_NAME}.kops-cui --quiet
+    fi
 }
 
 read_state_store() {
