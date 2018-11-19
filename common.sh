@@ -238,12 +238,12 @@ config_load() {
         _error "Unable to connect to the cluster."
     fi
 
-    COUNT=$(kubectl get cm -n default | grep ${THIS_NAME}-config  | wc -l | xargs)
+    COUNT=$(kubectl get secret -n default | grep ${THIS_NAME}-config  | wc -l | xargs)
 
     if [ "x${COUNT}" != "x0" ]; then
         CONFIG=$(mktemp /tmp/${THIS_NAME}-config.XXXXXX)
 
-        kubectl get cm ${THIS_NAME}-config -n default -o json | jq -r '.data.config' | base64 -d > ${CONFIG}
+        kubectl get secret ${THIS_NAME}-config -n default -o json | jq -r '.data.config' | base64 -d > ${CONFIG}
 
         _command "load ${THIS_NAME}-config"
         cat ${CONFIG}
