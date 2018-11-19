@@ -207,7 +207,7 @@ logo() {
 }
 
 config_save() {
-    CONFIG=$(mktemp /tmp/${THIS_NAME}-config.XXXXXX)
+    CONFIG=${SHELL_DIR}/build/${THIS_NAME}-config.sh
     echo "# ${THIS_NAME} config" > ${CONFIG}
     echo "CLUSTER_NAME=${CLUSTER_NAME}" >> ${CONFIG}
     echo "ROOT_DOMAIN=${ROOT_DOMAIN}" >> ${CONFIG}
@@ -218,10 +218,10 @@ config_save() {
     _command "save ${THIS_NAME}-config"
     cat ${CONFIG}
 
-    ENCODED=$(mktemp /tmp/${THIS_NAME}-config-encoded.XXXXXX)
+    ENCODED=${SHELL_DIR}/build/${THIS_NAME}-config-encoded.txt
     cat ${CONFIG} | base64 > ${ENCODED}
 
-    CHART=$(mktemp /tmp/${THIS_NAME}-config-yaml.XXXXXX)
+    CHART=${SHELL_DIR}/build/${THIS_NAME}-config.yaml
     get_template templates/config.yaml ${CHART}
 
     _replace "s/REPLACE-ME/${THIS_NAME}-config/" ${CHART}
@@ -241,9 +241,13 @@ config_load() {
     COUNT=$(kubectl get secret -n default | grep ${THIS_NAME}-config  | wc -l | xargs)
 
     if [ "x${COUNT}" != "x0" ]; then
-        CONFIG=$(mktemp /tmp/${THIS_NAME}-config.XXXXXX)
+        CONFIG=${SHELL_DIR}/build/${THIS_NAME}-config.sh
 
-        kubectl get secret ${THIS_NAME}-config -n default -o json | jq -r '.data.config' | base64 -d > ${CONFIG}
+        if [ "${OS_NAME}" == "darwin" ]; then
+            kubectl get secret ${THIS_NAME}-config -n default -o json | jq -r '.data.config' | base64 -D > ${CONFIG}
+        else
+            kubectl get secret ${THIS_NAME}-config -n default -o json | jq -r '.data.config' | base64 -d > ${CONFIG}
+        fi
 
         _command "load ${THIS_NAME}-config"
         cat ${CONFIG}

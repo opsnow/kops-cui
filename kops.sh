@@ -61,6 +61,7 @@ run() {
 
     mkdir -p ~/.ssh
     mkdir -p ~/.aws
+    mkdir -p ${SHELL_DIR}/build
 
     if [ ! -f ~/.ssh/id_rsa ]; then
         _command "ssh-keygen -q -f ~/.ssh/id_rsa -N ''"
@@ -423,7 +424,7 @@ read_state_store() {
 
 read_cluster_list() {
     # cluster list
-    LIST=$(mktemp /tmp/kops-cui-kops-cluster-list.XXXXXX)
+    LIST=${SHELL_DIR}/build/${THIS_NAME}-kops-cluster-list
 
     _command "kops get cluster --state=s3://${KOPS_STATE_STORE}"
     kops get cluster --state=s3://${KOPS_STATE_STORE} | grep -v "NAME" | awk '{print $1}' > ${LIST}
@@ -469,7 +470,7 @@ kops_get() {
 }
 
 kops_create() {
-    KOPS_CREATE=$(mktemp /tmp/kops-cui-kops-create.XXXXXX)
+    KOPS_CREATE=${SHELL_DIR}/build/${THIS_NAME}-kops-create.sh
 
     echo "kops create cluster "                  >  ${KOPS_CREATE}
     echo "    --cloud=${cloud} "                 >> ${KOPS_CREATE}
@@ -508,10 +509,10 @@ kops_create() {
 }
 
 kops_edit() {
-    IG_LIST=$(mktemp /tmp/kops-cui-kops-ig-list.XXXXXX)
+    LIST=${SHELL_DIR}/build/${THIS_NAME}-kops-ig-list
 
     _command "kops get ig --name=${KOPS_CLUSTER_NAME} --state=s3://${KOPS_STATE_STORE}"
-    kops get ig --name=${KOPS_CLUSTER_NAME} --state=s3://${KOPS_STATE_STORE} | grep -v "NAME" > ${IG_LIST}
+    kops get ig --name=${KOPS_CLUSTER_NAME} --state=s3://${KOPS_STATE_STORE} | grep -v "NAME" > ${LIST}
 
     echo
 
@@ -521,7 +522,7 @@ kops_edit() {
         IDX=$(( ${IDX} + 1 ))
 
         _echo "${IDX}. ${ARR[0]}"
-    done < ${IG_LIST}
+    done < ${LIST}
 
     echo
     _echo "0. cluster"
@@ -533,7 +534,7 @@ kops_edit() {
     if [ "x${ANSWER}" == "x0" ]; then
         SELECTED="cluster"
     elif [ ! -z ${ANSWER} ]; then
-        ARR=($(sed -n ${ANSWER}p ${IG_LIST}))
+        ARR=($(sed -n ${ANSWER}p ${LIST}))
         SELECTED="ig ${ARR[0]}"
     fi
 
@@ -612,7 +613,7 @@ efs_delete() {
 }
 
 elb_delete() {
-    LIST=$(mktemp /tmp/${THIS_NAME}-elb-list.XXXXXX)
+    LIST=${SHELL_DIR}/build/${THIS_NAME}-elb-list
 
     kubectl get svc --all-namespaces | grep LoadBalancer | awk '{print $5}' | cut -d'-' -f1 > ${LIST}
 

@@ -28,12 +28,12 @@ extraArgs:
   # balance-similar-node-groups: true
   # max-node-provision-time: 15m0s
 
-nodeSelector:
-  kubernetes.io/role: master
+# nodeSelector:
+#   kubernetes.io/role: master
 
-tolerations:
-  - effect: NoSchedule
-    key: node-role.kubernetes.io/master
+# tolerations:
+#   - effect: NoSchedule
+#     key: node-role.kubernetes.io/master
 
 # sslCertPath: /etc/kubernetes/pki/ca.crt
 sslCertPath: /etc/ssl/certs/ca-bundle.crt

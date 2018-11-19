@@ -23,6 +23,7 @@ prepare() {
 
     mkdir -p ~/.ssh
     mkdir -p ~/.aws
+    mkdir -p ${SHELL_DIR}/build
 
     NEED_TOOL=
     command -v jq > /dev/null      || export NEED_TOOL=jq
@@ -211,7 +212,7 @@ istio_menu() {
 sample_menu() {
     title
 
-    LIST=$(mktemp /tmp/${THIS_NAME}-sample-list.XXXXXX)
+    LIST=${SHELL_DIR}/build/${THIS_NAME}-sample-list
 
     # find sample
     ls ${SHELL_DIR}/charts/sample | grep yaml | sort | sed 's/.yaml//' > ${LIST}
@@ -235,7 +236,7 @@ charts_menu() {
 
     NAMESPACE=$1
 
-    LIST=$(mktemp /tmp/${THIS_NAME}-charts-list.XXXXXX)
+    LIST=${SHELL_DIR}/build/${THIS_NAME}-charts-list
 
     # find chart
     ls ${SHELL_DIR}/charts/${NAMESPACE} | sort | sed 's/.yaml//' > ${LIST}
@@ -264,7 +265,7 @@ helm_install() {
 
     create_namespace ${NAMESPACE}
 
-    CHART=$(mktemp /tmp/${THIS_NAME}-${NAME}.XXXXXX)
+    CHART=${SHELL_DIR}/build/${THIS_NAME}-${NAME}.yaml
     get_template charts/${NAMESPACE}/${NAME}.yaml ${CHART}
 
     _replace "s/AWS_REGION/${REGION}/" ${CHART}
@@ -364,8 +365,8 @@ helm_install() {
     fi
 
     # check exist persistent volume
-    PVC_LIST=$(mktemp /tmp/${THIS_NAME}-pvc-${NAME}.XXXXXX.yaml)
-    cat ${CHART} | grep chart-pvc | awk '{print $3,$4,$5}' > ${PVC_LIST}
+    LIST=${SHELL_DIR}/build/${THIS_NAME}-pvc-${NAME}-yaml
+    cat ${CHART} | grep chart-pvc | awk '{print $3,$4,$5}' > ${LIST}
     while IFS='' read -r line || [[ -n "$line" ]]; do
         ARR=(${line})
         check_exist_pv ${NAMESPACE} ${ARR[0]} ${ARR[1]} ${ARR[2]}
@@ -374,7 +375,7 @@ helm_install() {
             echo "  To use an existing volume, remove the PV's '.claimRef.uid' attribute to make the PV an 'Available' status and try again."
             return;
         fi
-    done < "${PVC_LIST}"
+    done < "${LIST}"
 
     # helm install
     if [ -z ${VERSION} ] || [ "${VERSION}" == "latest" ]; then
@@ -429,7 +430,7 @@ helm_install() {
 helm_delete() {
     NAME=
 
-    LIST=$(mktemp /tmp/${THIS_NAME}-helm-list.XXXXXX)
+    LIST=${SHELL_DIR}/build/${THIS_NAME}-helm-list
 
     _command "helm ls --all"
 
@@ -552,7 +553,7 @@ create_cluster_role_binding() {
 }
 
 elb_security() {
-    LIST=$(mktemp /tmp/${THIS_NAME}-elb-list.XXXXXX)
+    LIST=${SHELL_DIR}/build/${THIS_NAME}-elb-list
 
     # elb list
     _command "kubectl get svc --all-namespaces | grep LoadBalancer"
@@ -622,7 +623,7 @@ check_exist_pv() {
         # Create a new pvc
         create_pvc ${NAMESPACE} ${PVC_NAME} ${PVC_ACCESS_MODE} ${PVC_SIZE}
     else
-        PV_JSON=$(mktemp /tmp/${THIS_NAME}-pv-${PVC_NAME}.XXXXXX)
+        PV_JSON=${SHELL_DIR}/build/${THIS_NAME}-pv-${PVC_NAME}.json
 
         _command "kubectl get pv -o json ${PV_NAME}"
         kubectl get pv -o json ${PV_NAME} > ${PV_JSON}
@@ -650,7 +651,7 @@ create_pvc() {
     PVC_SIZE=${4}
     PV_NAME=${5}
 
-    PVC=$(mktemp /tmp/${THIS_NAME}-pvc-${PVC_NAME}.XXXXXX.yaml)
+    PVC=${SHELL_DIR}/build/${THIS_NAME}-pvc-${PVC_NAME}.yaml
     get_template templates/pvc.yaml ${PVC}
 
     _replace "s/PVC_NAME/${PVC_NAME}/" ${PVC}
@@ -878,7 +879,7 @@ istion_init() {
     NAME="istio"
     NAMESPACE="istio-system"
 
-    ISTIO_TMP=/tmp/${THIS_NAME}-istio
+    ISTIO_TMP=${SHELL_DIR}/build/istio
     mkdir -p ${ISTIO_TMP}
 
     VERSION=$(curl -s https://api.github.com/repos/${NAME}/${NAME}/releases/latest | jq -r '.tag_name')
@@ -900,7 +901,7 @@ istio_install() {
 
     create_namespace ${NAMESPACE}
 
-    CHART=$(mktemp /tmp/${THIS_NAME}-${NAME}.XXXXXX)
+    CHART=${SHELL_DIR}/build/${THIS_NAME}-${NAME}.yaml
     get_template charts/istio/${NAME}.yaml ${CHART}
 
     # ingress
@@ -951,7 +952,7 @@ istio_injection() {
         return
     fi
 
-    LIST=$(mktemp /tmp/${THIS_NAME}-ns-list.XXXXXX)
+    LIST=${SHELL_DIR}/build/${THIS_NAME}-ns-list
 
     # find sample
     kubectl get ns | grep -v "NAME" | awk '{print $1}' > ${LIST}
@@ -998,7 +999,7 @@ sample_install() {
     NAME=${1}
     NAMESPACE=${2}
 
-    CHART=$(mktemp /tmp/${THIS_NAME}-${NAME}.XXXXXX)
+    CHART=${SHELL_DIR}/build/${THIS_NAME}-${NAME}.yaml
     get_template charts/sample/${NAME}.yaml ${CHART}
 
     # profile
@@ -1202,7 +1203,7 @@ get_ingress_nip_io() {
 
 read_root_domain() {
     # domain list
-    LIST=$(mktemp /tmp/${THIS_NAME}-hosted-zones.XXXXXX)
+    LIST=${SHELL_DIR}/build/${THIS_NAME}-hosted-zones
 
     _command "aws route53 list-hosted-zones | jq -r '.HostedZones[] | .Name' | sed 's/.$//'"
     aws route53 list-hosted-zones | jq -r '.HostedZones[] | .Name' | sed 's/.$//' > ${LIST}
@@ -1261,7 +1262,7 @@ req_ssl_cert_arn() {
     fi
 
     # record sets
-    RECORD=$(mktemp /tmp/${THIS_NAME}-record-sets-cname.XXXXXX)
+    RECORD=${SHELL_DIR}/build/${THIS_NAME}-record-sets-cname.json
     get_template templates/record-sets-cname.json ${RECORD}
 
     # replace
@@ -1305,7 +1306,7 @@ set_record_alias() {
     fi
 
     # record sets
-    RECORD=$(mktemp /tmp/${THIS_NAME}-record-sets-alias.XXXXXX)
+    RECORD=${SHELL_DIR}/build/${THIS_NAME}-record-sets-alias.json
     get_template templates/record-sets-alias.json ${RECORD}
 
     # replace
@@ -1334,7 +1335,7 @@ set_record_delete() {
     fi
 
     # record sets
-    RECORD=$(mktemp /tmp/${THIS_NAME}-record-sets-delete.XXXXXX)
+    RECORD=${SHELL_DIR}/build/${THIS_NAME}-record-sets-delete.json
     get_template templates/record-sets-delete.json ${RECORD}
 
     # replace
@@ -1377,7 +1378,7 @@ get_base_domain() {
         BASE_DOMAIN=${ANSWER:-${DEFAULT}}
     fi
 
-    CHART=$(mktemp /tmp/${THIS_NAME}-${NAME}.XXXXXX)
+    CHART=${SHELL_DIR}/build/${THIS_NAME}-${NAME}.yaml
     get_template charts/${NAMESPACE}/${NAME}.yaml ${CHART}
 
     # certificate
@@ -1422,14 +1423,14 @@ waiting_deploy() {
     _command "kubectl get deploy -n ${_NS} | grep ${_NM}"
     kubectl get deploy -n ${_NS} | head -1
 
-    TMP=$(mktemp /tmp/${THIS_NAME}-waiting-pod.XXXXXX)
+    DEPLOY=${SHELL_DIR}/build/${THIS_NAME}-waiting-pod
 
     IDX=0
     while true; do
-        kubectl get deploy -n ${_NS} | grep ${_NM} | head -1 > ${TMP}
-        cat ${TMP}
+        kubectl get deploy -n ${_NS} | grep ${_NM} | head -1 > ${DEPLOY}
+        cat ${DEPLOY}
 
-        CURRENT=$(cat ${TMP} | awk '{print $5}' | cut -d'/' -f1)
+        CURRENT=$(cat ${DEPLOY} | awk '{print $5}' | cut -d'/' -f1)
 
         if [ "x${CURRENT}" != "x0" ]; then
             break
@@ -1451,15 +1452,15 @@ waiting_pod() {
     _command "kubectl get pod -n ${_NS} | grep ${_NM}"
     kubectl get pod -n ${_NS} | head -1
 
-    TMP=$(mktemp /tmp/${THIS_NAME}-waiting-pod.XXXXXX)
+    POD=${SHELL_DIR}/build/${THIS_NAME}-waiting-pod
 
     IDX=0
     while true; do
-        kubectl get pod -n ${_NS} | grep ${_NM} | head -1 > ${TMP}
-        cat ${TMP}
+        kubectl get pod -n ${_NS} | grep ${_NM} | head -1 > ${POD}
+        cat ${POD}
 
-        READY=$(cat ${TMP} | awk '{print $2}' | cut -d'/' -f1)
-        STATUS=$(cat ${TMP} | awk '{print $3}')
+        READY=$(cat ${POD} | awk '{print $2}' | cut -d'/' -f1)
+        STATUS=$(cat ${POD} | awk '{print $3}')
 
         if [ "${STATUS}" == "Running" ] && [ "x${READY}" != "x0" ]; then
             break
