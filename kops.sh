@@ -108,9 +108,7 @@ state_store() {
 
         _result "${KUBE_CLUSTER_NAME}"
 
-        if [ "${KOPS_CLUSTER_NAME}" != "${KUBE_CLUSTER_NAME}" ]; then
-            kops_export
-        fi
+        kops_export
     fi
 
     cluster_menu
@@ -572,7 +570,7 @@ kops_validate() {
 }
 
 kops_export() {
-    rm -rf ~/.kube
+    # rm -rf ~/.kube
 
     _command "kops export kubecfg --name ${KOPS_CLUSTER_NAME} --state=s3://${KOPS_STATE_STORE}"
     kops export kubecfg --name ${KOPS_CLUSTER_NAME} --state=s3://${KOPS_STATE_STORE}
@@ -592,7 +590,7 @@ kops_delete() {
     _command "kops delete cluster --name=${KOPS_CLUSTER_NAME} --state=s3://${KOPS_STATE_STORE} --yes"
     kops delete cluster --name=${KOPS_CLUSTER_NAME} --state=s3://${KOPS_STATE_STORE} --yes
 
-    rm -rf ~/.kube ~/.helm ~/.draft
+    # rm -rf ~/.kube ~/.helm ~/.draft
 }
 
 efs_delete() {
