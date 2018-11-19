@@ -230,7 +230,7 @@ cluster_menu() {
 
             if [ "${ANSWER}" == "YES" ]; then
                 kops_delete
-                press_enter state
+                # press_enter state
             else
                 cluster_menu
             fi
@@ -651,10 +651,12 @@ kops_delete() {
     kubectl config unset ${KOPS_CLUSTER_NAME}
 
     # rm -rf ~/.kube ~/.helm ~/.draft
+
+    _success
 }
 
 efs_delete() {
-    config_load
+    # config_load
 
     if [ "${EFS_ID}" != "" ]; then
         _result "EFS_ID: ${EFS_ID}"
