@@ -106,11 +106,6 @@ state_store() {
     get_kops_cluster
 
     if [ "x${CLUSTER}" != "x0" ]; then
-        _command "kubectl config current-context"
-        KUBE_CLUSTER_NAME=$(kubectl config current-context)
-
-        _result "${KUBE_CLUSTER_NAME}"
-
         kops_export
     fi
 

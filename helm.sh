@@ -42,25 +42,15 @@ prepare() {
         fi
     fi
 
-    COUNT=$(kubectl config current-context 2>&1 | wc -l)
-
-    if [ "x${COUNT}" == "x0" ]; then
-        _error "Can not found kubernetes cluster."
-    fi
-
     REGION="$(aws configure get default.region)"
 }
 
 run() {
     prepare
 
+    get_cluster
+
     config_load
-
-    if [ "${CLUSTER_NAME}" == "" ]; then
-        get_cluster_name
-
-        config_save
-    fi
 
     main_menu
 }
@@ -265,29 +255,40 @@ helm_install() {
 
     create_namespace ${NAMESPACE}
 
+    # helm FAILED check
+    COUNT=$(helm ls | grep ${NAME} | grep ${NAMESPACE} | grep FAILED | wc -l | xargs)
+    if [ "x${COUNT}" != "x0" ]; then
+        _command "helm delete --purge ${NAME}"
+        helm delete --purge ${NAME}
+
+        waiting 5
+    fi
+
+    # helm chart
     CHART=${SHELL_DIR}/build/${THIS_NAME}-${NAME}.yaml
     get_template charts/${NAMESPACE}/${NAME}.yaml ${CHART}
 
+    # chart config
+    VERSION=$(cat ${CHART} | grep chart-version | awk '{print $3}')
+    INGRESS=$(cat ${CHART} | grep chart-ingress | awk '{print $3}')
+
     _replace "s/AWS_REGION/${REGION}/" ${CHART}
     _replace "s/CLUSTER_NAME/${CLUSTER_NAME}/" ${CHART}
-
-    # for nginx-ingress
-    if [ "${NAME}" == "nginx-ingress" ]; then
-        get_base_domain
-    fi
 
     # for efs-provisioner
     if [ "${NAME}" == "efs-provisioner" ]; then
         efs_create
     fi
 
-    # for jenkins
-    if [ "${NAME}" == "jenkins" ]; then
-        # admin password
-        read_password ${CHART}
-
-        ${SHELL_DIR}/jenkins/jobs.sh ${CHART}
+    # for nginx-ingress
+    if [ "${NAME}" == "nginx-ingress" ]; then
+        get_base_domain
     fi
+
+    # for kubernetes-dashboard
+    # if [ "${NAME}" == "kubernetes-dashboard" ]; then
+    #     get_base_domain "${NAME}.${NAMESPACE}"
+    # fi
 
     # for cluster-autoscaler
     if [ "${NAME}" == "cluster-autoscaler" ]; then
@@ -295,6 +296,15 @@ helm_install() {
         if [ "x${COUNT}" != "x0" ]; then
             _replace "s/#:MASTER://" ${CHART}
         fi
+    fi
+
+    # for jenkins
+    if [ "${NAME}" == "jenkins" ]; then
+        # admin password
+        read_password ${CHART}
+
+        # jenkins jobs
+        ${SHELL_DIR}/jenkins/jobs.sh ${CHART}
     fi
 
     # for grafana
@@ -328,7 +338,7 @@ helm_install() {
         _replace "s/CUSTOM_PORT/${CUSTOM_PORT}/" ${CHART}
     fi
 
-    # for efs-provisioner
+    # for efs-mount
     if [ ! -z ${EFS_ID} ]; then
         _replace "s/#:EFS://" ${CHART}
         _replace "s/EFS_FILE_SYSTEM_ID/${EFS_ID}/" ${CHART}
@@ -347,20 +357,10 @@ helm_install() {
     fi
     _replace "s/ISTIO_ENABLED/${ISTIO_ENABLED}/" ${CHART}
 
-    # chart version
-    VERSION=$(cat ${CHART} | grep chart-version | awk '{print $3}')
-
-    # if [ -z ${VERSION} ] || [ "${VERSION}" == "latest" ]; then
-    #     # https://kubernetes-charts.storage.googleapis.com/
-    #     VERSION=${VERSION:-latest}
-    # fi
-
-    # ingress
-    INGRESS=$(cat ${CHART} | grep chart-ingress | awk '{print $3}')
-    DOMAIN=
-
     if [ "${INGRESS}" == "true" ]; then
         if [ -z ${BASE_DOMAIN} ]; then
+            DOMAIN=
+
             _replace "s/SERVICE_TYPE/LoadBalancer/" ${CHART}
             _replace "s/INGRESS_ENABLED/false/" ${CHART}
         else
@@ -396,7 +396,6 @@ helm_install() {
 
     # nginx-ingress
     if [ "${NAME}" == "nginx-ingress" ]; then
-        INGRESS=true
         config_save
     fi
 
@@ -406,32 +405,38 @@ helm_install() {
     _command "helm history ${NAME}"
     helm history ${NAME}
 
-    _command "kubectl get deploy,pod,svc,ing,pv -n ${NAMESPACE}"
-    kubectl get deploy,pod,svc,ing,pv -n ${NAMESPACE}
+    _command "kubectl get deploy,pod,svc,ing,pvc,pv -n ${NAMESPACE}"
+    kubectl get deploy,pod,svc,ing,pvc,pv -n ${NAMESPACE}
+
+    # for nginx-ingress
+    if [ "${NAME}" == "nginx-ingress" ]; then
+        set_base_domain "${NAME}"
+    fi
 
     # for kubernetes-dashboard
     if [ "${NAME}" == "kubernetes-dashboard" ]; then
-        create_cluster_role_binding view kube-system dashboard-view true
-
-        get_ingress_elb_name "kubernetes-dashboard"
+        # set_base_domain "${NAME}" "${NAME}.${NAMESPACE}"
+        get_elb_domain ${NAME} ${NAMESPACE}
     fi
 
-    if [ "${NAME}" == "nginx-ingress" ]; then
-        set_base_domain ${NAME}
-    else
-        if [ "${INGRESS}" == "true" ]; then
-            if [ -z ${BASE_DOMAIN} ]; then
-                get_elb_domain ${NAME} ${NAMESPACE}
+    # chart ingress = true
+    if [ "${INGRESS}" == "true" ]; then
+        if [ -z ${BASE_DOMAIN} ]; then
+            get_elb_domain ${NAME} ${NAMESPACE}
 
-                _result "${NAME}: http://${ELB_DOMAIN}"
+            _result "${NAME}: http://${ELB_DOMAIN}"
+        else
+            if [ -z ${ROOT_DOMAIN} ]; then
+                _result "${NAME}: http://${DOMAIN}"
             else
-                if [ -z ${ROOT_DOMAIN} ]; then
-                    _result "${NAME}: http://${DOMAIN}"
-                else
-                    _result "${NAME}: https://${DOMAIN}"
-                fi
+                _result "${NAME}: https://${DOMAIN}"
             fi
         fi
+    fi
+
+    # for kubernetes-dashboard
+    if [ "${NAME}" == "kubernetes-dashboard" ]; then
+        create_cluster_role_binding view ${NAMESPACE} ${NAME}-view true
     fi
 }
 
@@ -1090,28 +1095,22 @@ sample_install() {
     fi
 }
 
-read_password() {
-    CHART=${1}
+get_cluster() {
+    # config list
+    LIST=${SHELL_DIR}/build/${THIS_NAME}-config-list
+    kubectl config view -o json | jq -r '.clusters[].name' | sort > ${LIST}
 
-    # admin password
-    DEFAULT="password"
-    password "Enter admin password [${DEFAULT}] : "
-    echo
+    # select
+    select_one
 
-    _replace "s/PASSWORD/${PASSWORD:-${DEFAULT}}/g" ${CHART}
-}
-
-get_cluster_name() {
-    CLUSTER_NAME=$(kubectl config current-context)
-
-    if [ "${CLUSTER_NAME}" == "aws" ]; then
-        # EKS
-        CLUSTER_NAME=$(kubectl config view -o json | jq -r '.users[].user.exec.args[2]')
-    fi
+    CLUSTER_NAME="${SELECTED}"
 
     if [ "${CLUSTER_NAME}" == "" ]; then
         _error
     fi
+
+    _command "kubectl config use-context ${CLUSTER_NAME}"
+    kubectl config use-context ${CLUSTER_NAME}
 }
 
 get_elb_domain() {
@@ -1228,8 +1227,8 @@ get_ssl_cert_arn() {
     fi
 
     # get certificate arn
-    _command "aws acm list-certificates | DOMAIN="*.${BASE_DOMAIN}" jq -r '.CertificateSummaryList[] | select(.DomainName==env.DOMAIN) | .CertificateArn'"
-    SSL_CERT_ARN=$(aws acm list-certificates | DOMAIN="*.${BASE_DOMAIN}" jq -r '.CertificateSummaryList[] | select(.DomainName==env.DOMAIN) | .CertificateArn')
+    _command "aws acm list-certificates | DOMAIN="${SUB_DOMAIN}.${BASE_DOMAIN}" jq -r '.CertificateSummaryList[] | select(.DomainName==env.DOMAIN) | .CertificateArn'"
+    SSL_CERT_ARN=$(aws acm list-certificates | DOMAIN="${SUB_DOMAIN}.${BASE_DOMAIN}" jq -r '.CertificateSummaryList[] | select(.DomainName==env.DOMAIN) | .CertificateArn')
 }
 
 req_ssl_cert_arn() {
@@ -1238,8 +1237,8 @@ req_ssl_cert_arn() {
     fi
 
     # request certificate
-    _command "aws acm request-certificate --domain-name "*.${BASE_DOMAIN}" --validation-method DNS | jq -r '.CertificateArn'"
-    SSL_CERT_ARN=$(aws acm request-certificate --domain-name "*.${BASE_DOMAIN}" --validation-method DNS | jq -r '.CertificateArn')
+    _command "aws acm request-certificate --domain-name "${SUB_DOMAIN}.${BASE_DOMAIN}" --validation-method DNS | jq -r '.CertificateArn'"
+    SSL_CERT_ARN=$(aws acm request-certificate --domain-name "${SUB_DOMAIN}.${BASE_DOMAIN}" --validation-method DNS | jq -r '.CertificateArn')
 
     _result "Request Certificate..."
 
@@ -1318,7 +1317,7 @@ set_record_alias() {
     get_template templates/record-sets-alias.json ${RECORD}
 
     # replace
-    _replace "s/DOMAIN/*.${BASE_DOMAIN}/g" ${RECORD}
+    _replace "s/DOMAIN/${SUB_DOMAIN}.${BASE_DOMAIN}/g" ${RECORD}
     _replace "s/ZONE_ID/${ELB_ZONE_ID}/g" ${RECORD}
     _replace "s/DNS_NAME/${ELB_DNS_NAME}/g" ${RECORD}
 
@@ -1330,7 +1329,7 @@ set_record_alias() {
 }
 
 set_record_delete() {
-    if [ -z ${BASE_DOMAIN} ] || [ -z ${BASE_DOMAIN} ]; then
+    if [ -z ${ROOT_DOMAIN} ] || [ -z ${BASE_DOMAIN} ]; then
         return
     fi
 
@@ -1347,7 +1346,7 @@ set_record_delete() {
     get_template templates/record-sets-delete.json ${RECORD}
 
     # replace
-    _replace "s/DOMAIN/*.${BASE_DOMAIN}/g" ${RECORD}
+    _replace "s/DOMAIN/${SUB_DOMAIN}.${BASE_DOMAIN}/g" ${RECORD}
 
     cat ${RECORD}
 
@@ -1358,6 +1357,8 @@ set_record_delete() {
 
 set_base_domain() {
     POD="${1:-nginx-ingress}"
+
+    SUB_DOMAIN=${2:-"*"}
 
     _result "Pending ELB..."
 
@@ -1371,12 +1372,14 @@ set_base_domain() {
 }
 
 get_base_domain() {
+    SUB_DOMAIN=${1:-"*"}
+
     ROOT_DOMAIN=
     BASE_DOMAIN=
 
     read_root_domain
 
-    # ingress domain
+    # base domain
     if [ ! -z ${ROOT_DOMAIN} ]; then
         WORD=$(echo ${CLUSTER_NAME} | cut -d'.' -f1)
 
@@ -1386,8 +1389,8 @@ get_base_domain() {
         BASE_DOMAIN=${ANSWER:-${DEFAULT}}
     fi
 
-    CHART=${SHELL_DIR}/build/${THIS_NAME}-${NAME}.yaml
-    get_template charts/${NAMESPACE}/${NAME}.yaml ${CHART}
+    # CHART=${SHELL_DIR}/build/${THIS_NAME}-${NAME}.yaml
+    # get_template charts/${NAMESPACE}/${NAME}.yaml ${CHART}
 
     # certificate
     if [ ! -z ${BASE_DOMAIN} ]; then
@@ -1397,13 +1400,24 @@ get_base_domain() {
             req_ssl_cert_arn
         fi
         if [ -z ${SSL_CERT_ARN} ]; then
-            _error "Certificate ARN does not exists. [${ROOT_DOMAIN}][*.${BASE_DOMAIN}][${REGION}]"
+            _error "Certificate ARN does not exists. [${ROOT_DOMAIN}][${SUB_DOMAIN}.${BASE_DOMAIN}][${REGION}]"
         fi
 
         _result "CertificateArn: ${SSL_CERT_ARN}"
 
         _replace "s@aws-load-balancer-ssl-cert:.*@aws-load-balancer-ssl-cert: ${SSL_CERT_ARN}@" ${CHART}
     fi
+}
+
+read_password() {
+    CHART=${1}
+
+    # admin password
+    DEFAULT="password"
+    password "Enter admin password [${DEFAULT}] : "
+    echo
+
+    _replace "s/PASSWORD/${PASSWORD:-${DEFAULT}}/g" ${CHART}
 }
 
 waiting_for() {

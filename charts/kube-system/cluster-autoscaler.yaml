@@ -1,6 +1,5 @@
 # chart-repo: stable/cluster-autoscaler
 # chart-version: latest
-# chart-ingress: false
 
 nameOverride: cluster-autoscaler
 
