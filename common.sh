@@ -219,7 +219,7 @@ config_save() {
     cat ${CONFIG}
 
     ENCODED=${SHELL_DIR}/build/${THIS_NAME}-config.txt
-    cat ${CONFIG} | base64 > ${ENCODED}
+    cat ${CONFIG} | base64 -w 0 > ${ENCODED}
 
     CHART=${SHELL_DIR}/build/${THIS_NAME}-config.yaml
     get_template templates/config.yaml ${CHART}
@@ -244,9 +244,9 @@ config_load() {
         CONFIG=${SHELL_DIR}/build/${THIS_NAME}-config.sh
 
         if [ "${OS_NAME}" == "darwin" ]; then
-            kubectl get secret ${THIS_NAME}-config -n default -o json | jq -r '.data.config' | base64 -D > ${CONFIG}
+            kubectl get secret ${THIS_NAME}-config -n default -o json | jq -r '.data.text' | base64 -D > ${CONFIG}
         else
-            kubectl get secret ${THIS_NAME}-config -n default -o json | jq -r '.data.config' | base64 -d > ${CONFIG}
+            kubectl get secret ${THIS_NAME}-config -n default -o json | jq -r '.data.text' | base64 -d > ${CONFIG}
         fi
 
         _command "load ${THIS_NAME}-config"

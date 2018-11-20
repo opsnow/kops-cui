@@ -60,4 +60,4 @@ Persistence:
   AccessMode: ReadWriteOnce
   Size: 8Gi
   #:EFS:StorageClass: "efs"
-  existingClaim: jenkins
+  ExistingClaim: jenkins
