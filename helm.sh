@@ -289,6 +289,14 @@ helm_install() {
         ${SHELL_DIR}/jenkins/jobs.sh ${CHART}
     fi
 
+    # for cluster-autoscaler
+    if [ "${NAME}" == "cluster-autoscaler" ]; then
+        COUNT=$(kubectl get no | grep Ready | grep master | wc -l | xargs)
+        if [ "x${COUNT}" != "x0" ]; then
+            _replace "s/#:MASTER://" ${CHART}
+        fi
+    fi
+
     # for grafana
     if [ "${NAME}" == "grafana" ]; then
         # admin password
