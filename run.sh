@@ -29,6 +29,18 @@ EFS_FILE_SYSTEM_ID=
 
 ISTIO=
 
+GUARD_LDAP_SERVER_ADDRESS=
+GUARD_LDAP_IS_SECURE_LDAP=
+GUARD_LDAP_BIND_DN=
+GUARD_LDAP_BIND_PASSWORD=
+GUARD_LDAP_AUTH_CHOICE=
+GUARD_LDAP_USER_SEARCH_DN=
+GUARD_LDAP_USER_SEARCH_FILTER=
+GUARD_LDAP_USER_ATTRIBUTE=
+GUARD_LDAP_GROUP_SEARCH_DN=
+GUARD_LDAP_GROUP_SEARCH_FILTER=
+GUARD_CLIENT=
+
 cloud=aws
 master_size=c4.large
 master_count=1
@@ -713,8 +725,32 @@ addons_menu() {
             helm_install efs-provisioner kube-system
             press_enter addons
             ;;
+        8)
+            guard_install
+
+            _result "Edit Cluster for Guard"
+
+            WEBHOOK_GUARD_CONFIG=$(guard get webhook-config opsnow -o ldap --addr=100.64.10.96:443 | sed 's/^/      /g')
+            
+            echo "spec:"
+            echo "  kubeAPIServer:"
+            echo "    authenticationTokenWebhookConfigFile: /srv/kubernetes/webhook-guard-config"
+            echo "  fileAssets:"
+            echo "  - content: |"
+            echo -n "${WEBHOOK_GUARD_CONFIG}"
+            echo "    name: guard-github-auth"
+            echo "    path: /srv/kubernetes/webhook-guard-config"
+            echo "    roles:"
+            echo "    - Master"
+
+            press_enter addons
+            ;;
         9)
             helm_delete
+            press_enter addons
+            ;;
+        10)
+            guard_delete
             press_enter addons
             ;;
         11)
@@ -870,6 +906,16 @@ save_kops_config() {
     echo "BASE_DOMAIN=${BASE_DOMAIN}" >> ${CONFIG}
     echo "EFS_FILE_SYSTEM_ID=${EFS_FILE_SYSTEM_ID}" >> ${CONFIG}
     echo "ISTIO=${ISTIO}" >> ${CONFIG}
+    echo "GUARD_LDAP_SERVER_ADDRESS=${GUARD_LDAP_SERVER_ADDRESS}" >> ${CONFIG}
+    echo "GUARD_LDAP_IS_SECURE_LDAP=${GUARD_LDAP_IS_SECURE_LDAP}" >> ${CONFIG}
+    echo "GUARD_LDAP_BIND_DN='${GUARD_LDAP_BIND_DN}'" >> ${CONFIG}
+    echo "GUARD_LDAP_AUTH_CHOICE=${GUARD_LDAP_AUTH_CHOICE}" >> ${CONFIG}
+    echo "GUARD_LDAP_USER_SEARCH_DN='${GUARD_LDAP_USER_SEARCH_DN}'" >> ${CONFIG}
+    echo "GUARD_LDAP_USER_SEARCH_FILTER='${GUARD_LDAP_USER_SEARCH_FILTER}'" >> ${CONFIG}
+    echo "GUARD_LDAP_USER_ATTRIBUTE=${GUARD_LDAP_USER_ATTRIBUTE}" >> ${CONFIG}
+    echo "GUARD_LDAP_GROUP_SEARCH_DN='${GUARD_LDAP_GROUP_SEARCH_DN}'" >> ${CONFIG}
+    echo "GUARD_LDAP_GROUP_SEARCH_FILTER='${GUARD_LDAP_GROUP_SEARCH_FILTER}'" >> ${CONFIG}
+    echo "GUARD_CLIENT=${GUARD_CLIENT}" >> ${CONFIG}
 
     . ${CONFIG}
 
@@ -892,6 +938,17 @@ clear_kops_config() {
     export BASE_DOMAIN=
     export EFS_FILE_SYSTEM_ID=
     export ISTIO=
+    export GUARD_LDAP_SERVER_ADDRESS=
+    export GUARD_LDAP_IS_SECURE_LDAP=
+    export GUARD_LDAP_BIND_DN=
+    export GUARD_LDAP_BIND_PASSWORD=
+    export GUARD_LDAP_AUTH_CHOICE=
+    export GUARD_LDAP_USER_SEARCH_DN=
+    export GUARD_LDAP_USER_SEARCH_FILTER=
+    export GUARD_LDAP_USER_ATTRIBUTE=
+    export GUARD_LDAP_GROUP_SEARCH_DN=
+    export GUARD_LDAP_GROUP_SEARCH_FILTER=
+    export GUARD_CLIENT=
 
     save_kops_config
 }
@@ -1711,6 +1768,125 @@ helm_kubernetes_dashboard() {
     kubectl get deploy,pod,svc -n ${NAMESPACE}
 }
 
+guard_install() {
+
+    NAME="guard"
+    NAMESPACE=${1:-kube-system}
+
+    OUT=$(kubectl get pod -n ${NAMESPACE} | grep ${NAME} | head -1 | awk '{print $3}')
+
+    if [ "${OUT}" == "Running" ]; then
+        question "The guard server is already running. Do you want to update it? (YES/[no]) : "
+
+        if [ "${ANSWER}" == "no" ]; then
+            return;
+        fi
+    fi
+
+    DEFAULT=$( [ "${GUARD_LDAP_SERVER_ADDRESS}" == "" ] && echo -n "ldap.${BASE_DOMAIN}" || echo -n ${GUARD_LDAP_SERVER_ADDRESS} )
+    question "Enter LDAP server address [${DEFAULT}] : "
+    GUARD_LDAP_SERVER_ADDRESS=${ANSWER:-${DEFAULT}}
+    
+    DEFAULT=$( [ "${GUARD_LDAP_IS_SECURE_LDAP}" == "" ] && echo -n "false" || echo -n ${GUARD_LDAP_IS_SECURE_LDAP} )
+    question "Enter whether the server uses secure LDAP [${DEFAULT}] : "
+    GUARD_LDAP_IS_SECURE_LDAP=${ANSWER:-${DEFAULT}}
+
+    DEFAULT=$( [ "${GUARD_LDAP_BIND_DN}" == "" ] && echo -n "CN=binder,OU=development,DC=example,DC=com" || echo -n ${GUARD_LDAP_BIND_DN} )
+    question "Enter LDAP bind DN [${DEFAULT}] : "
+    GUARD_LDAP_BIND_DN=${ANSWER:-${DEFAULT}}
+
+    password "Enter LDAP bind password : "
+    GUARD_LDAP_BIND_PASSWORD=${PASSWORD}
+    echo
+
+    DEFAULT=$( [ "${GUARD_LDAP_AUTH_CHOICE}" == "" ] && echo -n "Simple" || echo -n ${GUARD_LDAP_AUTH_CHOICE} )
+    question "Enter LDAP auth choice [${DEFAULT}] : "
+    GUARD_LDAP_AUTH_CHOICE=${ANSWER:-${DEFAULT}}
+
+    DEFAULT=$( [ "${GUARD_LDAP_USER_SEARCH_DN}" == "" ] && echo -n "OU=development user,OU=development,DC=example,DC=com" || echo -n ${GUARD_LDAP_USER_SEARCH_DN} )
+    question "Enter LDAP user search DN [${DEFAULT}] : "
+    GUARD_LDAP_USER_SEARCH_DN=${ANSWER:-${DEFAULT}}
+
+    DEFAULT=$( [ "${GUARD_LDAP_USER_SEARCH_FILTER}" == "" ] && echo -n "(objectClass=person)" || echo -n ${GUARD_LDAP_USER_SEARCH_FILTER} )
+    question "Enter LDAP user search filter [${DEFAULT}] : "
+    GUARD_LDAP_USER_SEARCH_FILTER=${ANSWER:-${DEFAULT}}
+
+    DEFAULT=$( [ "${GUARD_LDAP_USER_ATTRIBUTE}" == "" ] && echo -n "uid" || echo -n ${GUARD_LDAP_USER_ATTRIBUTE} )
+    question "Enter LDAP user attribute [${DEFAULT}] : "
+    GUARD_LDAP_USER_ATTRIBUTE=${ANSWER:-${DEFAULT}}
+
+    DEFAULT=$( [ "${GUARD_LDAP_GROUP_SEARCH_DN}" == "" ] && echo -n "OU=development user,OU=development,DC=example,DC=com" || echo -n ${GUARD_LDAP_GROUP_SEARCH_DN} )
+    question "Enter LDAP group search DN [${DEFAULT}] : "
+    GUARD_LDAP_GROUP_SEARCH_DN=${ANSWER:-${DEFAULT}}
+
+    DEFAULT=$( [ "${GUARD_LDAP_GROUP_SEARCH_FILTER}" == "" ] && echo -n "(objectClass=groupOfNames)" || echo -n ${GUARD_LDAP_GROUP_SEARCH_FILTER} )
+    question "Enter LDAP group search filter [${DEFAULT}] : "
+    GUARD_LDAP_GROUP_SEARCH_FILTER=${ANSWER:-${DEFAULT}}
+
+    DEFAULT=$( [ "${GUARD_CLIENT}" == "" ] && echo -n "scott" || echo -n ${GUARD_CLIENT} )
+    question "Enter guard client [${DEFAULT}] : "
+    GUARD_CLIENT=${ANSWER:-${DEFAULT}}
+
+    # ca
+    if [ -f ~/.guard/pki/ca.key ]; then
+        echo "ca.key exists"
+    else 
+        echo "ca.key does not exists"
+        _command "guard init ca"
+        guard init ca
+    fi
+    
+    # server
+    if [ -f ~/.guard/pki/server.key ]; then
+        echo "server.key exists"
+    else 
+        echo "server.key does not exists"
+        _command "guard init server --ips=100.64.10.96"
+        guard init server --ips=100.64.10.96
+    fi
+    
+    # client
+    if [ -f ~/.guard/pki/${GUARD_CLIENT}.key ]; then
+        echo "${GUARD_CLIENT}.key exists"
+    else 
+        echo "${GUARD_CLIENT}.key does not exists"
+        _command "guard init client ${GUARD_CLIENT} -o ldap"
+        guard init client ${GUARD_CLIENT} -o ldap
+    fi
+
+    CHART=$(mktemp /tmp/kops-cui-${NAME}.XXXXXX)
+
+    _command "guard get installer --auth-providers=ldap --ldap.server-address=${GUARD_LDAP_SERVER_ADDRESS} --ldap.is-secure-ldap=${GUARD_LDAP_IS_SECURE_LDAP} --ldap.bind-dn=${GUARD_LDAP_BIND_DN} --ldap.bind-password=${GUARD_LDAP_BIND_PASSWORD} --ldap.auth-choice=Simple --ldap.user-search-dn=${GUARD_LDAP_USER_SEARCH_DN} --ldap.user-search-filter=${GUARD_LDAP_USER_SEARCH_FILTER} --ldap.user-attribute=${GUARD_LDAP_USER_ATTRIBUTE} --ldap.group-search-dn=${GUARD_LDAP_GROUP_SEARCH_DN} --ldap.group-search-filter=${GUARD_LDAP_GROUP_SEARCH_FILTER} > guard-server.yml"
+    guard get installer \
+        --auth-providers=ldap \
+        --ldap.server-address=${GUARD_LDAP_SERVER_ADDRESS} \
+        --ldap.is-secure-ldap=${GUARD_LDAP_IS_SECURE_LDAP} \
+        --ldap.bind-dn="${GUARD_LDAP_BIND_DN}" \
+        --ldap.bind-password=${GUARD_LDAP_BIND_PASSWORD} \
+        --ldap.auth-choice=Simple \
+        --ldap.user-search-dn="${GUARD_LDAP_USER_SEARCH_DN}" \
+        --ldap.user-search-filter="${GUARD_LDAP_USER_SEARCH_FILTER}" \
+        --ldap.user-attribute="${GUARD_LDAP_USER_ATTRIBUTE}" \
+        --ldap.group-search-dn="${GUARD_LDAP_GROUP_SEARCH_DN}" \
+        --ldap.group-search-filter="${GUARD_LDAP_GROUP_SEARCH_FILTER}" \
+        > ${CHART}
+
+    _command "cat ${CHART} | sed -e 's/10.96.10.96/100.64.10.96/g' > ${CHART}.yml"
+    cat ${CHART} | sed -e 's/10.96.10.96/100.64.10.96/g' > ${CHART}.yml
+
+    _command "kubectl apply -f ${CHART}.yml"
+    kubectl apply -f ${CHART}.yml
+
+    # save config (GUARD)
+    save_kops_config true
+
+    # waiting 2
+    waiting_pod "${NAMESPACE}" "${NAME}"
+
+    _command "kubectl get deploy,pod,svc,ing,pv -n ${NAMESPACE}"
+    kubectl get deploy,pod,svc,ing,pv -n ${NAMESPACE}
+}
+
 helm_install() {
     helm_check
 
@@ -1934,6 +2110,42 @@ isBound() {
     PVC_STATUS=$(kubectl get pvc -n ${NAMESPACE} ${PVC_NAME} -o json | jq -r '.status.phase')
     if [ "${PVC_STATUS}" != "Bound" ]; then 
         return 1;
+    fi
+}
+
+guard_delete() {
+    GUARD=$(kubectl get deployments -n kube-system guard | grep guard)
+    if [ "${GUARD}" != "" ]; then
+        question "Do you want to remove the guard server? [Y/n] : "
+
+        ANSWER=${ANSWER:-Y}
+
+        if [ "${ANSWER}" == "Y" ]; then
+            GUARD_DEF=$(ls /tmp --sort=time | grep -E 'kops-cui-guard.*.yml' | head -1)
+
+            if [ "${GUARD}" != "" ]; then
+                _command "kubectl delete -f /tmp/${GUARD_DEF}"
+                kubectl delete -f /tmp/${GUARD_DEF}
+
+                # save config (GUARD)
+                GUARD_LDAP_SERVER_ADDRESS=
+                GUARD_LDAP_IS_SECURE_LDAP=
+                GUARD_LDAP_BIND_DN=
+                GUARD_LDAP_BIND_PASSWORD=
+                GUARD_LDAP_AUTH_CHOICE=
+                GUARD_LDAP_USER_SEARCH_DN=
+                GUARD_LDAP_USER_SEARCH_FILTER=
+                GUARD_LDAP_USER_ATTRIBUTE=
+                GUARD_LDAP_GROUP_SEARCH_DN=
+                GUARD_LDAP_GROUP_SEARCH_FILTER=
+                GUARD_CLIENT=
+
+                save_kops_config true
+            else
+                echo "Not found kops-cui-guard.*.yml"
+            fi
+
+        fi
     fi
 }
 
