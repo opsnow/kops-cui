@@ -268,10 +268,17 @@ helm_install() {
     CHART=${SHELL_DIR}/build/${THIS_NAME}-${NAME}.yaml
     get_template charts/${NAMESPACE}/${NAME}.yaml ${CHART}
 
+    # chart repository
+    REPO=$(cat ${CHART} | grep chart-repo | awk '{print $3}')
+    if [ "${REPO}" == "" ]; then
+        REPO="stable/${NAME}"
+    fi
+
     # chart config
     VERSION=$(cat ${CHART} | grep chart-version | awk '{print $3}')
     INGRESS=$(cat ${CHART} | grep chart-ingress | awk '{print $3}')
 
+    # global
     _replace "s/AWS_REGION/${REGION}/" ${CHART}
     _replace "s/CLUSTER_NAME/${CLUSTER_NAME}/" ${CHART}
 
@@ -386,12 +393,12 @@ helm_install() {
     done < "${LIST}"
 
     # helm install
-    if [ -z ${VERSION} ] || [ "${VERSION}" == "latest" ]; then
-        _command "helm upgrade --install ${NAME} stable/${NAME} --namespace ${NAMESPACE} --values ${CHART}"
-        helm upgrade --install ${NAME} stable/${NAME} --namespace ${NAMESPACE} --values ${CHART}
+    if [ "${VERSION}" == "" ] || [ "${VERSION}" == "latest" ]; then
+        _command "helm upgrade --install ${NAME} ${REPO} --namespace ${NAMESPACE} --values ${CHART}"
+        helm upgrade --install ${NAME} ${REPO} --namespace ${NAMESPACE} --values ${CHART}
     else
-        _command "helm upgrade --install ${NAME} stable/${NAME} --namespace ${NAMESPACE} --values ${CHART} --version ${VERSION}"
-        helm upgrade --install ${NAME} stable/${NAME} --namespace ${NAMESPACE} --values ${CHART} --version ${VERSION}
+        _command "helm upgrade --install ${NAME} ${REPO} --namespace ${NAMESPACE} --values ${CHART} --version ${VERSION}"
+        helm upgrade --install ${NAME} ${REPO} --namespace ${NAMESPACE} --values ${CHART} --version ${VERSION}
     fi
 
     # nginx-ingress
@@ -414,10 +421,10 @@ helm_install() {
     fi
 
     # for kubernetes-dashboard
-    if [ "${NAME}" == "kubernetes-dashboard" ]; then
-        # set_base_domain "${NAME}" "${NAME}.${NAMESPACE}"
-        get_elb_domain ${NAME} ${NAMESPACE}
-    fi
+    # if [ "${NAME}" == "kubernetes-dashboard" ]; then
+    #     # set_base_domain "${NAME}" "${NAME}.${NAMESPACE}"
+    #     get_elb_domain ${NAME} ${NAMESPACE}
+    # fi
 
     # chart ingress = true
     if [ "${INGRESS}" == "true" ]; then
@@ -434,10 +441,10 @@ helm_install() {
         fi
     fi
 
-    # for kubernetes-dashboard
-    if [ "${NAME}" == "kubernetes-dashboard" ]; then
-        create_cluster_role_binding view ${NAMESPACE} ${NAME}-view true
-    fi
+    # # for kubernetes-dashboard
+    # if [ "${NAME}" == "kubernetes-dashboard" ]; then
+    #     create_cluster_role_binding view ${NAMESPACE} ${NAME}-view true
+    # fi
 }
 
 helm_delete() {
