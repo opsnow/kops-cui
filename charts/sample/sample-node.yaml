@@ -1,5 +1,6 @@
 # chart-repo: sample-node
 # chart-version: latest
+# chart-ingress: true
 
 profile: default
 

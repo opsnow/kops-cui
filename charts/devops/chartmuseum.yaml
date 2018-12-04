@@ -1,5 +1,6 @@
 # chart-repo: stable/chartmuseum
 # chart-version: latest
+# chart-ingress: true
 # chart-pvc: chartmuseum ReadWriteOnce 8Gi
 
 fullnameOverride: chartmuseum

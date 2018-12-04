@@ -1,5 +1,6 @@
 # chart-repo: sample-webpack
 # chart-version: latest
+# chart-ingress: true
 
 profile: default
 
