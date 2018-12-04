@@ -1,4 +1,5 @@
-{{ if .Values.istio.enabled }}
+{{ if (not (empty .Values.istio)) }}
+{{ if (.Values.istio.enabled) }}
 apiVersion: networking.istio.io/v1alpha3
 kind: DestinationRule
 metadata:
@@ -22,4 +23,5 @@ spec:
   - name: master
     labels:
       version: master
+{{ end }}
 {{ end }}

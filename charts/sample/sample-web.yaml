@@ -1,5 +1,6 @@
 # chart-repo: sample-web
 # chart-version: latest
+# chart-ingress: true
 
 profile: default
 

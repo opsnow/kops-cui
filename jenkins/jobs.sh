@@ -2,66 +2,66 @@
 
 SHELL_DIR=$(dirname $0)
 
-CHART=${1:-/tmp/kops-cui-jenkins.yaml}
+PARENT_DIR=$(dirname ${SHELL_DIR})
 
-TMP_DIR=/tmp/kops-cui-jenkins
+. ${PARENT_DIR}/default.sh
+. ${PARENT_DIR}/common.sh
 
-JOBS_DIR=${TMP_DIR}/jobs
-FILE_DIR=${TMP_DIR}/file
+################################################################################
 
-rm -rf ${TMP_DIR}
-mkdir -p ${JOBS_DIR} ${FILE_DIR}
+CHART=${1:-${PARENT_DIR}/build/${THIS_NAME}-jenkins.yaml}
+CHART_TMP=${PARENT_DIR}/build/${THIS_NAME}-jenkins-tmp.yaml
 
-JOB_LIST=${TMP_DIR}/job-list
+TMP_DIR=${PARENT_DIR}/build/${THIS_NAME}-jenkins
 
-CHART_TMP=${TMP_DIR}/chart.yaml
+rm -rf ${TMP_DIR} ${CHART_TMP} && mkdir -p ${TMP_DIR}
 
 # job list
+JOB_LIST=${PARENT_DIR}/build/${THIS_NAME}-jenkins-job-list
+
 ls ${SHELL_DIR}/jobs/ > ${JOB_LIST}
 
 while read JOB; do
+    mkdir -p ${TMP_DIR}/${JOB}
+
     ORIGIN=${SHELL_DIR}/jobs/${JOB}/Jenkinsfile
-    TMP=${FILE_DIR}/${JOB}
-    XML=${JOBS_DIR}/${JOB}.xml
+
+    TARGET=${TMP_DIR}/${JOB}/Jenkinsfile
+    CONFIG=${TMP_DIR}/${JOB}/config.xml
 
     # Jenkinsfile
     if [ -f ${ORIGIN} ]; then
-        cp -rf ${ORIGIN} ${TMP}
-        sed -i -e "s/\"/\&quot;/g" ${TMP}
-        sed -i -e "s/</\&lt;/g" ${TMP}
-        sed -i -e "s/>/\&gt;/g" ${TMP}
+        cp -rf ${ORIGIN} ${TARGET}
+        _replace "s/\"/\&quot;/g" ${TARGET}
+        _replace "s/</\&lt;/g" ${TARGET}
+        _replace "s/>/\&gt;/g" ${TARGET}
     else
-        touch ${TMP}
+        touch ${TARGET}
     fi
 
-    # Jenkinsfile >> job.xml
+    # Jenkinsfile >> config.xml
     while read LINE; do
         if [ "${LINE}" == "REPLACE" ]; then
-            cat ${TMP} >> ${XML}
+            cat ${TARGET} >> ${CONFIG}
         else
-            echo "${LINE}" >> ${XML}
+            echo "${LINE}" >> ${CONFIG}
         fi
     done < ${SHELL_DIR}/jobs/${JOB}/config.xml
 done < ${JOB_LIST}
 
-# job list
-ls ${JOBS_DIR} | grep "[.]xml" > ${JOB_LIST}
-
-# jobs.yaml >> chart.yaml
+# config.yaml >> jenkins.yaml
 POS=$(grep -n "jenkins-jobs -- start" ${CHART} | cut -d':' -f1)
 
 sed "${POS}q" ${CHART} >> ${CHART_TMP}
 
 echo
 echo "  Jobs:" >> ${CHART_TMP}
+
 while read JOB; do
     echo "> ${JOB}"
+    echo "    ${JOB}: |-" >> ${CHART_TMP}
 
-    NAME=${JOB%.*l}
-    echo "    ${NAME}: |-" >> ${CHART_TMP}
-    while read LINE; do
-        echo "      ${LINE}" >> ${CHART_TMP}
-    done < ${JOBS_DIR}/${JOB}
+    sed -e "s/^/      /" ${TMP_DIR}/${JOB}/config.xml >> ${CHART_TMP}
 done < ${JOB_LIST}
 
 sed "1,${POS}d" ${CHART} >> ${CHART_TMP}
