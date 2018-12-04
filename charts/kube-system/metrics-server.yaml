@@ -1,10 +1,19 @@
 # chart-repo: stable/metrics-server
-# chart-version: 1.1.0
+# chart-version: latest
 
 nameOverride: metrics-server
 
-# args:
-#   - --logtostderr
-# # enable this if you have self-signed certificates
-# # see: https://github.com/kubernetes-incubator/metrics-server
-#   - --kubelet-insecure-tls
+image:
+  repository: k8s.gcr.io/metrics-server-amd64
+  tag: v0.3.1
+
+args:
+  # - --logtostderr
+  # enable this if you have self-signed certificates
+  - --kubelet-insecure-tls
+  - --kubelet-preferred-address-types=InternalIP,InternalDNS,ExternalDNS,ExternalIP,Hostname
+  # - --source=kubernetes.summary_api:''
+  # - --source=kubernetes.summary_api:https://kubernetes.default.svc?kubeletHttps=true&kubeletPort=10250&useServiceAccount=true&insecure=true
+  # https://github.com/kubernetes/kubernetes/issues/67702
+  # - --requestheader-client-ca-file=/etc/kubernetes/cert/ca.pem
+  # - --enable-aggregator-routing=true

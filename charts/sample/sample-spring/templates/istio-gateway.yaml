@@ -1,4 +1,5 @@
-{{ if .Values.istio.enabled }}
+{{ if (not (empty .Values.istio)) }}
+{{ if (.Values.istio.enabled) }}
 apiVersion: networking.istio.io/v1alpha3
 kind: Gateway
 metadata:
@@ -12,13 +13,7 @@ spec:
       name: http
       protocol: HTTP
     hosts:
-    - "{{ .Release.Name }}.istio-{{ .Values.ingress.basedomain }}"
-  # - port:
-  #     number: 443
-  #     name: https
-  #     protocol: HTTPS
-  #   hosts:
-  #   - {{ .Release.Name }}.{{ .Values.ingress.basedomain }}
+    - "*"
 ---
 apiVersion: networking.istio.io/v1alpha3
 kind: VirtualService
@@ -26,7 +21,7 @@ metadata:
   name: {{ template "fullname" . }}-gateway
 spec:
   hosts:
-  - "{{ .Release.Name }}.istio-{{ .Values.ingress.basedomain }}"
+  - "*"
   gateways:
   - {{ template "fullname" . }}-gateway
   http:
@@ -34,14 +29,15 @@ spec:
     - destination:
         host: {{ template "fullname" . }}
         port:
-          number: {{ .Values.service.internalPort }}
-    # match:
-    # - uri:
-    #     exact: /productpage
-    # - uri:
-    #     exact: /login
-    # - uri:
-    #     exact: /logout
-    # - uri:
-    #     prefix: /api/v1/products
+          number: {{ .Values.service.externalPort }}
+    match:
+    - uri:
+        exact: /spring
+    - uri:
+        exact: /stress
+    - uri:
+        prefix: /dealy
+    - uri:
+        prefix: /timeout
+{{ end }}
 {{ end }}

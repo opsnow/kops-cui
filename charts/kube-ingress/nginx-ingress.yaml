@@ -1,6 +1,8 @@
 # chart-repo: stable/nginx-ingress
 # chart-version: latest
 
+nameOverride: nginx-ingress
+
 controller:
   replicaCount: 2
   # autoscaling:
@@ -10,17 +12,11 @@ controller:
   #   targetCPUUtilizationPercentage: 50
   #   targetMemoryUtilizationPercentage: 50
   service:
-    labels:
-      app: nginx-ingress
     annotations:
-      # replace with the correct value of the generated certificate in the AWS console
       service.beta.kubernetes.io/aws-load-balancer-ssl-cert: ""
-      # the backend instances are HTTP
-      service.beta.kubernetes.io/aws-load-balancer-backend-protocol: "http"
-      # Map port 443
       service.beta.kubernetes.io/aws-load-balancer-ssl-ports: "https"
-      # Increase the ELB idle timeout to avoid issues with WebSockets or Server-Sent Events.
-      service.beta.kubernetes.io/aws-load-balancer-connection-idle-timeout: '3600'
+      service.beta.kubernetes.io/aws-load-balancer-backend-protocol: "http"
+      service.beta.kubernetes.io/aws-load-balancer-connection-idle-timeout: "3600"
     targetPorts:
       http: http
       https: http

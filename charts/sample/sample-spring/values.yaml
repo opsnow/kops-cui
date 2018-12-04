@@ -1,13 +1,8 @@
-replicaCount: 2
+replicaCount: 1
 image:
   repository: nalbam/sample-spring
   tag: alpine
   pullPolicy: Always
-canary:
-  enabled: true
-  tag: alpine
-istio:
-  enabled: true
 service:
   type: ClusterIP
   externalPort: 80
@@ -34,16 +29,21 @@ livenessProbe:
   periodSeconds: 15
   failureThreshold: 6
 ingress:
-  enabled: false
+  enabled: true
   basedomain: 127.0.0.1.nip.io
 hpa:
   enabled: true
   min: 1
   max: 5
-  cpu: 65
-  mem: 65
+  cpu: 80
+  mem: 80
 profile: default
 configmap:
   enabled: false
 secret:
   enabled: false
+istio:
+  enabled: true
+canary:
+  enabled: true
+  tag: alpine
