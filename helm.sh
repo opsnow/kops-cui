@@ -272,6 +272,11 @@ helm_install() {
     REPO=$(cat ${CHART} | grep chart-repo | awk '{print $3}')
     if [ "${REPO}" == "" ]; then
         REPO="stable/${NAME}"
+    else
+        PREFIX="$(echo ${REPO} | cut -d'/' -f1)"
+        if [ "${PREFIX}" == "custom" ]; then
+            REPO="${SHELL_DIR}/${REPO}"
+        fi
     fi
 
     # chart config

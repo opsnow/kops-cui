@@ -1,5 +1,6 @@
 # chart-repo: custom/kubernetes-dashboard
 # chart-version: latest
+# chart-ingress: true
 
 nameOverride: kubernetes-dashboard
 
