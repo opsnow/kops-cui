@@ -1,0 +1,6 @@
+image:
+  repository: opspresso/docker-clean
+  tag: latest
+
+env:
+  CLEAN_PERIOD: 600
