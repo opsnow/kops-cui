@@ -319,6 +319,12 @@ helm_install() {
         ${SHELL_DIR}/jenkins/jobs.sh ${CHART}
     fi
 
+    # for sonatype-nexus
+    if [ "${NAME}" == "sonatype-nexus" ]; then
+        # admin password
+        read_password ${CHART}
+    fi
+
     # for grafana
     if [ "${NAME}" == "grafana" ]; then
         # admin password
@@ -900,7 +906,7 @@ efs_delete() {
     config_save
 }
 
-istion_init() {
+istio_init() {
     NAME="istio"
     NAMESPACE="istio-system"
 
@@ -922,7 +928,7 @@ istion_init() {
 istio_install() {
     helm_check
 
-    istion_init
+    istio_init
 
     create_namespace ${NAMESPACE}
 
@@ -947,7 +953,7 @@ istio_install() {
     helm upgrade --install ${NAME} ${ISTIO_DIR} --namespace ${NAMESPACE} --values ${CHART}
 
     # for kiali
-    create_cluster_role_binding view ${NAMESPACE} kiali-service-account
+    # create_cluster_role_binding view ${NAMESPACE} kiali-service-account
 
     # save config (ISTIO)
     ISTIO=true
@@ -1001,7 +1007,7 @@ istio_injection() {
 }
 
 istio_delete() {
-    istion_init
+    istio_init
 
     # helm delete
     _command "helm delete --purge ${NAME}"

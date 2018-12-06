@@ -24,6 +24,14 @@ server:
     existingClaim: prometheus-server
 
 alertmanager:
+  # service:
+  #   type: SERVICE_TYPE
+  # ingress:
+  #   enabled: INGRESS_ENABLED
+  #   annotations:
+  #     kubernetes.io/ingress.class: nginx
+  #   hosts:
+  #     - alertmanager-INGRESS_DOMAIN
   persistentVolume:
     enabled: true
     accessModes:

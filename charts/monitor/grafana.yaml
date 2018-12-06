@@ -26,6 +26,15 @@ persistence:
   #:EFS:storageClassName: "efs"
   existingClaim: grafana
 
+#:LDAP:grafana.ini:
+#:LDAP:  auth.ldap:
+#:LDAP:    enabled: true
+#:LDAP:    allow_sign_up: true
+#:LDAP:    config_file: /etc/grafana/ldap.toml
+
+#:LDAP:ldap:
+#:LDAP:  existingSecret: "GRAFANA_LDAP"
+
 datasources:
   datasources.yaml:
     apiVersion: 1
@@ -49,11 +58,14 @@ dashboardProviders:
       options:
         path: /var/lib/grafana/dashboards/default
 
+# https://grafana.com/dashboards
 dashboards:
   default:
     kube-mon:
+      # gnetId: 9374
       url: https://raw.githubusercontent.com/opsnow/kops-cui/master/templates/kube-mon.json
     kube-mon-apps:
+      # gnetId: 9377
       url: https://raw.githubusercontent.com/opsnow/kops-cui/master/templates/kube-mon-apps.json
     # prometheus-stats:
     #   gnetId: 2
@@ -63,12 +75,3 @@ dashboards:
     #   gnetId: 315
     #   revision: 3
     #   datasource: Prometheus
-
-#:LDAP:grafana.ini:
-#:LDAP:  auth.ldap:
-#:LDAP:    enabled: true
-#:LDAP:    allow_sign_up: true
-#:LDAP:    config_file: /etc/grafana/ldap.toml
-
-#:LDAP:ldap:
-#:LDAP:  existingSecret: "GRAFANA_LDAP"
