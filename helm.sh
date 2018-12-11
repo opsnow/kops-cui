@@ -317,12 +317,6 @@ helm_install() {
         ${SHELL_DIR}/jenkins/jobs.sh ${CHART}
     fi
 
-    # for sonatype-nexus
-    if [ "${NAME}" == "sonatype-nexus" ]; then
-        # admin password
-        read_password ${CHART}
-    fi
-
     # for grafana
     if [ "${NAME}" == "grafana" ]; then
         # admin password
