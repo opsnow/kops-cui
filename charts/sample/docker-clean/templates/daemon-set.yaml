@@ -24,13 +24,7 @@ spec:
             - name: docker-sock
               mountPath: /var/run/docker.sock
               readOnly: false
-            - name: docker-dir
-              mountPath: /var/lib/docker
-              readOnly: false
       volumes:
         - name: docker-sock
           hostPath:
             path: /var/run/docker.sock
-        - name: docker-dir
-          hostPath:
-            path: /var/lib/docker

@@ -3,4 +3,4 @@ image:
   tag: latest
 
 env:
-  CLEAN_PERIOD: 600
+  CLEAN_PERIOD: 3600
