@@ -256,7 +256,7 @@ helm_install() {
     create_namespace ${NAMESPACE}
 
     # helm check FAILED
-    COUNT=$(helm ls -a | grep ${NAME} | grep ${NAMESPACE} | grep -v "DEPLOYED" | wc -l | xargs)
+    COUNT=$(helm ls -a | grep ${NAME} | grep ${NAMESPACE} | grep "FAILED" | wc -l | xargs)
     if [ "x${COUNT}" != "x0" ]; then
         _command "helm delete --purge ${NAME}"
         helm delete --purge ${NAME}
