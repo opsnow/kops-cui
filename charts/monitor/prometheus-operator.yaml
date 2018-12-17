@@ -1,0 +1,19 @@
+# chart-repo: stable/prometheus-operator
+# chart-version: latest
+# chart-ingress: true
+
+nameOverride: prometheus-operator
+
+alertmanager:
+  enabled: true
+  ingress:
+    enabled: INGRESS_ENABLED
+    hosts:
+    - alertmanager-INGRESS_DOMAIN
+
+grafana:
+  enabled: true
+  ingress:
+    enabled: INGRESS_ENABLED
+    hosts:
+    - grafana-INGRESS_DOMAIN

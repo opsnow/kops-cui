@@ -255,13 +255,11 @@ helm_install() {
 
     create_namespace ${NAMESPACE}
 
-    # helm FAILED check
-    COUNT=$(helm ls | grep ${NAME} | grep ${NAMESPACE} | grep FAILED | wc -l | xargs)
+    # helm check FAILED
+    COUNT=$(helm ls -a | grep ${NAME} | grep ${NAMESPACE} | grep "FAILED" | wc -l | xargs)
     if [ "x${COUNT}" != "x0" ]; then
         _command "helm delete --purge ${NAME}"
         helm delete --purge ${NAME}
-
-        waiting 5
     fi
 
     # helm chart
@@ -900,7 +898,7 @@ efs_delete() {
     config_save
 }
 
-istion_init() {
+istio_init() {
     NAME="istio"
     NAMESPACE="istio-system"
 
@@ -922,7 +920,7 @@ istion_init() {
 istio_install() {
     helm_check
 
-    istion_init
+    istio_init
 
     create_namespace ${NAMESPACE}
 
@@ -947,7 +945,7 @@ istio_install() {
     helm upgrade --install ${NAME} ${ISTIO_DIR} --namespace ${NAMESPACE} --values ${CHART}
 
     # for kiali
-    create_cluster_role_binding view ${NAMESPACE} kiali-service-account
+    # create_cluster_role_binding view ${NAMESPACE} kiali-service-account
 
     # save config (ISTIO)
     ISTIO=true
@@ -1001,7 +999,7 @@ istio_injection() {
 }
 
 istio_delete() {
-    istion_init
+    istio_init
 
     # helm delete
     _command "helm delete --purge ${NAME}"
