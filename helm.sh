@@ -282,8 +282,8 @@ helm_install() {
     INGRESS=$(cat ${CHART} | grep chart-ingress | awk '{print $3}')
 
     # global
-    _replace "s/AWS_REGION/${REGION}/" ${CHART}
-    _replace "s/CLUSTER_NAME/${CLUSTER_NAME}/" ${CHART}
+    _replace "s/AWS_REGION/${REGION}/g" ${CHART}
+    _replace "s/CLUSTER_NAME/${CLUSTER_NAME}/g" ${CHART}
 
     # for nginx-ingress
     if [ "${NAME}" == "nginx-ingress" ]; then
@@ -304,7 +304,7 @@ helm_install() {
     if [ "${NAME}" == "cluster-autoscaler" ]; then
         COUNT=$(kubectl get no | grep Ready | grep master | wc -l | xargs)
         if [ "x${COUNT}" != "x0" ]; then
-            _replace "s/#:MASTER://" ${CHART}
+            _replace "s/#:MASTER://g" ${CHART}
         fi
     fi
 
@@ -334,8 +334,8 @@ helm_install() {
         _result "secret: ${GRAFANA_LDAP}"
 
         if [ "${GRAFANA_LDAP}" != "" ]; then
-            _replace "s/#:LDAP://" ${CHART}
-            _replace "s/GRAFANA_LDAP/${GRAFANA_LDAP}/" ${CHART}
+            _replace "s/#:LDAP://g" ${CHART}
+            _replace "s/GRAFANA_LDAP/${GRAFANA_LDAP}/g" ${CHART}
         fi
     fi
 
@@ -345,18 +345,18 @@ helm_install() {
         question "Enter elasticsearch host [elasticsearch-client] : "
         CUSTOM_HOST=${ANSWER:-elasticsearch-client}
         _result "host: ${CUSTOM_HOST}"
-        _replace "s/CUSTOM_HOST/${CUSTOM_HOST}/" ${CHART}
+        _replace "s/CUSTOM_HOST/${CUSTOM_HOST}/g" ${CHART}
 
         # port
         question "Enter elasticsearch port [9200]: "
         CUSTOM_PORT=${ANSWER:-9200}
         _result "port: ${CUSTOM_PORT}"
-        _replace "s/CUSTOM_PORT/${CUSTOM_PORT}/" ${CHART}
+        _replace "s/CUSTOM_PORT/${CUSTOM_PORT}/g" ${CHART}
     fi
 
     # for efs-mount
     if [ ! -z ${EFS_ID} ]; then
-        _replace "s/#:EFS://" ${CHART}
+        _replace "s/#:EFS://g" ${CHART}
     fi
 
     # for istio
@@ -370,20 +370,20 @@ helm_install() {
     else
         ISTIO_ENABLED=false
     fi
-    _replace "s/ISTIO_ENABLED/${ISTIO_ENABLED}/" ${CHART}
+    _replace "s/ISTIO_ENABLED/${ISTIO_ENABLED}/g" ${CHART}
 
     if [ "${INGRESS}" == "true" ]; then
         if [ -z ${BASE_DOMAIN} ]; then
             DOMAIN=
 
-            _replace "s/SERVICE_TYPE/LoadBalancer/" ${CHART}
-            _replace "s/INGRESS_ENABLED/false/" ${CHART}
+            _replace "s/SERVICE_TYPE/LoadBalancer/g" ${CHART}
+            _replace "s/INGRESS_ENABLED/false/g" ${CHART}
         else
             DOMAIN="${NAME}-${NAMESPACE}.${BASE_DOMAIN}"
 
-            _replace "s/SERVICE_TYPE/ClusterIP/" ${CHART}
-            _replace "s/INGRESS_ENABLED/true/" ${CHART}
-            _replace "s/INGRESS_DOMAIN/${DOMAIN}/" ${CHART}
+            _replace "s/SERVICE_TYPE/ClusterIP/g" ${CHART}
+            _replace "s/INGRESS_ENABLED/true/g" ${CHART}
+            _replace "s/INGRESS_DOMAIN/${DOMAIN}/g" ${CHART}
         fi
     fi
 
@@ -688,19 +688,19 @@ create_pvc() {
     PVC=${SHELL_DIR}/build/${THIS_NAME}-pvc-${PVC_NAME}.yaml
     get_template templates/pvc.yaml ${PVC}
 
-    _replace "s/PVC_NAME/${PVC_NAME}/" ${PVC}
-    _replace "s/PVC_ACCESS_MODE/${PVC_ACCESS_MODE}/" ${PVC}
-    _replace "s/PVC_SIZE/${PVC_SIZE}/" ${PVC}
+    _replace "s/PVC_NAME/${PVC_NAME}/g" ${PVC}
+    _replace "s/PVC_ACCESS_MODE/${PVC_ACCESS_MODE}/g" ${PVC}
+    _replace "s/PVC_SIZE/${PVC_SIZE}/g" ${PVC}
 
     # for efs-provisioner
     if [ ! -z ${EFS_ID} ]; then
-        _replace "s/#:EFS://" ${PVC}
+        _replace "s/#:EFS://g" ${PVC}
     fi
 
     # for static pvc
     if [ ! -z ${PV_NAME} ]; then
-        _replace "s/#:PV://" ${PVC}
-        _replace "s/PV_NAME/${PV_NAME}/" ${PVC}
+        _replace "s/#:PV://g" ${PVC}
+        _replace "s/PV_NAME/${PV_NAME}/g" ${PVC}
     fi
 
     echo ${PVC}
@@ -846,7 +846,7 @@ efs_create() {
     _result "EFS_ID=[${EFS_ID}]"
 
     # replace EFS_ID
-    _replace "s/EFS_ID/${EFS_ID}/" ${CHART}
+    _replace "s/EFS_ID/${EFS_ID}/g" ${CHART}
 
     # save config (EFS_ID)
     config_save
@@ -913,18 +913,35 @@ efs_delete() {
 }
 
 istio_init() {
+    helm_check
+
     NAME="istio"
     NAMESPACE="istio-system"
 
     ISTIO_TMP=${SHELL_DIR}/build/istio
     mkdir -p ${ISTIO_TMP}
 
-    VERSION=$(curl -s https://api.github.com/repos/${NAME}/${NAME}/releases/latest | jq -r '.tag_name')
+    CHART=${SHELL_DIR}/charts/istio/istio.yaml
+    VERSION=$(cat ${CHART} | grep chart-version | awk '{print $3}')
+
+    if [ "${VERSION}" == "" ] || [ "${VERSION}" == "latest" ]; then
+        VERSION=$(curl -s https://api.github.com/repos/istio/istio/releases/latest | jq -r '.tag_name')
+    fi
+
+    _result "${NAME} ${VERSION}"
 
     # istio download
     if [ ! -d ${ISTIO_TMP}/${NAME}-${VERSION} ]; then
+        if [ "${OS_NAME}" == "darwin" ]; then
+            OSEXT="osx"
+        else
+            OSEXT="linux"
+        fi
+
+        URL="https://github.com/istio/istio/releases/download/${VERSION}/istio-${VERSION}-${OSEXT}.tar.gz"
+
         pushd ${ISTIO_TMP}
-        curl -sL https://git.io/getLatestIstio | sh -
+        curl -sL "${URL}" | tar xz
         popd
     fi
 
@@ -932,8 +949,6 @@ istio_init() {
 }
 
 istio_install() {
-    helm_check
-
     istio_init
 
     create_namespace ${NAMESPACE}
@@ -959,7 +974,7 @@ istio_install() {
     helm upgrade --install ${NAME} ${ISTIO_DIR} --namespace ${NAMESPACE} --values ${CHART}
 
     # for kiali
-    # create_cluster_role_binding view ${NAMESPACE} kiali-service-account
+    create_cluster_role_binding view ${NAMESPACE} kiali-service-account
 
     # save config (ISTIO)
     ISTIO=true
@@ -1019,15 +1034,21 @@ istio_delete() {
     _command "helm delete --purge ${NAME}"
     helm delete --purge ${NAME}
 
-    # save config (ISTIO)
-    ISTIO=
-    config_save
+    # _command "kubectl delete -f ${ISTIO_DIR}/templates/crds.yaml"
+    # kubectl delete -f ${ISTIO_DIR}/templates/crds.yaml
 
-    _command "kubectl delete -f ${ISTIO_DIR}/templates/crds.yaml"
-    kubectl delete -f ${ISTIO_DIR}/templates/crds.yaml
+    LIST="$(kubectl get crds | grep istio.io | awk '{print $1}')"
+    if [ "${LIST}" != "" ]; then
+        _command "kubectl delete crds *.istio.io"
+        kubectl delete crds ${LIST}
+    fi
 
     _command "kubectl delete namespace ${NAMESPACE}"
     kubectl delete namespace ${NAMESPACE}
+
+    # save config (ISTIO)
+    ISTIO=
+    config_save
 }
 
 sample_install() {
@@ -1040,7 +1061,7 @@ sample_install() {
     get_template charts/sample/${NAME}.yaml ${CHART}
 
     # profile
-    _replace "s/profile:.*/profile: ${NAMESPACE}/" ${CHART}
+    _replace "s/profile:.*/profile: ${NAMESPACE}/g" ${CHART}
 
     # ingress
     INGRESS=$(cat ${CHART} | grep chart-ingress | awk '{print $3}')
@@ -1049,29 +1070,29 @@ sample_install() {
         if [ -z ${BASE_DOMAIN} ]; then
             get_ingress_nip_io
 
-            _replace "s/SERVICE_TYPE/LoadBalancer/" ${CHART}
-            _replace "s/INGRESS_ENABLED/false/" ${CHART}
+            _replace "s/SERVICE_TYPE/LoadBalancer/g" ${CHART}
+            _replace "s/INGRESS_ENABLED/false/g" ${CHART}
         else
-            _replace "s/SERVICE_TYPE/ClusterIP/" ${CHART}
-            _replace "s/INGRESS_ENABLED/true/" ${CHART}
-            _replace "s/BASE_DOMAIN/${BASE_DOMAIN}/" ${CHART}
+            _replace "s/SERVICE_TYPE/ClusterIP/g" ${CHART}
+            _replace "s/INGRESS_ENABLED/true/g" ${CHART}
+            _replace "s/BASE_DOMAIN/${BASE_DOMAIN}/g" ${CHART}
         fi
     fi
 
     # has configmap
     COUNT=$(kubectl get configmap -n ${NAMESPACE} 2>&1 | grep ${NAME}-${NAMESPACE} | wc -l | xargs)
     if [ "x${COUNT}" != "x0" ]; then
-        _replace "s/CONFIGMAP_ENABLED/true/" ${CHART}
+        _replace "s/CONFIGMAP_ENABLED/true/g" ${CHART}
     else
-        _replace "s/CONFIGMAP_ENABLED/false/" ${CHART}
+        _replace "s/CONFIGMAP_ENABLED/false/g" ${CHART}
     fi
 
     # has secret
     COUNT=$(kubectl get secret -n ${NAMESPACE} 2>&1 | grep ${NAME}-${NAMESPACE} | wc -l | xargs)
     if [ "x${COUNT}" != "x0" ]; then
-        _replace "s/SECRET_ENABLED/true/" ${CHART}
+        _replace "s/SECRET_ENABLED/true/g" ${CHART}
     else
-        _replace "s/SECRET_ENABLED/false/" ${CHART}
+        _replace "s/SECRET_ENABLED/false/g" ${CHART}
     fi
 
     # for istio
@@ -1085,7 +1106,7 @@ sample_install() {
     else
         ISTIO_ENABLED=false
     fi
-    _replace "s/ISTIO_ENABLED/${ISTIO_ENABLED}/" ${CHART}
+    _replace "s/ISTIO_ENABLED/${ISTIO_ENABLED}/g" ${CHART}
 
     SAMPLE_DIR=${SHELL_DIR}/charts/sample/${NAME}
 
