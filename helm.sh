@@ -285,14 +285,14 @@ helm_install() {
     _replace "s/AWS_REGION/${REGION}/" ${CHART}
     _replace "s/CLUSTER_NAME/${CLUSTER_NAME}/" ${CHART}
 
-    # for efs-provisioner
-    if [ "${NAME}" == "efs-provisioner" ]; then
-        efs_create
-    fi
-
     # for nginx-ingress
     if [ "${NAME}" == "nginx-ingress" ]; then
         get_base_domain
+    fi
+
+    # for efs-provisioner
+    if [ "${NAME}" == "efs-provisioner" ]; then
+        efs_create
     fi
 
     # for kubernetes-dashboard
@@ -357,7 +357,6 @@ helm_install() {
     # for efs-mount
     if [ ! -z ${EFS_ID} ]; then
         _replace "s/#:EFS://" ${CHART}
-        _replace "s/EFS_FILE_SYSTEM_ID/${EFS_ID}/" ${CHART}
     fi
 
     # for istio
@@ -427,6 +426,12 @@ helm_install() {
     # for nginx-ingress
     if [ "${NAME}" == "nginx-ingress" ]; then
         set_base_domain "${NAME}"
+    fi
+
+    # for efs-provisioner
+    if [ "${NAME}" == "efs-provisioner" ]; then
+        _command "kubectl get sc -n ${NAMESPACE}"
+        kubectl get sc -n ${NAMESPACE}
     fi
 
     # for kubernetes-dashboard
@@ -838,7 +843,10 @@ efs_create() {
         EFS_ID=$(aws efs describe-file-systems --creation-token ${CLUSTER_NAME} --region ${REGION} | jq -r '.FileSystems[].FileSystemId')
     fi
 
-    _result "EFS_ID=${EFS_ID}"
+    _result "EFS_ID=[${EFS_ID}]"
+
+    # replace EFS_ID
+    _replace "s/EFS_ID/${EFS_ID}/" ${CHART}
 
     # save config (EFS_ID)
     config_save
