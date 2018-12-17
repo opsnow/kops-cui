@@ -13,6 +13,7 @@ server:
   #   enabled: INGRESS_ENABLED
   #   annotations:
   #     kubernetes.io/ingress.class: nginx
+  #     nginx.ingress.kubernetes.io/force-ssl-redirect: "true"
   #   hosts:
   #     - INGRESS_DOMAIN
   persistentVolume:
@@ -30,6 +31,7 @@ alertmanager:
   #   enabled: INGRESS_ENABLED
   #   annotations:
   #     kubernetes.io/ingress.class: nginx
+  #     nginx.ingress.kubernetes.io/force-ssl-redirect: "true"
   #   hosts:
   #     - alertmanager-INGRESS_DOMAIN
   persistentVolume:

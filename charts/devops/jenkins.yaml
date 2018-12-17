@@ -23,13 +23,10 @@ Master:
   JavaOpts: "-Dorg.apache.commons.jelly.tags.fmt.timeZone=Asia/Seoul"
   ServiceType: SERVICE_TYPE
   HostName: INGRESS_DOMAIN
-  # Ingress:
-  #   ApiVersion: extensions/v1beta1
-  #   kubernetes.io/ingress.class: nginx
-  #   TLS:
-  #   - secretName: INGRESS_DOMAIN
-  #     hosts:
-  #       - INGRESS_DOMAIN
+  Ingress:
+    Annotations:
+      kubernetes.io/ingress.class: nginx
+      nginx.ingress.kubernetes.io/force-ssl-redirect: "true"
   InstallPlugins:
     # https://github.com/helm/charts/blob/master/stable/jenkins/values.yaml
     - kubernetes:latest
