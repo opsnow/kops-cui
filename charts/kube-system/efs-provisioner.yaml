@@ -1,5 +1,5 @@
 # chart-repo: stable/efs-provisioner
-# chart-version: latest
+# chart-version: 0.1.1
 
 nameOverride: efs-provisioner
 
@@ -9,10 +9,10 @@ image:
   pullPollicy: IfNotPresent
 
 efsProvisioner:
-  efsFileSystemId: EFS_FILE_SYSTEM_ID
+  efsFileSystemId: EFS_ID
   awsRegion: AWS_REGION
   path: /shared
-  provisionerName: CLUSTER_NAME/efs
+  provisionerName: CLUSTER_NAME/aws-efs
   storageClass:
     name: efs
     isDefault: false

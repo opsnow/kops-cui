@@ -58,15 +58,18 @@ dashboardProviders:
       options:
         path: /var/lib/grafana/dashboards/default
 
-# https://grafana.com/dashboards
 dashboards:
   default:
     kube-mon:
-      # gnetId: 9374
-      url: https://raw.githubusercontent.com/opsnow/kops-cui/master/templates/kube-mon.json
+      # https://grafana.com/dashboards/9374
+      gnetId: 9374
+      revision: 1
+      datasource: Prometheus
     kube-mon-apps:
-      # gnetId: 9377
-      url: https://raw.githubusercontent.com/opsnow/kops-cui/master/templates/kube-mon-apps.json
+      # https://grafana.com/dashboards/9377
+      gnetId: 9377
+      revision: 1
+      datasource: Prometheus
     # prometheus-stats:
     #   gnetId: 2
     #   revision: 2

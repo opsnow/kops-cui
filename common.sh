@@ -221,14 +221,14 @@ config_save() {
     ENCODED=${SHELL_DIR}/build/${THIS_NAME}-config.txt
     cat ${CONFIG} | base64 -w 0 > ${ENCODED}
 
-    CHART=${SHELL_DIR}/build/${THIS_NAME}-config.yaml
-    get_template templates/config.yaml ${CHART}
+    CONFIG=${SHELL_DIR}/build/${THIS_NAME}-config.yaml
+    get_template templates/config.yaml ${CONFIG}
 
-    _replace "s/REPLACE-ME/${THIS_NAME}-config/" ${CHART}
+    _replace "s/REPLACE-ME/${THIS_NAME}-config/" ${CONFIG}
 
-    sed "s/^/    /" ${ENCODED} >> ${CHART}
+    sed "s/^/    /" ${ENCODED} >> ${CONFIG}
 
-    kubectl apply -f ${CHART} -n default
+    kubectl apply -f ${CONFIG} -n default
 }
 
 config_load() {
