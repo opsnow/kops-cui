@@ -32,6 +32,9 @@ nexusProxy:
     nexusHttpHost: INGRESS_DOMAIN
     nexusDockerHost: docker-INGRESS_DOMAIN
 
+nexusBackup:
+  nexusAdminPassword: PASSWORD
+
 ingress:
   enabled: INGRESS_ENABLED
   tls:
