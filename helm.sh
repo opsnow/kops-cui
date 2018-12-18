@@ -1442,7 +1442,7 @@ get_base_domain() {
         _replace "s@${TEXT}:.*@${TEXT}: ${SSL_CERT_ARN}@" ${CHART}
 
         TEXT="external-dns.alpha.kubernetes.io/hostname"
-        _replace "s@${TEXT}:.*@${TEXT}: ${SUB_DOMAIN}.${BASE_DOMAIN}@" ${CHART}
+        _replace "s@${TEXT}:.*@${TEXT}: \"${SUB_DOMAIN}.${BASE_DOMAIN}\"@" ${CHART}
     fi
 }
 
