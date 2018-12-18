@@ -1,5 +1,6 @@
 # chart-repo: stable/external-dns
 # chart-version: latest
+# chart-node: master
 
 nameOverride: external-dns
 
@@ -9,3 +10,10 @@ aws:
   # pre external-dns 0.5.9 home dir should be `/root/.aws`
   credentialsPath: "/.aws"
   region: "us-east-1"
+
+#:MASTER:nodeSelector:
+#:MASTER:  kubernetes.io/role: master
+
+#:MASTER:tolerations:
+#:MASTER:  - effect: NoSchedule
+#:MASTER:    key: node-role.kubernetes.io/master
