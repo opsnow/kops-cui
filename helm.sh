@@ -283,7 +283,7 @@ helm_install() {
 
     # chart version
     if [ "${VERSION}" == "" ] || [ "${VERSION}" == "latest" ]; then
-        VERSION=$(helm search stable/${NAME} | grep "stable/${NAME} " | awk '{printf $2}' | head -1 | xargs)
+        VERSION=$(helm search stable/${NAME} | grep ${NAME} | head -1 | awk '{printf $2}' | xargs)
 
         if [ "${VERSION}" != "" ]; then
             _replace "s/chart-version:.*/chart-version: ${VERSION}/g" ${CHART}
