@@ -1,4 +1,4 @@
-# chart-repo: custom/kubernetes-dashboard
+# chart-repo: stable/kubernetes-dashboard
 # chart-version: latest
 # chart-ingress: true
 
@@ -6,13 +6,15 @@ nameOverride: kubernetes-dashboard
 
 # extraArgs:
 #   - --enable-insecure-login=true
-#   - --port=9000
-#   - --insecure-port=9000
+#   - --port=9090
+#   - --insecure-port=9090
 #   - --insecure-bind-address=0.0.0.0
 
-# service:
-#   type: LoadBalancer
-#   externalPort: 443
+enableInsecureLogin: true
+
+service:
+  type: SERVICE_TYPE
+  externalPort: 9090
 #   annotations:
 #     service.beta.kubernetes.io/aws-load-balancer-ssl-cert: ""
 #     service.beta.kubernetes.io/aws-load-balancer-ssl-ports: "https"
@@ -24,9 +26,10 @@ ingress:
   enabled: INGRESS_ENABLED
   annotations:
     kubernetes.io/ingress.class: nginx
+    nginx.ingress.kubernetes.io/force-ssl-redirect: "true"
   hosts:
     - INGRESS_DOMAIN
 
 # rbac:
 #   create: true
-#   clusterAdminRole: true
+#   clusterAdminRole: false
