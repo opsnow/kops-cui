@@ -281,6 +281,15 @@ helm_install() {
     VERSION=$(cat ${CHART} | grep chart-version | awk '{print $3}')
     INGRESS=$(cat ${CHART} | grep chart-ingress | awk '{print $3}')
 
+    # chart version
+    if [ "${VERSION}" == "" ] || [ "${VERSION}" == "latest" ]; then
+        VERSION=$(helm search stable/${NAME} | grep "stable/${NAME} " | awk '{printf $2}' | head -1 | xargs)
+
+        if [ "${VERSION}" != "" ]; then
+            _replace "s/chart-version:.*/chart-version: ${VERSION}/g" ${CHART}
+        fi
+    fi
+
     # global
     _replace "s/AWS_REGION/${REGION}/g" ${CHART}
     _replace "s/CLUSTER_NAME/${CLUSTER_NAME}/g" ${CHART}
@@ -396,13 +405,8 @@ helm_install() {
     done < "${LIST}"
 
     # helm install
-    if [ "${VERSION}" == "" ] || [ "${VERSION}" == "latest" ]; then
-        _command "helm upgrade --install ${NAME} ${REPO} --namespace ${NAMESPACE} --values ${CHART}"
-        helm upgrade --install ${NAME} ${REPO} --namespace ${NAMESPACE} --values ${CHART}
-    else
-        _command "helm upgrade --install ${NAME} ${REPO} --namespace ${NAMESPACE} --values ${CHART} --version ${VERSION}"
-        helm upgrade --install ${NAME} ${REPO} --namespace ${NAMESPACE} --values ${CHART} --version ${VERSION}
-    fi
+    _command "helm upgrade --install ${NAME} ${REPO} --namespace ${NAMESPACE} --values ${CHART}"
+    helm upgrade --install ${NAME} ${REPO} --namespace ${NAMESPACE} --values ${CHART}
 
     # nginx-ingress
     if [ "${NAME}" == "nginx-ingress" ]; then
