@@ -4,6 +4,10 @@
 
 nameOverride: external-dns
 
+sources:
+  - service
+  # - ingress
+
 aws:
   accessKey: ""
   secretKey: ""
