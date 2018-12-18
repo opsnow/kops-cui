@@ -219,7 +219,12 @@ config_save() {
     cat ${CONFIG}
 
     ENCODED=${SHELL_DIR}/build/${THIS_NAME}-config.txt
-    cat ${CONFIG} | base64 -w 0 > ${ENCODED}
+
+    if [ "${OS_NAME}" == "darwin" ]; then
+        cat ${CONFIG} | base64 > ${ENCODED}
+    else
+        cat ${CONFIG} | base64 -w 0 > ${ENCODED}
+    fi
 
     CONFIG=${SHELL_DIR}/build/${THIS_NAME}-config.yaml
     get_template templates/config.yaml ${CONFIG}
