@@ -1,0 +1,11 @@
+# chart-repo: stable/external-dns
+# chart-version: latest
+
+nameOverride: external-dns
+
+aws:
+  secretKey: ""
+  accessKey: ""
+  # pre external-dns 0.5.9 home dir should be `/root/.aws`
+  credentialsPath: "/.aws"
+  region: "us-east-1"

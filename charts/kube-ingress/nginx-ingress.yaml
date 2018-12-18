@@ -17,6 +17,8 @@ controller:
       service.beta.kubernetes.io/aws-load-balancer-ssl-ports: "https"
       service.beta.kubernetes.io/aws-load-balancer-backend-protocol: "http"
       service.beta.kubernetes.io/aws-load-balancer-connection-idle-timeout: "3600"
+      external-dns.alpha.kubernetes.io/hostname: "demo.opsnow.com."
+      external-dns.alpha.kubernetes.io/ttl: 300
     targetPorts:
       http: http
       https: http
