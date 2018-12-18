@@ -263,7 +263,7 @@ helm_install() {
     fi
 
     # helm chart
-    CHART=${SHELL_DIR}/build/${THIS_NAME}-${NAME}.yaml
+    CHART=${SHELL_DIR}/build/${THIS_NAME}-helm-${NAME}.yaml
     get_template charts/${NAMESPACE}/${NAME}.yaml ${CHART}
 
     # chart repository
@@ -294,11 +294,6 @@ helm_install() {
     if [ "${NAME}" == "efs-provisioner" ]; then
         efs_create
     fi
-
-    # for kubernetes-dashboard
-    # if [ "${NAME}" == "kubernetes-dashboard" ]; then
-    #     get_base_domain "${NAME}.${NAMESPACE}"
-    # fi
 
     # for cluster-autoscaler
     if [ "${NAME}" == "cluster-autoscaler" ]; then
@@ -434,12 +429,6 @@ helm_install() {
         kubectl get sc -n ${NAMESPACE}
     fi
 
-    # for kubernetes-dashboard
-    # if [ "${NAME}" == "kubernetes-dashboard" ]; then
-    #     # set_base_domain "${NAME}" "${NAME}.${NAMESPACE}"
-    #     get_elb_domain ${NAME} ${NAMESPACE}
-    # fi
-
     # chart ingress = true
     if [ "${INGRESS}" == "true" ]; then
         if [ -z ${BASE_DOMAIN} ]; then
@@ -455,10 +444,10 @@ helm_install() {
         fi
     fi
 
-    # # for kubernetes-dashboard
-    # if [ "${NAME}" == "kubernetes-dashboard" ]; then
-    #     create_cluster_role_binding view ${NAMESPACE} ${NAME}-view true
-    # fi
+    # for kubernetes-dashboard
+    if [ "${NAME}" == "kubernetes-dashboard" ]; then
+        create_cluster_role_binding view ${NAMESPACE} ${NAME}-view true
+    fi
 }
 
 helm_delete() {
@@ -938,7 +927,7 @@ istio_install() {
 
     create_namespace ${NAMESPACE}
 
-    CHART=${SHELL_DIR}/build/${THIS_NAME}-${NAME}.yaml
+    CHART=${SHELL_DIR}/build/${THIS_NAME}-istio-${NAME}.yaml
     get_template charts/istio/${NAME}.yaml ${CHART}
 
     # ingress
@@ -989,7 +978,7 @@ istio_injection() {
         return
     fi
 
-    LIST=${SHELL_DIR}/build/${THIS_NAME}-ns-list
+    LIST=${SHELL_DIR}/build/${THIS_NAME}-istio-ns-list
 
     # find sample
     kubectl get ns | grep -v "NAME" | awk '{print $1}' > ${LIST}
@@ -1412,9 +1401,6 @@ get_base_domain() {
 
         BASE_DOMAIN=${ANSWER:-${DEFAULT}}
     fi
-
-    # CHART=${SHELL_DIR}/build/${THIS_NAME}-${NAME}.yaml
-    # get_template charts/${NAMESPACE}/${NAME}.yaml ${CHART}
 
     # certificate
     if [ ! -z ${BASE_DOMAIN} ]; then
