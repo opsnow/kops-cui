@@ -14,3 +14,6 @@ aws:
 #:MASTER:tolerations:
 #:MASTER:  - effect: NoSchedule
 #:MASTER:    key: node-role.kubernetes.io/master
+
+rbac:
+  create: true
