@@ -280,6 +280,7 @@ helm_install() {
     # chart config
     VERSION=$(cat ${CHART} | grep chart-version | awk '{print $3}')
     INGRESS=$(cat ${CHART} | grep chart-ingress | awk '{print $3}')
+    NODE=$(cat ${CHART} | grep chart-node | awk '{print $3}')
 
     # global
     _replace "s/AWS_REGION/${REGION}/g" ${CHART}
@@ -293,14 +294,6 @@ helm_install() {
     # for efs-provisioner
     if [ "${NAME}" == "efs-provisioner" ]; then
         efs_create
-    fi
-
-    # for cluster-autoscaler
-    if [ "${NAME}" == "cluster-autoscaler" ]; then
-        COUNT=$(kubectl get no | grep Ready | grep master | wc -l | xargs)
-        if [ "x${COUNT}" != "x0" ]; then
-            _replace "s/#:MASTER://g" ${CHART}
-        fi
     fi
 
     # for jenkins
@@ -354,6 +347,14 @@ helm_install() {
         _replace "s/#:EFS://g" ${CHART}
     fi
 
+    # for master node
+    if [ "${NODE}" == "master" ]; then
+        COUNT=$(kubectl get no | grep Ready | grep master | wc -l | xargs)
+        if [ "x${COUNT}" != "x0" ]; then
+            _replace "s/#:MASTER://g" ${CHART}
+        fi
+    fi
+
     # for istio
     if [ "${ISTIO}" == "true" ]; then
         COUNT=$(kubectl get ns ${NAMESPACE} --show-labels | grep 'istio-injection=enabled' | wc -l | xargs)
@@ -367,6 +368,7 @@ helm_install() {
     fi
     _replace "s/ISTIO_ENABLED/${ISTIO_ENABLED}/g" ${CHART}
 
+    # for ingress
     if [ "${INGRESS}" == "true" ]; then
         if [ -z ${BASE_DOMAIN} ]; then
             DOMAIN=
@@ -1436,7 +1438,11 @@ get_base_domain() {
 
         _result "CertificateArn: ${SSL_CERT_ARN}"
 
-        _replace "s@aws-load-balancer-ssl-cert:.*@aws-load-balancer-ssl-cert: ${SSL_CERT_ARN}@" ${CHART}
+        TEXT="aws-load-balancer-ssl-cert"
+        _replace "s@${TEXT}:.*@${TEXT}: ${SSL_CERT_ARN}@" ${CHART}
+
+        TEXT="external-dns.alpha.kubernetes.io/hostname"
+        _replace "s@${TEXT}:.*@${TEXT}: ${SUB_DOMAIN}.${BASE_DOMAIN}@" ${CHART}
     fi
 }
 
