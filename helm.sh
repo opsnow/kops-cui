@@ -286,6 +286,12 @@ helm_install() {
     _replace "s/AWS_REGION/${REGION}/g" ${CHART}
     _replace "s/CLUSTER_NAME/${CLUSTER_NAME}/g" ${CHART}
 
+    # for external-dns
+    if [ "${NAME}" == "external-dns" ]; then
+        replace_secret ${CHART} accessKey
+        replace_secret ${CHART} secretKey
+    fi
+
     # for nginx-ingress
     if [ "${NAME}" == "nginx-ingress" ]; then
         get_base_domain
@@ -299,7 +305,7 @@ helm_install() {
     # for jenkins
     if [ "${NAME}" == "jenkins" ]; then
         # admin password
-        read_password ${CHART}
+        replace_password ${CHART}
 
         # jenkins jobs
         ${SHELL_DIR}/jenkins/jobs.sh ${CHART}
@@ -308,13 +314,13 @@ helm_install() {
     # for sonatype-nexus
     if [ "${NAME}" == "sonatype-nexus" ]; then
         # admin password
-        read_password ${CHART}
+        replace_password ${CHART}
     fi
 
     # for grafana
     if [ "${NAME}" == "grafana" ]; then
         # admin password
-        read_password ${CHART}
+        replace_password ${CHART}
 
         # ldap
         question "Enter grafana LDAP secret : "
@@ -958,7 +964,7 @@ istio_install() {
     fi
 
     # admin password
-    read_password ${CHART}
+    replace_password ${CHART}
 
     # helm install
     _command "helm upgrade --install ${NAME} ${ISTIO_DIR} --namespace ${NAMESPACE} --values ${CHART}"
@@ -1446,15 +1452,25 @@ get_base_domain() {
     fi
 }
 
-read_password() {
+replace_password() {
     CHART=${1}
+    KEY=${2:-PASSWORD}
+    DEFAULT=${3:-password}
 
-    # admin password
-    DEFAULT="password"
-    password "Enter admin password [${DEFAULT}] : "
+    password "Enter ${KEY} [${DEFAULT}] : "
     echo
 
-    _replace "s/PASSWORD/${PASSWORD:-${DEFAULT}}/g" ${CHART}
+    _replace "s/${KEY}/${PASSWORD:-${DEFAULT}}/g" ${CHART}
+}
+
+replace_secret() {
+    CHART=${1}
+    KEY=${2:-KEY}
+
+    password "Enter ${KEY} : "
+    echo
+
+    _replace "s/${KEY}:.*/${KEY}: \"${PASSWORD}\"/g" ${CHART}
 }
 
 waiting_for() {
