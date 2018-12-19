@@ -22,3 +22,9 @@ controller:
     targetPorts:
       http: http
       https: http
+  metrics:
+    enabled: true
+    service:
+      annotations:
+        prometheus.io/scrape: "true"
+        prometheus.io/port: "80"
