@@ -439,18 +439,30 @@ save_kops_config() {
 }
 
 read_state_store() {
+    # state store list
+    LIST=${SHELL_DIR}/build/${THIS_NAME}-kops-state-store-list
+
+    _command "aws s3 ls | grep kops-state"
+    aws s3 ls | grep kops-state | awk '{print $3}' > ${LIST}
+
+    # select
+    select_one
+
+    KOPS_STATE_STORE="${SELECTED}"
+
     if [ -z ${KOPS_STATE_STORE} ]; then
         DEFAULT=$(aws s3 ls | grep kops-state | head -1 | awk '{print $3}')
         if [ -z ${DEFAULT} ]; then
             DEFAULT="kops-state-$(whoami)"
         fi
-    else
-        DEFAULT=${KOPS_STATE_STORE}
+
+        question "Enter cluster store [${DEFAULT}] : "
+
+        KOPS_STATE_STORE=${ANSWER:-${DEFAULT}}
     fi
-
-    question "Enter cluster store [${DEFAULT}] : "
-
-    KOPS_STATE_STORE=${ANSWER:-${DEFAULT}}
+    if [ -z ${KOPS_STATE_STORE} ]; then
+        _error
+    fi
 
     # S3 Bucket
     BUCKET=$(aws s3api get-bucket-acl --bucket ${KOPS_STATE_STORE} | jq -r '.Owner.ID')
@@ -462,7 +474,6 @@ read_state_store() {
 
         BUCKET=$(aws s3api get-bucket-acl --bucket ${KOPS_STATE_STORE} | jq -r '.Owner.ID')
         if [ -z ${BUCKET} ]; then
-            # clear_kops_config
             _error
         fi
     fi
@@ -485,7 +496,6 @@ read_cluster_list() {
     fi
 
     if [ "${KOPS_CLUSTER_NAME}" == "" ]; then
-        # clear_kops_config
         _error
     fi
 }
