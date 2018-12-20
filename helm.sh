@@ -280,10 +280,26 @@ helm_install() {
     # chart config
     VERSION=$(cat ${CHART} | grep chart-version | awk '{print $3}')
     INGRESS=$(cat ${CHART} | grep chart-ingress | awk '{print $3}')
+    NODE=$(cat ${CHART} | grep chart-node | awk '{print $3}')
+
+    # chart version
+    if [ "${VERSION}" == "" ] || [ "${VERSION}" == "latest" ]; then
+        VERSION=$(helm search stable/${NAME} | grep ${NAME} | head -1 | awk '{printf $2}' | xargs)
+
+        if [ "${VERSION}" != "" ]; then
+            _replace "s/chart-version:.*/chart-version: ${VERSION}/g" ${CHART}
+        fi
+    fi
 
     # global
     _replace "s/AWS_REGION/${REGION}/g" ${CHART}
     _replace "s/CLUSTER_NAME/${CLUSTER_NAME}/g" ${CHART}
+
+    # for external-dns
+    if [ "${NAME}" == "external-dns" ]; then
+        replace_secret ${CHART} accessKey
+        replace_secret ${CHART} secretKey
+    fi
 
     # for nginx-ingress
     if [ "${NAME}" == "nginx-ingress" ]; then
@@ -295,18 +311,10 @@ helm_install() {
         efs_create
     fi
 
-    # for cluster-autoscaler
-    if [ "${NAME}" == "cluster-autoscaler" ]; then
-        COUNT=$(kubectl get no | grep Ready | grep master | wc -l | xargs)
-        if [ "x${COUNT}" != "x0" ]; then
-            _replace "s/#:MASTER://g" ${CHART}
-        fi
-    fi
-
     # for jenkins
     if [ "${NAME}" == "jenkins" ]; then
         # admin password
-        read_password ${CHART}
+        replace_password ${CHART}
 
         # jenkins jobs
         ${SHELL_DIR}/jenkins/jobs.sh ${CHART}
@@ -315,13 +323,13 @@ helm_install() {
     # for sonatype-nexus
     if [ "${NAME}" == "sonatype-nexus" ]; then
         # admin password
-        read_password ${CHART}
+        replace_password ${CHART}
     fi
 
     # for grafana
     if [ "${NAME}" == "grafana" ]; then
         # admin password
-        read_password ${CHART}
+        replace_password ${CHART}
 
         # ldap
         question "Enter grafana LDAP secret : "
@@ -354,6 +362,14 @@ helm_install() {
         _replace "s/#:EFS://g" ${CHART}
     fi
 
+    # for master node
+    if [ "${NODE}" == "master" ]; then
+        COUNT=$(kubectl get no | grep Ready | grep master | wc -l | xargs)
+        if [ "x${COUNT}" != "x0" ]; then
+            _replace "s/#:MASTER://g" ${CHART}
+        fi
+    fi
+
     # for istio
     if [ "${ISTIO}" == "true" ]; then
         COUNT=$(kubectl get ns ${NAMESPACE} --show-labels | grep 'istio-injection=enabled' | wc -l | xargs)
@@ -367,6 +383,7 @@ helm_install() {
     fi
     _replace "s/ISTIO_ENABLED/${ISTIO_ENABLED}/g" ${CHART}
 
+    # for ingress
     if [ "${INGRESS}" == "true" ]; then
         if [ -z ${BASE_DOMAIN} ]; then
             DOMAIN=
@@ -396,13 +413,8 @@ helm_install() {
     done < "${LIST}"
 
     # helm install
-    if [ "${VERSION}" == "" ] || [ "${VERSION}" == "latest" ]; then
-        _command "helm upgrade --install ${NAME} ${REPO} --namespace ${NAMESPACE} --values ${CHART}"
-        helm upgrade --install ${NAME} ${REPO} --namespace ${NAMESPACE} --values ${CHART}
-    else
-        _command "helm upgrade --install ${NAME} ${REPO} --namespace ${NAMESPACE} --values ${CHART} --version ${VERSION}"
-        helm upgrade --install ${NAME} ${REPO} --namespace ${NAMESPACE} --values ${CHART} --version ${VERSION}
-    fi
+    _command "helm upgrade --install ${NAME} ${REPO} --namespace ${NAMESPACE} --values ${CHART}"
+    helm upgrade --install ${NAME} ${REPO} --namespace ${NAMESPACE} --values ${CHART}
 
     # nginx-ingress
     if [ "${NAME}" == "nginx-ingress" ]; then
@@ -956,7 +968,7 @@ istio_install() {
     fi
 
     # admin password
-    read_password ${CHART}
+    replace_password ${CHART}
 
     # helm install
     _command "helm upgrade --install ${NAME} ${ISTIO_DIR} --namespace ${NAMESPACE} --values ${CHART}"
@@ -1436,19 +1448,33 @@ get_base_domain() {
 
         _result "CertificateArn: ${SSL_CERT_ARN}"
 
-        _replace "s@aws-load-balancer-ssl-cert:.*@aws-load-balancer-ssl-cert: ${SSL_CERT_ARN}@" ${CHART}
+        TEXT="aws-load-balancer-ssl-cert"
+        _replace "s@${TEXT}:.*@${TEXT}: ${SSL_CERT_ARN}@" ${CHART}
+
+        TEXT="external-dns.alpha.kubernetes.io/hostname"
+        _replace "s@${TEXT}:.*@${TEXT}: \"${SUB_DOMAIN}.${BASE_DOMAIN}.\"@" ${CHART}
     fi
 }
 
-read_password() {
+replace_password() {
     CHART=${1}
+    KEY=${2:-PASSWORD}
+    DEFAULT=${3:-password}
 
-    # admin password
-    DEFAULT="password"
-    password "Enter admin password [${DEFAULT}] : "
+    password "Enter ${KEY} [${DEFAULT}] : "
     echo
 
-    _replace "s/PASSWORD/${PASSWORD:-${DEFAULT}}/g" ${CHART}
+    _replace "s/${KEY}/${PASSWORD:-${DEFAULT}}/g" ${CHART}
+}
+
+replace_secret() {
+    CHART=${1}
+    KEY=${2:-KEY}
+
+    password "Enter ${KEY} : "
+    echo
+
+    _replace "s/${KEY}:.*/${KEY}: \"${PASSWORD}\"/g" ${CHART}
 }
 
 waiting_for() {
