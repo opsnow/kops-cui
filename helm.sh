@@ -1080,22 +1080,6 @@ sample_install() {
         fi
     fi
 
-    # has configmap
-    COUNT=$(kubectl get configmap -n ${NAMESPACE} 2>&1 | grep ${NAME}-${NAMESPACE} | wc -l | xargs)
-    if [ "x${COUNT}" != "x0" ]; then
-        _replace "s/CONFIGMAP_ENABLED/true/g" ${CHART}
-    else
-        _replace "s/CONFIGMAP_ENABLED/false/g" ${CHART}
-    fi
-
-    # has secret
-    COUNT=$(kubectl get secret -n ${NAMESPACE} 2>&1 | grep ${NAME}-${NAMESPACE} | wc -l | xargs)
-    if [ "x${COUNT}" != "x0" ]; then
-        _replace "s/SECRET_ENABLED/true/g" ${CHART}
-    else
-        _replace "s/SECRET_ENABLED/false/g" ${CHART}
-    fi
-
     # for istio
     if [ "${ISTIO}" == "true" ]; then
         COUNT=$(kubectl get ns ${NAMESPACE} --show-labels | grep 'istio-injection=enabled' | wc -l | xargs)
