@@ -1,4 +1,6 @@
 {{ if .Values.ingress.enabled }}
+{{- $fullName := include "fullname" . -}}
+{{- $servicePort := .Values.service.externalPort -}}
 apiVersion: extensions/v1beta1
 kind: Ingress
 metadata:
@@ -7,8 +9,12 @@ metadata:
     draft: {{ default "draft-app" .Values.draft }}
     chart: "{{ .Chart.Name }}-{{ .Chart.Version | replace "+" "_" }}"
     app: {{ template "fullname" . }}
+  annotations:
+    kubernetes.io/ingress.class: nginx
+    # nginx.ingress.kubernetes.io/force-ssl-redirect: "true"
 spec:
   rules:
+{{ if not (empty .Values.ingress.basedomain) }}
   - host: {{ .Release.Name }}.{{ .Values.ingress.basedomain }}
     http:
       paths:
@@ -16,4 +22,20 @@ spec:
         backend:
           serviceName: {{ template "fullname" . }}
           servicePort: {{ .Values.service.externalPort }}
+{{ end }}
+{{ range .Values.ingress.hosts }}
+  - host: {{ . }}
+    http:
+      paths:
+      - path: /
+        backend:
+          serviceName: {{ $fullName }}
+          servicePort: {{ $servicePort }}
+{{ end }}
+{{ if (not (empty .Values.ingress.tls)) }}
+  tls:
+  - hosts:
+    - {{ .Release.Name }}.{{ .Values.ingress.basedomain }}
+    secretName: {{ template "fullname" . }}-tls
+{{ end }}
 {{ end }}

@@ -34,14 +34,3 @@ spec:
         env:
           - name: PROFILE
             value: {{ .Values.profile }}
-{{ if or .Values.configmap.enabled .Values.secret.enabled }}
-        envFrom:
-{{ end }}
-{{ if .Values.configmap.enabled }}
-          - configMapRef:
-              name: {{ template "fullname" . }}
-{{ end }}
-{{ if .Values.secret.enabled }}
-          - secretRef:
-              name: {{ template "fullname" . }}
-{{ end }}
