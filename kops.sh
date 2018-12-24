@@ -368,6 +368,13 @@ create_menu() {
 
             kops_create
 
+            _result "Edit InstanceGroup (node) for Autoscaler"
+
+            echo "spec:"
+            echo "  cloudLabels:"
+            echo "    k8s.io/cluster-autoscaler/enabled: \"\""
+            echo "    kubernetes.io/cluster/${KOPS_CLUSTER_NAME}: owned"
+
             press_enter
 
             get_kops_cluster
@@ -514,13 +521,13 @@ read_cluster_name() {
     select_one
 
     if [ "${SELECTED}" == "" ]; then
-        DEFAULT="dev"
+        DEFAULT="dev.k8s.local"
         question "Enter cluster name [${DEFAULT}] : "
 
-        SELECTED=${ANSWER:-${DEFAULT}}
+        KOPS_CLUSTER_NAME=${ANSWER:-${DEFAULT}}
+    else
+        KOPS_CLUSTER_NAME="${SELECTED}.k8s.local"
     fi
-
-    KOPS_CLUSTER_NAME="${SELECTED}.k8s.local"
 }
 
 kops_get() {
@@ -530,8 +537,8 @@ kops_get() {
     _command "kubectl cluster-info"
     kubectl cluster-info
 
-    _command "kubectl get no"
-    kubectl get no
+    _command "kubectl get node"
+    kubectl get node
 }
 
 kops_create() {
