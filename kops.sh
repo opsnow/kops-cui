@@ -57,8 +57,6 @@ waiting_for() {
 prepare() {
     logo
 
-    # get_kops_config
-
     mkdir -p ~/.ssh
     mkdir -p ~/.aws
     mkdir -p ${SHELL_DIR}/build
@@ -387,6 +385,14 @@ create_menu() {
 get_kops_cluster() {
     _command "kops get --name=${KOPS_CLUSTER_NAME} --state=s3://${KOPS_STATE_STORE} | wc -l | xargs"
     CLUSTER=$(kops get --name=${KOPS_CLUSTER_NAME} --state=s3://${KOPS_STATE_STORE} | wc -l | xargs)
+
+    _command "kubectl config current-context"
+    CURRENT=$(kubectl config current-context)
+
+    if [ "${CURRENT}" != "${KOPS_CLUSTER_NAME}" ]; then
+        _command "kubectl config unset current-context"
+        kubectl config unset current-context
+    fi
 }
 
 read_kops_config() {
@@ -646,8 +652,6 @@ kops_secret() {
 }
 
 kops_delete() {
-    kops_export
-
     efs_delete
 
     elb_delete
@@ -655,8 +659,8 @@ kops_delete() {
     _command "kops delete cluster --name=${KOPS_CLUSTER_NAME} --state=s3://${KOPS_STATE_STORE} --yes"
     kops delete cluster --name=${KOPS_CLUSTER_NAME} --state=s3://${KOPS_STATE_STORE} --yes
 
-    _command "kubectl config unset ${KOPS_CLUSTER_NAME}"
-    kubectl config unset ${KOPS_CLUSTER_NAME}
+    _command "kubectl config unset current-context"
+    kubectl config unset current-context
 
     _success
 }
