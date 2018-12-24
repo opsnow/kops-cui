@@ -57,8 +57,6 @@ waiting_for() {
 prepare() {
     logo
 
-    # get_kops_config
-
     mkdir -p ~/.ssh
     mkdir -p ~/.aws
     mkdir -p ${SHELL_DIR}/build
@@ -387,6 +385,14 @@ create_menu() {
 get_kops_cluster() {
     _command "kops get --name=${KOPS_CLUSTER_NAME} --state=s3://${KOPS_STATE_STORE} | wc -l | xargs"
     CLUSTER=$(kops get --name=${KOPS_CLUSTER_NAME} --state=s3://${KOPS_STATE_STORE} | wc -l | xargs)
+
+    _command "kubectl config current-context"
+    CURRENT=$(kubectl config current-context)
+
+    if [ "${CURRENT}" != "${KOPS_CLUSTER_NAME}" ]; then
+        _command "kubectl config unset current-context"
+        kubectl config unset current-context
+    fi
 }
 
 read_kops_config() {
@@ -521,6 +527,9 @@ kops_get() {
     _command "kops get --name=${KOPS_CLUSTER_NAME} --state=s3://${KOPS_STATE_STORE}"
     kops get --name=${KOPS_CLUSTER_NAME} --state=s3://${KOPS_STATE_STORE}
 
+    _command "kubectl cluster-info"
+    kubectl cluster-info
+
     _command "kubectl get no"
     kubectl get no
 }
@@ -627,8 +636,6 @@ kops_validate() {
 }
 
 kops_export() {
-    # rm -rf ~/.kube ~/.helm ~/.draft
-
     _command "kops export kubecfg --name ${KOPS_CLUSTER_NAME} --state=s3://${KOPS_STATE_STORE}"
     kops export kubecfg --name ${KOPS_CLUSTER_NAME} --state=s3://${KOPS_STATE_STORE}
 
@@ -652,17 +659,13 @@ kops_delete() {
     _command "kops delete cluster --name=${KOPS_CLUSTER_NAME} --state=s3://${KOPS_STATE_STORE} --yes"
     kops delete cluster --name=${KOPS_CLUSTER_NAME} --state=s3://${KOPS_STATE_STORE} --yes
 
-    _command "kubectl config unset ${KOPS_CLUSTER_NAME}"
-    kubectl config unset ${KOPS_CLUSTER_NAME}
-
-    # rm -rf ~/.kube ~/.helm ~/.draft
+    _command "kubectl config unset current-context"
+    kubectl config unset current-context
 
     _success
 }
 
 efs_delete() {
-    # config_load
-
     if [ "${EFS_ID}" != "" ]; then
         _result "EFS_ID: ${EFS_ID}"
 

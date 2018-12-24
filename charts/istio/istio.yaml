@@ -1,5 +1,5 @@
 # chart-repo: istio
-# chart-version: 1.0.3
+# chart-version: latest
 # chart-ingress: true
 
 # global:

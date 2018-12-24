@@ -8,6 +8,10 @@ metadata:
     draft: {{ default "draft-app" .Values.draft }}
     chart: "{{ .Chart.Name }}-{{ .Chart.Version | replace "+" "_" }}"
     app: {{ template "fullname" . }}
+{{- with .Values.annotations }}
+  annotations:
+{{ toYaml . | indent 4 }}
+{{- end }}
 spec:
   replicas: 1
   selector:
@@ -36,16 +40,5 @@ spec:
         env:
           - name: PROFILE
             value: {{ .Values.profile }}
-{{ if or .Values.configmap.enabled .Values.secret.enabled }}
-        envFrom:
-{{ end }}
-{{ if .Values.configmap.enabled }}
-          - configMapRef:
-              name: {{ template "fullname" . }}
-{{ end }}
-{{ if .Values.secret.enabled }}
-          - secretRef:
-              name: {{ template "fullname" . }}
-{{ end }}
 {{ end }}
 {{ end }}
