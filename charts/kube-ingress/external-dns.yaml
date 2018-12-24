@@ -1,6 +1,5 @@
 # chart-repo: stable/external-dns
 # chart-version: latest
-# chart-node: master
 
 nameOverride: external-dns
 
@@ -11,13 +10,6 @@ sources:
 aws:
   accessKey: ""
   secretKey: ""
-
-#:MASTER:nodeSelector:
-#:MASTER:  kubernetes.io/role: master
-
-#:MASTER:tolerations:
-#:MASTER:  - effect: NoSchedule
-#:MASTER:    key: node-role.kubernetes.io/master
 
 rbac:
   create: true
