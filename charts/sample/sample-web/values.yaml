@@ -1,4 +1,5 @@
 replicaCount: 1
+profile: default
 image:
   repository: nalbam/sample-web
   tag: alpine
@@ -7,6 +8,15 @@ service:
   type: ClusterIP
   externalPort: 80
   internalPort: 80
+ingress:
+  enabled: true
+  basedomain: 127.0.0.1.nip.io
+hpa:
+  enabled: true
+  min: 1
+  max: 5
+  cpu: 80
+  mem: 80
 resources:
   requests:
     cpu: 100m
@@ -18,27 +28,13 @@ readinessProbe:
   httpGet:
     path: /
     port: 80
-  initialDelaySeconds: 15
+  initialDelaySeconds: 5
   periodSeconds: 15
   failureThreshold: 6
 livenessProbe:
   httpGet:
     path: /
     port: 80
-  initialDelaySeconds: 15
+  initialDelaySeconds: 5
   periodSeconds: 15
   failureThreshold: 6
-ingress:
-  enabled: true
-  basedomain: 127.0.0.1.nip.io
-hpa:
-  enabled: true
-  min: 1
-  max: 5
-  cpu: 80
-  mem: 80
-profile: default
-configmap:
-  enabled: false
-secret:
-  enabled: false

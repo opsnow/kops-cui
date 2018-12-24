@@ -2,7 +2,11 @@
 # chart-version: latest
 # chart-ingress: true
 
-profile: default
+profile: dev
+
+image:
+  repository: nalbam/sample-node
+  tag: alpine
 
 service:
   type: SERVICE_TYPE
@@ -10,12 +14,6 @@ service:
 ingress:
   enabled: INGRESS_ENABLED
   basedomain: BASE_DOMAIN
-
-configmap:
-  enabled: CONFIGMAP_ENABLED
-
-secret:
-  enabled: SECRET_ENABLED
-
-istio:
-  enabled: ISTIO_ENABLED
+  annotations:
+    kubernetes.io/ingress.class: nginx
+    nginx.ingress.kubernetes.io/force-ssl-redirect: "true"
