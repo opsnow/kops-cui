@@ -521,6 +521,9 @@ kops_get() {
     _command "kops get --name=${KOPS_CLUSTER_NAME} --state=s3://${KOPS_STATE_STORE}"
     kops get --name=${KOPS_CLUSTER_NAME} --state=s3://${KOPS_STATE_STORE}
 
+    _command "kubectl cluster-info"
+    kubectl cluster-info
+
     _command "kubectl get no"
     kubectl get no
 }
@@ -627,8 +630,6 @@ kops_validate() {
 }
 
 kops_export() {
-    # rm -rf ~/.kube ~/.helm ~/.draft
-
     _command "kops export kubecfg --name ${KOPS_CLUSTER_NAME} --state=s3://${KOPS_STATE_STORE}"
     kops export kubecfg --name ${KOPS_CLUSTER_NAME} --state=s3://${KOPS_STATE_STORE}
 
@@ -645,6 +646,8 @@ kops_secret() {
 }
 
 kops_delete() {
+    kops_export
+
     efs_delete
 
     elb_delete
@@ -655,14 +658,10 @@ kops_delete() {
     _command "kubectl config unset ${KOPS_CLUSTER_NAME}"
     kubectl config unset ${KOPS_CLUSTER_NAME}
 
-    # rm -rf ~/.kube ~/.helm ~/.draft
-
     _success
 }
 
 efs_delete() {
-    # config_load
-
     if [ "${EFS_ID}" != "" ]; then
         _result "EFS_ID: ${EFS_ID}"
 
