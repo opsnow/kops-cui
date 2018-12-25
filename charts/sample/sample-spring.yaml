@@ -19,8 +19,10 @@ ingress:
     nginx.ingress.kubernetes.io/force-ssl-redirect: "true"
 
 hpa:
+  enabled: true
   min: 1
-  max: 20
+  max: 30
+  cpu: 60
 
 canary:
   enabled: false
