@@ -18,6 +18,9 @@ kiali:
   enabled: true
   ingress:
     enabled: INGRESS_ENABLED
+    annotations:
+      kubernetes.io/ingress.class: nginx
+      nginx.ingress.kubernetes.io/force-ssl-redirect: "true"
     hosts:
     - kiali-istio.BASE_DOMAIN
   dashboard:
@@ -30,11 +33,17 @@ tracing:
   enabled: true
   ingress:
     enabled: INGRESS_ENABLED
+    annotations:
+      kubernetes.io/ingress.class: nginx
+      nginx.ingress.kubernetes.io/force-ssl-redirect: "true"
     hosts:
     - tracing-istio.BASE_DOMAIN
   jaeger:
     ingress:
       enabled: INGRESS_ENABLED
+      annotations:
+        kubernetes.io/ingress.class: nginx
+        nginx.ingress.kubernetes.io/force-ssl-redirect: "true"
       hosts:
       - jaeger-istio.BASE_DOMAIN
 
@@ -42,5 +51,8 @@ servicegraph:
   enabled: true
   # ingress:
   #   enabled: INGRESS_ENABLED
+  #   annotations:
+  #     kubernetes.io/ingress.class: nginx
+  #     nginx.ingress.kubernetes.io/force-ssl-redirect: "true"
   #   hosts:
   #   - servicegraph.local
