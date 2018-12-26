@@ -471,7 +471,7 @@ helm_delete() {
 
     # find sample
     helm ls --all | grep -v "NAME" | sort \
-        | awk '{printf "%-30s %-20s %-5s %-12s %s\n", $1, $11, $2, $8, $9}' > ${LIST}
+        | awk '{printf "%-40s %-20s %-5s %-12s %s\n", $1, $11, $2, $8, $9}' > ${LIST}
 
     # select
     select_one
