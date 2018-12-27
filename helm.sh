@@ -68,6 +68,9 @@ press_enter() {
         kube-ingress)
             charts_menu "kube-ingress"
             ;;
+        kube-service)
+            charts_menu "kube-service"
+            ;;
         kube-system)
             charts_menu "kube-system"
             ;;
@@ -93,11 +96,12 @@ main_menu() {
     _echo "1. helm init"
     echo
     _echo "2. kube-ingress.."
-    _echo "3. kube-system.."
-    _echo "4. monitor.."
-    _echo "5. devops.."
-    _echo "6. sample.."
-    _echo "7. istio.."
+    _echo "3. kube-service.."
+    _echo "4. kube-system.."
+    _echo "5. monitor.."
+    _echo "6. devops.."
+    _echo "7. sample.."
+    _echo "8. istio.."
     echo
     _echo "9. remove"
     # echo
@@ -119,18 +123,21 @@ main_menu() {
             charts_menu "kube-ingress"
             ;;
         3)
-            charts_menu "kube-system"
+            charts_menu "kube-service"
             ;;
         4)
-            charts_menu "monitor"
+            charts_menu "kube-system"
             ;;
         5)
-            charts_menu "devops"
+            charts_menu "monitor"
             ;;
         6)
-            sample_menu
+            charts_menu "devops"
             ;;
         7)
+            sample_menu
+            ;;
+        8)
             istio_menu
             ;;
         9)
