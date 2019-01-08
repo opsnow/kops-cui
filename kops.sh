@@ -327,8 +327,8 @@ create_menu() {
             create_menu
             ;;
         c)
-            # KOPS_TERRAFORM=
-            # save_kops_config true
+            KOPS_TERRAFORM=
+            save_kops_config
 
             kops_create
 
@@ -363,10 +363,17 @@ create_menu() {
             cluster_menu
             ;;
         t)
-            # KOPS_TERRAFORM=true
-            # save_kops_config true
+            KOPS_TERRAFORM=true
+            save_kops_config
 
             kops_create
+
+            _result "Edit InstanceGroup (node) for Autoscaler"
+
+            echo "spec:"
+            echo "  cloudLabels:"
+            echo "    k8s.io/cluster-autoscaler/enabled: \"\""
+            echo "    kubernetes.io/cluster/${KOPS_CLUSTER_NAME}: owned"
 
             press_enter
 
@@ -514,13 +521,13 @@ read_cluster_name() {
     select_one
 
     if [ "${SELECTED}" == "" ]; then
-        DEFAULT="dev"
+        DEFAULT="dev.k8s.local"
         question "Enter cluster name [${DEFAULT}] : "
 
-        SELECTED=${ANSWER:-${DEFAULT}}
+        KOPS_CLUSTER_NAME=${ANSWER:-${DEFAULT}}
+    else
+        KOPS_CLUSTER_NAME="${SELECTED}.k8s.local"
     fi
-
-    KOPS_CLUSTER_NAME="${SELECTED}.k8s.local"
 }
 
 kops_get() {
@@ -530,8 +537,8 @@ kops_get() {
     _command "kubectl cluster-info"
     kubectl cluster-info
 
-    _command "kubectl get no"
-    kubectl get no
+    _command "kubectl get node"
+    kubectl get node
 }
 
 kops_create() {
@@ -559,12 +566,11 @@ kops_create() {
     fi
 
     if [ ! -z ${KOPS_TERRAFORM} ]; then
-        OUT_PATH="terraform-${cloud}-${KOPS_CLUSTER_NAME}"
-
-        mkdir -p ${OUT_PATH}
+        TF_PATH="terraform-${cloud}-${KOPS_CLUSTER_NAME}"
+        mkdir -p ${TF_PATH}
 
         echo "    --target=terraform " >> ${KOPS_CREATE}
-        echo "    --out=${OUT_PATH} "  >> ${KOPS_CREATE}
+        echo "    --out=${TF_PATH} "   >> ${KOPS_CREATE}
     fi
 
     cat ${KOPS_CREATE}
@@ -614,14 +620,22 @@ kops_update() {
         _command "kops update cluster --name=${KOPS_CLUSTER_NAME} --state=s3://${KOPS_STATE_STORE} --yes"
         kops update cluster --name=${KOPS_CLUSTER_NAME} --state=s3://${KOPS_STATE_STORE} --yes
     else
-        _command "kops update cluster --name=${KOPS_CLUSTER_NAME} --state=s3://${KOPS_STATE_STORE} --yes --target=terraform --out=terraform-${KOPS_CLUSTER_NAME}"
-        kops update cluster --name=${KOPS_CLUSTER_NAME} --state=s3://${KOPS_STATE_STORE} --yes --target=terraform --out=terraform-${KOPS_CLUSTER_NAME}
+        TF_PATH="terraform-${cloud}-${KOPS_CLUSTER_NAME}"
+        mkdir -p ${TF_PATH}
+
+        _command "kops update cluster --name=${KOPS_CLUSTER_NAME} --state=s3://${KOPS_STATE_STORE} --yes --target=terraform --out=${TF_PATH}"
+        kops update cluster --name=${KOPS_CLUSTER_NAME} --state=s3://${KOPS_STATE_STORE} --yes --target=terraform --out=${TF_PATH}
     fi
 }
 
 kops_rolling_update() {
-    _command "kops rolling-update cluster --name=${KOPS_CLUSTER_NAME} --state=s3://${KOPS_STATE_STORE} --yes"
-    kops rolling-update cluster --name=${KOPS_CLUSTER_NAME} --state=s3://${KOPS_STATE_STORE} --yes
+    if [ -z ${KOPS_TERRAFORM} ]; then
+        _command "kops rolling-update cluster --name=${KOPS_CLUSTER_NAME} --state=s3://${KOPS_STATE_STORE} --yes"
+        kops rolling-update cluster --name=${KOPS_CLUSTER_NAME} --state=s3://${KOPS_STATE_STORE} --yes
+    else
+        _command "kops rolling-update cluster --name=${KOPS_CLUSTER_NAME} --state=s3://${KOPS_STATE_STORE} --yes --cloudonly --force"
+        kops rolling-update cluster --name=${KOPS_CLUSTER_NAME} --state=s3://${KOPS_STATE_STORE} --yes --cloudonly --force
+    fi
 }
 
 kops_validate() {
