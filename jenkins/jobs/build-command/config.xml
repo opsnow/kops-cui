@@ -22,9 +22,14 @@
         <defaultValue>master</defaultValue>
         </hudson.model.StringParameterDefinition>
         <hudson.model.StringParameterDefinition>
-        <name>NAME</name>
+        <name>SERVICE_GROUP</name>
         <description></description>
-        <defaultValue>sample-web</defaultValue>
+        <defaultValue>sample</defaultValue>
+        </hudson.model.StringParameterDefinition>
+        <hudson.model.StringParameterDefinition>
+        <name>SERVICE_NAME</name>
+        <description></description>
+        <defaultValue>web</defaultValue>
         </hudson.model.StringParameterDefinition>
         <hudson.model.StringParameterDefinition>
         <name>COMMAND</name>

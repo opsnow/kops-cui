@@ -7,11 +7,6 @@
     <hudson.model.ParametersDefinitionProperty>
     <parameterDefinitions>
         <hudson.model.StringParameterDefinition>
-        <name>NAME</name>
-        <description></description>
-        <defaultValue>sample-node</defaultValue>
-        </hudson.model.StringParameterDefinition>
-        <hudson.model.StringParameterDefinition>
         <name>REPOSITORY_URL</name>
         <description></description>
         <defaultValue>https://github.com/nalbam/sample-config.git</defaultValue>
@@ -35,6 +30,16 @@
         <name>NAMESPACE</name>
         <description></description>
         <defaultValue>dev</defaultValue>
+        </hudson.model.StringParameterDefinition>
+        <hudson.model.StringParameterDefinition>
+        <name>SERVICE_GROUP</name>
+        <description></description>
+        <defaultValue>sample</defaultValue>
+        </hudson.model.StringParameterDefinition>
+        <hudson.model.StringParameterDefinition>
+        <name>SERVICE_NAME</name>
+        <description></description>
+        <defaultValue>node</defaultValue>
         </hudson.model.StringParameterDefinition>
         <hudson.model.StringParameterDefinition>
         <name>SLACK_TOKEN</name>

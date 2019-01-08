@@ -1,11 +1,14 @@
 @Library("github.com/opsnow-tools/valve-butler")
-def pump = new com.opsnow.valve.Butler()
+def butler = new com.opsnow.valve.v7.Butler()
 def label = "worker-${UUID.randomUUID().toString()}"
+def IMAGE_NAME = "${SERVICE_GROUP}-${SERVICE_NAME}"
 properties([
   buildDiscarder(logRotator(daysToKeepStr: "60", numToKeepStr: "30"))
 ])
 podTemplate(label: label, containers: [
-  containerTemplate(name: "builder", image: "quay.io/opsnow-tools/valve-builder", command: "cat", ttyEnabled: true, alwaysPullImage: true)
+  containerTemplate(name: "builder", image: "quay.io/opsnow-tools/valve-builder", command: "cat", ttyEnabled: true, alwaysPullImage: true),
+  containerTemplate(name: "maven", image: "maven:3.5.4-jdk-8-alpine", command: "cat", ttyEnabled: true),
+  containerTemplate(name: "node", image: "node:10-alpine", command: "cat", ttyEnabled: true)
 ], volumes: [
   hostPathVolume(mountPath: "/var/run/docker.sock", hostPath: "/var/run/docker.sock"),
   hostPathVolume(mountPath: "/home/jenkins/.helm", hostPath: "/home/jenkins/.helm")
@@ -13,14 +16,7 @@ podTemplate(label: label, containers: [
   node(label) {
     stage("Prepare") {
       container("builder") {
-        pump.prepare()
-
-        if (!BASE_DOMAIN) {
-          BASE_DOMAIN = pump.base_domain
-        }
-        if (!SLACK_TOKEN) {
-          SLACK_TOKEN = pump.slack_token
-        }
+        butler.prepare(IMAGE_NAME)
       }
     }
     stage("Checkout") {
@@ -32,11 +28,10 @@ podTemplate(label: label, containers: [
             git(url: REPOSITORY_URL, branch: BRANCH_NAME)
           }
         } catch (e) {
-          checkout_failure(NAME, PIPELINE)
+          butler.failure(SLACK_TOKEN_DEV, "Checkout")
           throw e
         }
-
-        pump.scan(NAME)
+        butler.scan()
       }
     }
     stage("Command") {
