@@ -1,6 +1,7 @@
 @Library("github.com/opsnow-tools/valve-butler")
-def pump = new com.opsnow.valve.Butler()
+def butler = new com.opsnow.valve.v7.Butler()
 def label = "worker-${UUID.randomUUID().toString()}"
+
 properties([
   buildDiscarder(logRotator(daysToKeepStr: "60", numToKeepStr: "30"))
 ])
@@ -30,10 +31,8 @@ podTemplate(label: label, containers: [
           whoami
           uname -a
         """
-        pump.prepare()
+        butler.prepare()
       }
-
-      pump.scan("sample")
     }
     stage("Run docker") {
       container("builder") {
@@ -55,12 +54,12 @@ podTemplate(label: label, containers: [
     }
     stage("Run helm") {
       container("builder") {
-        pump.helm_init()
+        butler.helm_init()
       }
     }
     stage("Run draft") {
       container("builder") {
-        pump.draft_init()
+        butler.draft_init()
       }
     }
     stage("End") {

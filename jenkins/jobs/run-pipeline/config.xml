@@ -22,14 +22,14 @@
         <defaultValue>master</defaultValue>
         </hudson.model.StringParameterDefinition>
         <hudson.model.StringParameterDefinition>
-        <name>NAME</name>
+        <name>SERVICE_GROUP</name>
         <description></description>
-        <defaultValue>sample-spring</defaultValue>
+        <defaultValue>sample</defaultValue>
         </hudson.model.StringParameterDefinition>
         <hudson.model.StringParameterDefinition>
-        <name>SLACK_TOKEN</name>
+        <name>SERVICE_NAME</name>
         <description></description>
-        <defaultValue></defaultValue>
+        <defaultValue>spring</defaultValue>
         </hudson.model.StringParameterDefinition>
     </parameterDefinitions>
     </hudson.model.ParametersDefinitionProperty>
