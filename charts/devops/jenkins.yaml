@@ -15,10 +15,10 @@ Master:
   AdminPassword: PASSWORD
   resources:
     requests:
-      cpu: 500m
+      cpu: 200m
       memory: 3072Mi
     limits:
-      cpu: 1000m
+      cpu: 500m
       memory: 4096Mi
   JavaOpts: "-Dorg.apache.commons.jelly.tags.fmt.timeZone=Asia/Seoul"
   ServiceType: SERVICE_TYPE

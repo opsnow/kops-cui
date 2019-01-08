@@ -8,10 +8,10 @@ nexus:
   serviceType: SERVICE_TYPE
   resources:
     requests:
-      cpu: 500m
+      cpu: 200m
       memory: 3072Mi
     limits:
-      cpu: 1000m
+      cpu: 500m
       memory: 4096Mi
   livenessProbe:
     initialDelaySeconds: 200
