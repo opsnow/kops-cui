@@ -1,5 +1,5 @@
 @Library("github.com/opsnow-tools/valve-butler")
-def pump = new com.opsnow.valve.Butler()
+def butler = new com.opsnow.valve.v7.Butler()
 def label = "worker-${UUID.randomUUID().toString()}"
 def IMAGE_NAME = "${SERVICE_GROUP}-${SERVICE_NAME}"
 properties([

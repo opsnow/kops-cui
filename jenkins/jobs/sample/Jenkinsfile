@@ -8,7 +8,6 @@ podTemplate(label: label, containers: [
   containerTemplate(name: "builder", image: "quay.io/opsnow-tools/valve-builder", command: "cat", ttyEnabled: true, alwaysPullImage: true)
 ], volumes: [
   hostPathVolume(mountPath: "/var/run/docker.sock", hostPath: "/var/run/docker.sock"),
-  hostPathVolume(mountPath: "/home/jenkins/.draft", hostPath: "/home/jenkins/.draft"),
   hostPathVolume(mountPath: "/home/jenkins/.helm", hostPath: "/home/jenkins/.helm")
 ]) {
   node(label) {
@@ -54,11 +53,6 @@ podTemplate(label: label, containers: [
     stage("Run helm") {
       container("builder") {
         butler.helm_init()
-      }
-    }
-    stage("Run draft") {
-      container("builder") {
-        butler.draft_init()
       }
     }
     stage("End") {
