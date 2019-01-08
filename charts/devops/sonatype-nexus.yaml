@@ -5,7 +5,6 @@
 
 nexus:
   # imageName: quay.io/travelaudience/docker-nexus
-  # imageTag: 3.13.0
   serviceType: SERVICE_TYPE
   resources:
     requests:
@@ -15,22 +14,21 @@ nexus:
       cpu: 1000m
       memory: 4096Mi
   livenessProbe:
-    initialDelaySeconds: 300
+    initialDelaySeconds: 200
     periodSeconds: 30
     failureThreshold: 12
     path: /
   readinessProbe:
-    initialDelaySeconds: 300
+    initialDelaySeconds: 200
     periodSeconds: 30
     failureThreshold: 12
     path: /
 
 nexusProxy:
   # imageName: quay.io/travelaudience/docker-nexus-proxy
-  # imageTag: 2.3.0
   env:
     nexusHttpHost: INGRESS_DOMAIN
-    nexusDockerHost: docker-INGRESS_DOMAIN
+    # nexusDockerHost: docker-INGRESS_DOMAIN
 
 nexusBackup:
   nexusAdminPassword: PASSWORD
@@ -51,8 +49,3 @@ persistence:
   storageSize: 30Gi
   #:EFS:storageClass: "efs"
   existingClaim: sonatype-nexus-data
-
-resources:
-  requests:
-    cpu: 1000m
-    memory: 5120Mi
