@@ -36,7 +36,7 @@ podTemplate(label: label, containers: [
       }
     }
     stage("Build") {
-      if (SOURCE_LANG == "java") {
+      if (butler.source_lang == "java") {
         container("maven") {
           try {
             butler.mvn_build()
@@ -47,7 +47,7 @@ podTemplate(label: label, containers: [
           }
         }
       }
-      else if (SOURCE_LANG == "nodejs") {
+      else if (butler.source_lang == "nodejs") {
         container("node") {
           try {
             butler.npm_build()
@@ -64,69 +64,39 @@ podTemplate(label: label, containers: [
         """
       }
     }
-    if (BRANCH_NAME == "master") {
-      stage("Build Image") {
-        parallel(
-          "Build Docker": {
-            container("builder") {
-              try {
-                butler.build_image()
-              } catch (e) {
-                butler.failure(SLACK_TOKEN_DEV, "Build Docker")
-                throw e
-              }
-            }
-          },
-          "Build Charts": {
-            container("builder") {
-              try {
-                butler.build_chart()
-              } catch (e) {
-                butler.failure(SLACK_TOKEN_DEV, "Build Charts")
-                throw e
-              }
+    stage("Build Image") {
+      parallel(
+        "Build Docker": {
+          container("builder") {
+            try {
+              butler.build_image()
+            } catch (e) {
+              butler.failure(SLACK_TOKEN_DEV, "Build Docker")
+              throw e
             }
           }
-        )
-      }
-      stage("Deploy DEV") {
-        container("builder") {
-          try {
-            // deploy(cluster, namespace, sub_domain, profile)
-            butler.deploy("dev", "${SERVICE_GROUP}-dev", "${IMAGE_NAME}-dev", "dev")
-            butler.success(SLACK_TOKEN_DEV, "Deploy DEV")
-          } catch (e) {
-            butler.failure(SLACK_TOKEN_DEV, "Deploy DEV")
-            throw e
+        },
+        "Build Charts": {
+          container("builder") {
+            try {
+              butler.build_chart()
+            } catch (e) {
+              butler.failure(SLACK_TOKEN_DEV, "Build Charts")
+              throw e
+            }
           }
         }
-      }
-      stage("Request STAGE") {
-        container("builder") {
-          butler.proceed(SLACK_TOKEN_DEV, "Request STAGE", "stage")
-          timeout(time: 60, unit: "MINUTES") {
-            input(message: "${butler.name} ${butler.version} to stage")
-          }
-        }
-      }
-      stage("Proceed STAGE") {
-        container("builder") {
-          butler.proceed([SLACK_TOKEN_DEV,SLACK_TOKEN_DQA], "Deploy STAGE", "stage")
-          timeout(time: 60, unit: "MINUTES") {
-            input(message: "${butler.name} ${butler.version} to stage")
-          }
-        }
-      }
-      stage("Deploy STAGE") {
-        container("builder") {
-          try {
-            // deploy(cluster, namespace, sub_domain, profile)
-            butler.deploy("dev", "${SERVICE_GROUP}-stage", "${IMAGE_NAME}-stage", "stage")
-            butler.success([SLACK_TOKEN_DEV,SLACK_TOKEN_DQA], "Deploy STAGE")
-          } catch (e) {
-            butler.failure([SLACK_TOKEN_DEV,SLACK_TOKEN_DQA], "Deploy STAGE")
-            throw e
-          }
+      )
+    }
+    stage("Deploy") {
+      container("builder") {
+        try {
+          // deploy(cluster, namespace, sub_domain, profile)
+          butler.deploy("demo", "demo", "${IMAGE_NAME}", "dev")
+          butler.success(SLACK_TOKEN_DEV, "Deploy")
+        } catch (e) {
+          butler.failure(SLACK_TOKEN_DEV, "Deploy")
+          throw e
         }
       }
     }
