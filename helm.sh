@@ -256,11 +256,11 @@ helm_install() {
     create_namespace ${NAMESPACE}
 
     # helm check FAILED
-    COUNT=$(helm ls -a | grep ${NAME} | grep ${NAMESPACE} | grep "FAILED" | wc -l | xargs)
-    if [ "x${COUNT}" != "x0" ]; then
-        _command "helm delete --purge ${NAME}"
-        helm delete --purge ${NAME}
-    fi
+    # COUNT=$(helm ls -a | grep ${NAME} | grep ${NAMESPACE} | grep "FAILED" | wc -l | xargs)
+    # if [ "x${COUNT}" != "x0" ]; then
+    #     _command "helm delete --purge ${NAME}"
+    #     helm delete --purge ${NAME}
+    # fi
 
     # helm chart
     CHART=${SHELL_DIR}/build/${THIS_NAME}-helm-${NAME}.yaml
@@ -441,6 +441,11 @@ helm_install() {
         kubectl get sc -n ${NAMESPACE}
     fi
 
+    # for kubernetes-dashboard
+    if [ "${NAME}" == "kubernetes-dashboard" ]; then
+        create_cluster_role_binding view ${NAMESPACE} ${NAME}-view true
+    fi
+
     # chart ingress = true
     if [ "${INGRESS}" == "true" ]; then
         if [ -z ${BASE_DOMAIN} ]; then
@@ -454,11 +459,6 @@ helm_install() {
                 _result "${NAME}: https://${DOMAIN}"
             fi
         fi
-    fi
-
-    # for kubernetes-dashboard
-    if [ "${NAME}" == "kubernetes-dashboard" ]; then
-        create_cluster_role_binding view ${NAMESPACE} ${NAME}-view true
     fi
 }
 
