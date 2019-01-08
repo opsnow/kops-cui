@@ -28,12 +28,13 @@ resources:
     memory: 4096Mi
 
 readinessProbe:
-  initialDelaySeconds: 300
+  initialDelaySeconds: 200
   periodSeconds: 30
   failureThreshold: 6
 livenessProbe:
-  initialDelaySeconds: 300
+  initialDelaySeconds: 200
   periodSeconds: 30
+  failureThreshold: 6
 
 persistence:
   enabled: true
