@@ -13,7 +13,7 @@ nexus:
   resources:
     requests:
       cpu: 250m
-      memory: 4800Mi
+      memory: 4Gi
   livenessProbe:
     initialDelaySeconds: 100
     periodSeconds: 30
