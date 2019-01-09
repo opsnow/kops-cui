@@ -19,7 +19,7 @@ ingress:
       - /
   annotations:
     kubernetes.io/ingress.class: nginx
-    # nginx.ingress.kubernetes.io/force-ssl-redirect: "true"
+    nginx.ingress.kubernetes.io/force-ssl-redirect: "true"
     nginx.ingress.kubernetes.io/proxy-body-size: 500m
     ingress.kubernetes.io/proxy-body-size: 500m
 
