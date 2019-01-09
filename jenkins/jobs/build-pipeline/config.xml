@@ -32,12 +32,7 @@
         <defaultValue>node</defaultValue>
         </hudson.model.StringParameterDefinition>
         <hudson.model.StringParameterDefinition>
-        <name>SLACK_TOKEN_DEV</name>
-        <description></description>
-        <defaultValue></defaultValue>
-        </hudson.model.StringParameterDefinition>
-        <hudson.model.StringParameterDefinition>
-        <name>SLACK_TOKEN_DQA</name>
+        <name>SLACK_TOKEN</name>
         <description></description>
         <defaultValue></defaultValue>
         </hudson.model.StringParameterDefinition>

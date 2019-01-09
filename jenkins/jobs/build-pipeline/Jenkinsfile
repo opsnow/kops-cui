@@ -29,7 +29,7 @@ podTemplate(label: label, containers: [
             git(url: REPOSITORY_URL, branch: BRANCH_NAME)
           }
         } catch (e) {
-          butler.failure(SLACK_TOKEN_DEV, "Checkout")
+          butler.failure(SLACK_TOKEN, "Checkout")
           throw e
         }
         butler.scan()
@@ -40,9 +40,9 @@ podTemplate(label: label, containers: [
         container("maven") {
           try {
             butler.mvn_build()
-            butler.success(SLACK_TOKEN_DEV, "Build")
+            butler.success(SLACK_TOKEN, "Build")
           } catch (e) {
-            butler.failure(SLACK_TOKEN_DEV, "Build")
+            butler.failure(SLACK_TOKEN, "Build")
             throw e
           }
         }
@@ -51,9 +51,9 @@ podTemplate(label: label, containers: [
         container("node") {
           try {
             butler.npm_build()
-            butler.success(SLACK_TOKEN_DEV, "Build")
+            butler.success(SLACK_TOKEN, "Build")
           } catch (e) {
-            butler.failure(SLACK_TOKEN_DEV, "Build")
+            butler.failure(SLACK_TOKEN, "Build")
             throw e
           }
         }
@@ -71,7 +71,7 @@ podTemplate(label: label, containers: [
             try {
               butler.build_image()
             } catch (e) {
-              butler.failure(SLACK_TOKEN_DEV, "Build Docker")
+              butler.failure(SLACK_TOKEN, "Build Docker")
               throw e
             }
           }
@@ -81,7 +81,7 @@ podTemplate(label: label, containers: [
             try {
               butler.build_chart()
             } catch (e) {
-              butler.failure(SLACK_TOKEN_DEV, "Build Charts")
+              butler.failure(SLACK_TOKEN, "Build Charts")
               throw e
             }
           }
@@ -93,9 +93,9 @@ podTemplate(label: label, containers: [
         try {
           // deploy(cluster, namespace, sub_domain, profile)
           butler.deploy("demo", "demo", "${IMAGE_NAME}", "dev")
-          butler.success(SLACK_TOKEN_DEV, "Deploy")
+          butler.success(SLACK_TOKEN, "Deploy")
         } catch (e) {
-          butler.failure(SLACK_TOKEN_DEV, "Deploy")
+          butler.failure(SLACK_TOKEN, "Deploy")
           throw e
         }
       }

@@ -33,10 +33,11 @@ podTemplate(label: label, containers: [
         butler.scan()
       }
     }
-    stage("Apply Config") {
+    stage("Apply") {
       container("builder") {
-        butler.apply_config("secret", NAME, NAMESPACE, CLUSTER)
-        butler.success(SLACK_TOKEN, "Apply Config")
+          // apply(cluster, namespace, type, yaml)
+          butler.apply(CLUSTER, NAMESPACE, CONFIG_TYPE, YAML_PATH)
+        butler.success(SLACK_TOKEN, "Apply")
       }
     }
   }
