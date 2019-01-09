@@ -21,18 +21,15 @@ ingress:
 
 resources:
   requests:
-    cpu: 500m
+    cpu: 250m
     memory: 3Gi
-  # limits:
-  #   cpu: 1000m
-  #   memory: 4Gi
 
 readinessProbe:
-  initialDelaySeconds: 200
+  initialDelaySeconds: 100
   periodSeconds: 30
   failureThreshold: 6
 livenessProbe:
-  initialDelaySeconds: 200
+  initialDelaySeconds: 100
   periodSeconds: 30
   failureThreshold: 6
 

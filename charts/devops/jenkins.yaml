@@ -13,8 +13,8 @@ Master:
   AdminPassword: PASSWORD
   resources:
     requests:
-      cpu: 500m
-      memory: 3Gi
+      cpu: 250m
+      memory: 2Gi
     limits:
       cpu: 1000m
       memory: 4Gi

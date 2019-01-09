@@ -3,6 +3,8 @@
 # chart-ingress: true
 # chart-pvc: sonatype-nexus-data ReadWriteOnce 30Gi
 
+# nameOverride: sonatype-nexus
+
 statefulset:
   enabled: true
 
@@ -10,18 +12,15 @@ nexus:
   serviceType: SERVICE_TYPE
   resources:
     requests:
-      cpu: 500m
-      memory: 3Gi
-    # limits:
-    #   cpu: 1000m
-    #   memory: 4Gi
+      cpu: 250m
+      memory: 4800Mi
   livenessProbe:
-    initialDelaySeconds: 200
+    initialDelaySeconds: 100
     periodSeconds: 30
     failureThreshold: 12
     path: /
   readinessProbe:
-    initialDelaySeconds: 200
+    initialDelaySeconds: 100
     periodSeconds: 30
     failureThreshold: 12
     path: /
