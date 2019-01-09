@@ -432,7 +432,7 @@ helm_install() {
 
     # for jenkins
     if [ "${NAME}" == "jenkins" ]; then
-        create_cluster_role_binding cluster-admin ${NAMESPACE} default true
+        create_cluster_role_binding cluster-admin ${NAMESPACE} default
     fi
 
     # for nginx-ingress
