@@ -154,6 +154,10 @@ cluster_menu() {
             fi
 
             kops_edit
+
+            hint_istio
+            hint_cluster_autoscaler
+
             press_enter cluster
             ;;
         3)
@@ -332,29 +336,8 @@ create_menu() {
 
             kops_create
 
-            _result "Edit Cluster for Istio"
-
-            echo "spec:"
-            echo "  kubeAPIServer:"
-            echo "    admissionControl:"
-            echo "    - NamespaceLifecycle"
-            echo "    - LimitRanger"
-            echo "    - ServiceAccount"
-            echo "    - PersistentVolumeLabel"
-            echo "    - DefaultStorageClass"
-            echo "    - DefaultTolerationSeconds"
-            echo "    - MutatingAdmissionWebhook"
-            echo "    - ValidatingAdmissionWebhook"
-            echo "    - ResourceQuota"
-            echo "    - NodeRestriction"
-            echo "    - Priority"
-
-            _result "Edit InstanceGroup (node) for Autoscaler"
-
-            echo "spec:"
-            echo "  cloudLabels:"
-            echo "    k8s.io/cluster-autoscaler/enabled: \"\""
-            echo "    kubernetes.io/cluster/${KOPS_CLUSTER_NAME}: owned"
+            hint_istio
+            hint_cluster_autoscaler
 
             press_enter
 
@@ -368,12 +351,7 @@ create_menu() {
 
             kops_create
 
-            _result "Edit InstanceGroup (node) for Autoscaler"
-
-            echo "spec:"
-            echo "  cloudLabels:"
-            echo "    k8s.io/cluster-autoscaler/enabled: \"\""
-            echo "    kubernetes.io/cluster/${KOPS_CLUSTER_NAME}: owned"
+            hint_cluster_autoscaler
 
             press_enter
 
@@ -387,6 +365,34 @@ create_menu() {
             cluster_menu
             ;;
     esac
+}
+
+hint_istio() {
+    _result "Edit Cluster for Istio"
+
+    echo "spec:"
+    echo "  kubeAPIServer:"
+    echo "    admissionControl:"
+    echo "    - NamespaceLifecycle"
+    echo "    - LimitRanger"
+    echo "    - ServiceAccount"
+    echo "    - PersistentVolumeLabel"
+    echo "    - DefaultStorageClass"
+    echo "    - DefaultTolerationSeconds"
+    echo "    - MutatingAdmissionWebhook"
+    echo "    - ValidatingAdmissionWebhook"
+    echo "    - ResourceQuota"
+    echo "    - NodeRestriction"
+    echo "    - Priority"
+}
+
+hint_cluster_autoscaler() {
+    _result "Edit InstanceGroup (node) for Autoscaler"
+
+    echo "spec:"
+    echo "  cloudLabels:"
+    echo "    k8s.io/cluster-autoscaler/enabled: \"\""
+    echo "    kubernetes.io/cluster/${KOPS_CLUSTER_NAME}: owned"
 }
 
 get_kops_cluster() {
