@@ -4,7 +4,7 @@
 # chart-pvc: sonatype-nexus-data ReadWriteOnce 30Gi
 
 statefulset:
-  enabled: false
+  enabled: true
 
 nexus:
   serviceType: SERVICE_TYPE
