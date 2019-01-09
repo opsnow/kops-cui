@@ -15,9 +15,9 @@ Master:
     requests:
       cpu: 500m
       memory: 3Gi
-    # limits:
-    #   cpu: 1000m
-    #   memory: 4Gi
+    limits:
+      cpu: 1000m
+      memory: 4Gi
   JavaOpts: "-Dorg.apache.commons.jelly.tags.fmt.timeZone=Asia/Seoul"
   ServiceType: SERVICE_TYPE
   HostName: INGRESS_DOMAIN
