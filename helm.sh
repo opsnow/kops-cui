@@ -421,11 +421,11 @@ helm_install() {
         config_save
     fi
 
-    # waiting 2
-    waiting_pod "${NAMESPACE}" "${NAME}"
-
     _command "helm history ${NAME}"
     helm history ${NAME}
+
+    # waiting 2
+    waiting_pod "${NAMESPACE}" "${NAME}"
 
     _command "kubectl get deploy,pod,svc,ing,pvc,pv -n ${NAMESPACE}"
     kubectl get deploy,pod,svc,ing,pvc,pv -n ${NAMESPACE}
