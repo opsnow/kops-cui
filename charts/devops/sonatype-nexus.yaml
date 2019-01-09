@@ -8,7 +8,7 @@ nexus:
   serviceType: SERVICE_TYPE
   resources:
     requests:
-      cpu: 500m
+      cpu: 300m
       memory: 3072Mi
     limits:
       cpu: 1000m

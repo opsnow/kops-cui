@@ -7,19 +7,39 @@
     <hudson.model.ParametersDefinitionProperty>
     <parameterDefinitions>
         <hudson.model.StringParameterDefinition>
-        <name>NAME</name>
+        <name>CLUSTER</name>
         <description></description>
-        <defaultValue>sample-web</defaultValue>
+        <defaultValue>dev</defaultValue>
         </hudson.model.StringParameterDefinition>
         <hudson.model.StringParameterDefinition>
         <name>NAMESPACE</name>
         <description></description>
-        <defaultValue>prod</defaultValue>
+        <defaultValue>stage</defaultValue>
         </hudson.model.StringParameterDefinition>
         <hudson.model.StringParameterDefinition>
-        <name>CLUSTER</name>
+        <name>SERVICE_GROUP</name>
         <description></description>
-        <defaultValue>dev</defaultValue>
+        <defaultValue>sample</defaultValue>
+        </hudson.model.StringParameterDefinition>
+        <hudson.model.StringParameterDefinition>
+        <name>SERVICE_NAME</name>
+        <description></description>
+        <defaultValue>node</defaultValue>
+        </hudson.model.StringParameterDefinition>
+        <hudson.model.StringParameterDefinition>
+        <name>VERSION</name>
+        <description></description>
+        <defaultValue>latest</defaultValue>
+        </hudson.model.StringParameterDefinition>
+        <hudson.model.StringParameterDefinition>
+        <name>SUB_DOMAIN</name>
+        <description></description>
+        <defaultValue>sample-node-stage</defaultValue>
+        </hudson.model.StringParameterDefinition>
+        <hudson.model.StringParameterDefinition>
+        <name>PROFILE</name>
+        <description></description>
+        <defaultValue>stage</defaultValue>
         </hudson.model.StringParameterDefinition>
         <hudson.model.StringParameterDefinition>
         <name>SLACK_TOKEN</name>
@@ -33,7 +53,7 @@
     </org.jenkinsci.plugins.workflow.job.properties.PipelineTriggersJobProperty>
 </properties>
 <definition class="org.jenkinsci.plugins.workflow.cps.CpsFlowDefinition" plugin="workflow-cps@2.54">
-    <script>// remove-image
+    <script>// image-deploy
 REPLACE
     </script>
     <sandbox>true</sandbox>

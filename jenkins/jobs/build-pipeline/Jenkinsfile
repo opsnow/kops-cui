@@ -1,16 +1,14 @@
 @Library("github.com/opsnow-tools/valve-butler")
-def pump = new com.opsnow.valve.Butler()
+def butler = new com.opsnow.valve.v7.Butler()
 def label = "worker-${UUID.randomUUID().toString()}"
-def VERSION = ""
-def SOURCE_LANG = ""
-def SOURCE_ROOT = ""
+def IMAGE_NAME = "${SERVICE_GROUP}-${SERVICE_NAME}"
 properties([
   buildDiscarder(logRotator(daysToKeepStr: "60", numToKeepStr: "30"))
 ])
 podTemplate(label: label, containers: [
   containerTemplate(name: "builder", image: "quay.io/opsnow-tools/valve-builder", command: "cat", ttyEnabled: true, alwaysPullImage: true),
-  containerTemplate(name: "maven", image: "maven", command: "cat", ttyEnabled: true),
-  containerTemplate(name: "node", image: "node", command: "cat", ttyEnabled: true)
+  containerTemplate(name: "maven", image: "maven:3.5.4-jdk-8-alpine", command: "cat", ttyEnabled: true),
+  containerTemplate(name: "node", image: "node:10-alpine", command: "cat", ttyEnabled: true)
 ], volumes: [
   hostPathVolume(mountPath: "/var/run/docker.sock", hostPath: "/var/run/docker.sock"),
   hostPathVolume(mountPath: "/home/jenkins/.draft", hostPath: "/home/jenkins/.draft"),
@@ -19,14 +17,7 @@ podTemplate(label: label, containers: [
   node(label) {
     stage("Prepare") {
       container("builder") {
-        pump.prepare()
-
-        if (!BASE_DOMAIN) {
-          BASE_DOMAIN = pump.base_domain
-        }
-        if (!SLACK_TOKEN) {
-          SLACK_TOKEN = pump.slack_token
-        }
+        butler.prepare(IMAGE_NAME)
       }
     }
     stage("Checkout") {
@@ -38,42 +29,31 @@ podTemplate(label: label, containers: [
             git(url: REPOSITORY_URL, branch: BRANCH_NAME)
           }
         } catch (e) {
-          failure(SLACK_TOKEN, "Checkout", NAME)
+          butler.failure(SLACK_TOKEN, "Checkout")
           throw e
         }
-
-        pump.scan(NAME, BRANCH_NAME)
-
-        VERSION = pump.version
-        SOURCE_LANG = pump.source_lang
-        SOURCE_ROOT = pump.source_root
+        butler.scan()
       }
     }
     stage("Build") {
-      if (SOURCE_LANG == "java") {
+      if (butler.source_lang == "java") {
         container("maven") {
           try {
-            sh """
-              cd $SOURCE_ROOT
-              mvn package -s /home/jenkins/.m2/settings.xml
-            """
-            success(SLACK_TOKEN, "Build", NAME, VERSION)
+            butler.mvn_build()
+            butler.success(SLACK_TOKEN, "Build")
           } catch (e) {
-            failure(SLACK_TOKEN, "Build", NAME)
+            butler.failure(SLACK_TOKEN, "Build")
             throw e
           }
         }
       }
-      else if (SOURCE_LANG == "nodejs") {
+      else if (butler.source_lang == "nodejs") {
         container("node") {
           try {
-            sh """
-              cd $SOURCE_ROOT
-              npm run build
-            """
-            success(SLACK_TOKEN, "Build", NAME, VERSION)
+            butler.npm_build()
+            butler.success(SLACK_TOKEN, "Build")
           } catch (e) {
-            failure(SLACK_TOKEN, "Build", NAME)
+            butler.failure(SLACK_TOKEN, "Build")
             throw e
           }
         }
@@ -84,78 +64,41 @@ podTemplate(label: label, containers: [
         """
       }
     }
-    // if (BRANCH_NAME != "master") {
-    //   stage("Deploy PRE") {
-    //     container("builder") {
-    //       pump.draft_up(NAME, "pre", CLUSTER, BASE_DOMAIN)
-    //       success(SLACK_TOKEN, "Deploy PRE", NAME, VERSION, "pre", BASE_DOMAIN)
-    //     }
-    //   }
-    // }
-    if (BRANCH_NAME == "master") {
-      stage("Build Image") {
-        parallel(
-          "Build Docker": {
-            container("builder") {
-              pump.build_image(NAME, VERSION)
-            }
-          },
-          "Build Charts": {
-            container("builder") {
-              pump.build_chart(NAME, VERSION)
+    stage("Build Image") {
+      parallel(
+        "Build Docker": {
+          container("builder") {
+            try {
+              butler.build_image()
+            } catch (e) {
+              butler.failure(SLACK_TOKEN, "Build Docker")
+              throw e
             }
           }
-        )
-      }
-      stage("Deploy DEV") {
-        container("builder") {
-          pump.helm_install(NAME, VERSION, "dev", BASE_DOMAIN, CLUSTER)
-          success(SLACK_TOKEN, "Deploy DEV", NAME, VERSION, "dev", BASE_DOMAIN)
-        }
-      }
-      stage("Proceed STAGE") {
-        container("builder") {
-          proceed(SLACK_TOKEN, "Deploy STAGE", NAME, VERSION, "stage")
-          timeout(time: 60, unit: "MINUTES") {
-            input(message: "$NAME $VERSION to stage")
+        },
+        "Build Charts": {
+          container("builder") {
+            try {
+              butler.build_chart()
+            } catch (e) {
+              butler.failure(SLACK_TOKEN, "Build Charts")
+              throw e
+            }
           }
         }
-      }
-      stage("Deploy STAGE") {
-        container("builder") {
-          pump.helm_install(NAME, VERSION, "stage", BASE_DOMAIN, CLUSTER)
-          success(SLACK_TOKEN, "Deploy STAGE", NAME, VERSION, "stage", BASE_DOMAIN)
+      )
+    }
+    stage("Deploy") {
+      container("builder") {
+        try {
+          // deploy(cluster, namespace, sub_domain, profile)
+          butler.deploy("demo", "demo", "${IMAGE_NAME}", "dev")
+          butler.success(SLACK_TOKEN, "Deploy")
+        } catch (e) {
+          butler.failure(SLACK_TOKEN, "Deploy")
+          throw e
         }
       }
     }
-  }
-}
-def failure(token = "", type = "", name = "") {
-  slack("$token", "danger", "$type Failure", "`$name`", "$JOB_NAME <$RUN_DISPLAY_URL|#$BUILD_NUMBER>")
-}
-def success(token = "", type = "", name = "", version = "", namespace = "", base_domain = "", cluster = "") {
-  if (cluster) {
-    def link = "https://$name-$namespace.$base_domain"
-    slack("$token", "good", "$type Success", "`$name` `$version` :satellite: `$namespace` :earth_asia: `$cluster`", "$JOB_NAME <$RUN_DISPLAY_URL|#$BUILD_NUMBER> : <$link|$name-$namespace>")
-  } else if (base_domain) {
-    def link = "https://$name-$namespace.$base_domain"
-    slack("$token", "good", "$type Success", "`$name` `$version` :satellite: `$namespace`", "$JOB_NAME <$RUN_DISPLAY_URL|#$BUILD_NUMBER> : <$link|$name-$namespace>")
-  } else if (namespace) {
-    slack("$token", "good", "$type Success", "`$name` `$version` :rocket: `$namespace`", "$JOB_NAME <$RUN_DISPLAY_URL|#$BUILD_NUMBER>")
-  } else {
-    slack("$token", "good", "$type Success", "`$name` `$version` :heavy_check_mark:", "$JOB_NAME <$RUN_DISPLAY_URL|#$BUILD_NUMBER>")
-  }
-}
-def proceed(token = "", type = "", name = "", version = "", namespace = "") {
-  slack("$token", "warning", "$type Proceed?", "`$name` `$version` :rocket: `$namespace`", "$JOB_NAME <$RUN_DISPLAY_URL|#$BUILD_NUMBER>")
-}
-def slack(token = "", color = "", title = "", message = "", footer = "") {
-  try {
-    // pump.slack("$token", "$color", "$title", "$message", "$footer")
-    sh """
-      curl -sL toast.sh/slack | bash -s -- --token='$token' \
-      --color='$color' --title='$title' --footer='$footer' '$message'
-    """
-  } catch (ignored) {
   }
 }

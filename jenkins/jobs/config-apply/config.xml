@@ -7,11 +7,6 @@
     <hudson.model.ParametersDefinitionProperty>
     <parameterDefinitions>
         <hudson.model.StringParameterDefinition>
-        <name>NAME</name>
-        <description></description>
-        <defaultValue>sample-node</defaultValue>
-        </hudson.model.StringParameterDefinition>
-        <hudson.model.StringParameterDefinition>
         <name>REPOSITORY_URL</name>
         <description></description>
         <defaultValue>https://github.com/nalbam/sample-config.git</defaultValue>
@@ -37,6 +32,26 @@
         <defaultValue>dev</defaultValue>
         </hudson.model.StringParameterDefinition>
         <hudson.model.StringParameterDefinition>
+        <name>SERVICE_GROUP</name>
+        <description></description>
+        <defaultValue>sample</defaultValue>
+        </hudson.model.StringParameterDefinition>
+        <hudson.model.StringParameterDefinition>
+        <name>SERVICE_NAME</name>
+        <description></description>
+        <defaultValue>node</defaultValue>
+        </hudson.model.StringParameterDefinition>
+        <hudson.model.StringParameterDefinition>
+        <name>CONFIG_TYPE</name>
+        <description></description>
+        <defaultValue>secret</defaultValue>
+        </hudson.model.StringParameterDefinition>
+        <hudson.model.StringParameterDefinition>
+        <name>YAML_PATH</name>
+        <description></description>
+        <defaultValue></defaultValue>
+        </hudson.model.StringParameterDefinition>
+        <hudson.model.StringParameterDefinition>
         <name>SLACK_TOKEN</name>
         <description></description>
         <defaultValue></defaultValue>
@@ -48,7 +63,7 @@
     </org.jenkinsci.plugins.workflow.job.properties.PipelineTriggersJobProperty>
 </properties>
 <definition class="org.jenkinsci.plugins.workflow.cps.CpsFlowDefinition" plugin="workflow-cps@2.54">
-    <script>// deploy-config
+    <script>// config-apply
 REPLACE
     </script>
     <sandbox>true</sandbox>

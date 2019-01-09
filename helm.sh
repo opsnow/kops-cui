@@ -430,6 +430,11 @@ helm_install() {
     _command "kubectl get deploy,pod,svc,ing,pvc,pv -n ${NAMESPACE}"
     kubectl get deploy,pod,svc,ing,pvc,pv -n ${NAMESPACE}
 
+    # for jenkins
+    if [ "${NAME}" == "jenkins" ]; then
+        create_cluster_role_binding cluster-admin ${NAMESPACE} default true
+    fi
+
     # for nginx-ingress
     if [ "${NAME}" == "nginx-ingress" ]; then
         set_base_domain "${NAME}"
@@ -802,8 +807,7 @@ efs_create() {
 
     _result "K8S_NODE_SG_ID=${K8S_NODE_SG_ID}"
     _result "VPC_ID=${VPC_ID}"
-    _result "VPC_SUBNETS="
-    echo "${VPC_SUBNETS}"
+    _result "VPC_SUBNETS=$(echo ${VPC_SUBNETS} | xargs)"
     echo
 
     # create a security group for efs mount targets

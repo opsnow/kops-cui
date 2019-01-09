@@ -1,0 +1,33 @@
+@Library("github.com/opsnow-tools/valve-butler")
+def butler = new com.opsnow.valve.v7.Butler()
+def label = "worker-${UUID.randomUUID().toString()}"
+def IMAGE_NAME = "${SERVICE_GROUP}-${SERVICE_NAME}"
+properties([
+  buildDiscarder(logRotator(daysToKeepStr: "60", numToKeepStr: "30"))
+])
+podTemplate(label: label, containers: [
+  containerTemplate(name: "builder", image: "quay.io/opsnow-tools/valve-builder", command: "cat", ttyEnabled: true, alwaysPullImage: true)
+], volumes: [
+  hostPathVolume(mountPath: "/var/run/docker.sock", hostPath: "/var/run/docker.sock"),
+  hostPathVolume(mountPath: "/home/jenkins/.helm", hostPath: "/home/jenkins/.helm")
+]) {
+  node(label) {
+    stage("Prepare") {
+      container("builder") {
+        butler.prepare(IMAGE_NAME, VERSION)
+      }
+    }
+    stage("Deploy") {
+      container("builder") {
+        try {
+          // deploy(cluster, namespace, sub_domain, profile)
+          butler.deploy(CLUSTER, NAMESPACE, SUB_DOMAIN, PROFILE)
+          butler.success(SLACK_TOKEN, "Deploy")
+        } catch (e) {
+          butler.failure(SLACK_TOKEN, "Deploy")
+          throw e
+        }
+      }
+    }
+  }
+}
