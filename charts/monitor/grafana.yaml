@@ -69,7 +69,7 @@ dashboards:
     kube-mon-apps:
       # https://grafana.com/dashboards/9377
       gnetId: 9377
-      revision: 1
+      revision: 2
       datasource: Prometheus
     # prometheus-stats:
     #   gnetId: 2
