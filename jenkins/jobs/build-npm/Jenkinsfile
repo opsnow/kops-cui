@@ -7,11 +7,9 @@ properties([
 ])
 podTemplate(label: label, containers: [
   containerTemplate(name: "builder", image: "quay.io/opsnow-tools/valve-builder", command: "cat", ttyEnabled: true, alwaysPullImage: true),
-  containerTemplate(name: "maven", image: "maven:3.5.4-jdk-8-alpine", command: "cat", ttyEnabled: true),
-  containerTemplate(name: "node", image: "node:10-alpine", command: "cat", ttyEnabled: true)
+  containerTemplate(name: "node", image: "node:10", command: "cat", ttyEnabled: true)
 ], volumes: [
   hostPathVolume(mountPath: "/var/run/docker.sock", hostPath: "/var/run/docker.sock"),
-  hostPathVolume(mountPath: "/home/jenkins/.draft", hostPath: "/home/jenkins/.draft"),
   hostPathVolume(mountPath: "/home/jenkins/.helm", hostPath: "/home/jenkins/.helm")
 ]) {
   node(label) {
@@ -32,36 +30,28 @@ podTemplate(label: label, containers: [
           butler.failure(SLACK_TOKEN, "Checkout")
           throw e
         }
-        butler.scan()
+        butler.scan("nodejs")
       }
     }
     stage("Build") {
-      if (butler.source_lang == "java") {
-        container("maven") {
-          try {
-            butler.mvn_build()
-            butler.success(SLACK_TOKEN, "Build")
-          } catch (e) {
-            butler.failure(SLACK_TOKEN, "Build")
-            throw e
-          }
+      container("node") {
+        try {
+          butler.npm_build()
+          butler.success(SLACK_TOKEN, "Build")
+        } catch (e) {
+          butler.failure(SLACK_TOKEN, "Build")
+          throw e
         }
       }
-      else if (butler.source_lang == "nodejs") {
-        container("node") {
-          try {
-            butler.npm_build()
-            butler.success(SLACK_TOKEN, "Build")
-          } catch (e) {
-            butler.failure(SLACK_TOKEN, "Build")
-            throw e
-          }
+    }
+    stage("Tests") {
+      container("node") {
+        try {
+          butler.npm_test()
+        } catch (e) {
+          butler.failure(SLACK_TOKEN, "Tests")
+          throw e
         }
-      }
-      else {
-        sh """
-          echo "skipped."
-        """
       }
     }
     stage("Build Image") {
@@ -87,18 +77,6 @@ podTemplate(label: label, containers: [
           }
         }
       )
-    }
-    stage("Deploy") {
-      container("builder") {
-        try {
-          // deploy(cluster, namespace, sub_domain, profile)
-          butler.deploy("demo", "demo", "${IMAGE_NAME}", "dev")
-          butler.success(SLACK_TOKEN, "Deploy")
-        } catch (e) {
-          butler.failure(SLACK_TOKEN, "Deploy")
-          throw e
-        }
-      }
     }
   }
 }

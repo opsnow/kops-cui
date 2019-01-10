@@ -3,29 +3,29 @@
 # chart-ingress: true
 # chart-pvc: sonatype-nexus-data ReadWriteOnce 30Gi
 
+# nameOverride: sonatype-nexus
+
+statefulset:
+  enabled: true
+
 nexus:
-  # imageName: quay.io/travelaudience/docker-nexus
   serviceType: SERVICE_TYPE
   resources:
     requests:
-      cpu: 500m
-      memory: 3072Mi
-    # limits:
-    #   cpu: 1000m
-    #   memory: 4096Mi
+      cpu: 250m
+      memory: 4Gi
   livenessProbe:
-    initialDelaySeconds: 200
+    initialDelaySeconds: 100
     periodSeconds: 30
     failureThreshold: 12
     path: /
   readinessProbe:
-    initialDelaySeconds: 200
+    initialDelaySeconds: 100
     periodSeconds: 30
     failureThreshold: 12
     path: /
 
 nexusProxy:
-  # imageName: quay.io/travelaudience/docker-nexus-proxy
   env:
     nexusHttpHost: INGRESS_DOMAIN
     # nexusDockerHost: docker-INGRESS_DOMAIN
@@ -39,7 +39,7 @@ ingress:
     enabled: false
   annotations:
     kubernetes.io/ingress.class: nginx
-    # nginx.ingress.kubernetes.io/force-ssl-redirect: "true"
+    nginx.ingress.kubernetes.io/force-ssl-redirect: "true"
     nginx.ingress.kubernetes.io/proxy-body-size: 500m
     ingress.kubernetes.io/proxy-body-size: 500m
 

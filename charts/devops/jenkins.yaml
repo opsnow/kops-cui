@@ -9,17 +9,15 @@ rbac:
   install: true
 
 Master:
-  # Image: quay.io/nalbam/jenkins
-  # ImageTag: latest
   AdminUser: admin
   AdminPassword: PASSWORD
   resources:
     requests:
-      cpu: 500m
-      memory: 3072Mi
-    # limits:
-    #   cpu: 1000m
-    #   memory: 4096Mi
+      cpu: 250m
+      memory: 2Gi
+    limits:
+      cpu: 1000m
+      memory: 4Gi
   JavaOpts: "-Dorg.apache.commons.jelly.tags.fmt.timeZone=Asia/Seoul"
   ServiceType: SERVICE_TYPE
   HostName: INGRESS_DOMAIN
