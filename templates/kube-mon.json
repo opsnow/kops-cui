@@ -47,7 +47,7 @@
   "editable": true,
   "gnetId": 9374,
   "graphTooltip": 0,
-  "iteration": 1547111331250,
+  "iteration": 1547112260045,
   "links": [],
   "panels": [{
       "collapsed": false,
@@ -2882,8 +2882,8 @@
       "allValue": ".*",
       "current": {
         "tags": [],
-        "text": "ip-10-99-20-194.ap-northeast-2.compute.internal",
-        "value": "ip-10-99-20-194.ap-northeast-2.compute.internal"
+        "text": "",
+        "value": ""
       },
       "datasource": "${DS_PROMETHEUS}",
       "definition": "",

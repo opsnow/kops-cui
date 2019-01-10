@@ -49,7 +49,7 @@
   "editable": true,
   "gnetId": 9377,
   "graphTooltip": 0,
-  "iteration": 1547010145866,
+  "iteration": 1547112280190,
   "links": [],
   "panels": [{
       "collapsed": false,
@@ -1087,8 +1087,8 @@
         "allValue": ".*",
         "current": {
           "tags": [],
-          "text": "sonatype",
-          "value": "sonatype"
+          "text": "",
+          "value": ""
         },
         "datasource": "${DS_PROMETHEUS}",
         "definition": "",
@@ -1112,8 +1112,8 @@
       {
         "allValue": ".*",
         "current": {
-          "text": "sonatype-nexus",
-          "value": "sonatype-nexus"
+          "text": "",
+          "value": ""
         },
         "datasource": "${DS_PROMETHEUS}",
         "definition": "",
@@ -1168,5 +1168,5 @@
   "timezone": "browser",
   "title": "Kubernetes Deployment Monitor (via Prometheus)",
   "uid": "kube-mon-apps",
-  "version": 2
+  "version": 1
 }
