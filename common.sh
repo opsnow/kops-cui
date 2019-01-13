@@ -4,10 +4,11 @@ OS_NAME="$(uname | awk '{print tolower($0)}')"
 
 L_PAD="$(printf %2s)"
 
-command -v tput > /dev/null || TPUT=false
+command -v fzf > /dev/null && FZF=true
+command -v tput > /dev/null && TPUT=true
 
 _echo() {
-    if [ -z ${TPUT} ] && [ ! -z $2 ]; then
+    if [ -n ${TPUT} ] && [ -n $2 ]; then
         echo -e "${L_PAD}$(tput setaf $2)$1$(tput sgr0)"
     else
         echo -e "${L_PAD}$1"
@@ -16,13 +17,13 @@ _echo() {
 
 _read() {
     if [ "${3}" == "S" ]; then
-        if [ -z ${TPUT} ] && [ ! -z $2 ]; then
+        if [ -n ${TPUT} ] && [ -n $2 ]; then
             read -s -p "${L_PAD}$(tput setaf $2)$1$(tput sgr0)" PASSWORD
         else
             read -s -p "${L_PAD}$1" PASSWORD
         fi
     else
-        if [ -z ${TPUT} ] && [ ! -z $2 ]; then
+        if [ -n ${TPUT} ] && [ -n $2 ]; then
             read -p "${L_PAD}$(tput setaf $2)$1$(tput sgr0)" ANSWER
         else
             read -p "${L_PAD}$1" ANSWER
@@ -193,7 +194,7 @@ update_self() {
 }
 
 logo() {
-    if [ -z ${TPUT} ]; then
+    if [ -n ${TPUT} ]; then
         tput clear
         tput setaf 3
     fi
@@ -201,7 +202,7 @@ logo() {
     cat ${SHELL_DIR}/templates/kops-cui-logo.txt
     echo
 
-    if [ -z ${TPUT} ]; then
+    if [ -n ${TPUT} ]; then
         tput sgr0
     fi
 }

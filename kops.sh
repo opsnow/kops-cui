@@ -8,7 +8,7 @@ SHELL_DIR=$(dirname $0)
 ################################################################################
 
 title() {
-    if [ -z ${TPUT} ]; then
+    if [ -n ${TPUT} ]; then
         tput clear
     fi
 
