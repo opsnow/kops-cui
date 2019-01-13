@@ -199,7 +199,7 @@ update_self() {
 }
 
 logo() {
-    if [ -n ${TPUT} ]; then
+    if [ "${TPUT}" != "" ]; then
         tput clear
         tput setaf 3
     fi
@@ -207,7 +207,7 @@ logo() {
     cat ${SHELL_DIR}/templates/kops-cui-logo.txt
     echo
 
-    if [ -n ${TPUT} ]; then
+    if [ "${TPUT}" != "" ]; then
         tput sgr0
     fi
 }
