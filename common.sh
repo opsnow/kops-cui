@@ -90,7 +90,7 @@ select_one() {
         return
     fi
 
-    # if [ -n ${FZF} ]; then
+    # if [ "${FZF}" != "" ]; then
     #     SELECTED=$(cat ${LIST} | fzf --reverse --no-mouse --height=10 --bind=left:page-up,right:page-down)
     # else
         echo
