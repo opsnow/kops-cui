@@ -107,6 +107,7 @@ elif [ "${OS_TYPE}" == "brew" ]; then
     brew update && brew upgrade
     command -v jq > /dev/null || brew install jq
     command -v git > /dev/null || brew install git
+    command -v fzf > /dev/null || brew install fzf
     # getopt
     GETOPT=$(getopt 2>&1 | head -1 | xargs)
     if [ "${GETOPT}" == "--" ]; then
