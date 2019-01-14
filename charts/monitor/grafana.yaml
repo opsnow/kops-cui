@@ -64,12 +64,12 @@ dashboards:
     kube-mon:
       # https://grafana.com/dashboards/9374
       gnetId: 9374
-      revision: 4
+      revision: 5
       datasource: Prometheus
     kube-mon-apps:
       # https://grafana.com/dashboards/9377
       gnetId: 9377
-      revision: 3
+      revision: 4
       datasource: Prometheus
     # prometheus-stats:
     #   gnetId: 2
