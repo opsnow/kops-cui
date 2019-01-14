@@ -8,7 +8,7 @@ SHELL_DIR=$(dirname $0)
 ################################################################################
 
 title() {
-    if [ -z ${TPUT} ]; then
+    if [ "${TPUT}" != "" ]; then
         tput clear
     fi
 
@@ -1132,16 +1132,16 @@ sample_install() {
 get_cluster() {
     # config list
     LIST=${SHELL_DIR}/build/${THIS_NAME}-config-list
-    kubectl config view -o json | jq -r '.clusters[].name' | sort > ${LIST}
+    kubectl config view -o json | jq -r '.contexts[].name' | sort > ${LIST}
 
     # select
     select_one
 
-    CLUSTER_NAME="${SELECTED}"
-
-    if [ "${CLUSTER_NAME}" == "" ]; then
+    if [ "${SELECTED}" == "" ]; then
         _error
     fi
+
+    CLUSTER_NAME="${SELECTED}"
 
     _command "kubectl config use-context ${CLUSTER_NAME}"
     kubectl config use-context ${CLUSTER_NAME}

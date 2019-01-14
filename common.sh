@@ -2,12 +2,13 @@
 
 OS_NAME="$(uname | awk '{print tolower($0)}')"
 
-L_PAD="$(printf %2s)"
+L_PAD="  "
 
-command -v tput > /dev/null || TPUT=false
+command -v fzf > /dev/null && FZF=true
+command -v tput > /dev/null && TPUT=true
 
 _echo() {
-    if [ -z ${TPUT} ] && [ ! -z $2 ]; then
+    if [ "${TPUT}" != "" ] && [ "$2" != "" ]; then
         echo -e "${L_PAD}$(tput setaf $2)$1$(tput sgr0)"
     else
         echo -e "${L_PAD}$1"
@@ -16,13 +17,13 @@ _echo() {
 
 _read() {
     if [ "${3}" == "S" ]; then
-        if [ -z ${TPUT} ] && [ ! -z $2 ]; then
+        if [ "${TPUT}" != "" ] && [ "$2" != "" ]; then
             read -s -p "${L_PAD}$(tput setaf $2)$1$(tput sgr0)" PASSWORD
         else
             read -s -p "${L_PAD}$1" PASSWORD
         fi
     else
-        if [ -z ${TPUT} ] && [ ! -z $2 ]; then
+        if [ "${TPUT}" != "" ] && [ "$2" != "" ]; then
             read -p "${L_PAD}$(tput setaf $2)$1$(tput sgr0)" ANSWER
         else
             read -p "${L_PAD}$1" ANSWER
@@ -82,36 +83,41 @@ password() {
 }
 
 select_one() {
-    echo
-
-    IDX=0
-    while read VAL; do
-        IDX=$(( ${IDX} + 1 ))
-        printf "%3s. %s\n" "${IDX}" "${VAL}";
-    done < ${LIST}
-
     SELECTED=
-    COUNT=$(cat ${LIST} | wc -l | xargs)
 
-    if [ "x${COUNT}" == "x0" ]; then
+    CNT=$(cat ${LIST} | wc -l | xargs)
+    if [ "x${CNT}" == "x0" ]; then
         return
     fi
-    if [ "x${COUNT}" != "x1" ]; then
-        COUNT="1-${COUNT}"
-    fi
 
-    # select
-    question "${1:-"Select one"} (${COUNT}) : " "^[0-9]+$"
+    # if [ "${FZF}" != "" ]; then
+    #     SELECTED=$(cat ${LIST} | fzf --reverse --no-mouse --height=10 --bind=left:page-up,right:page-down)
+    # else
+        echo
 
-    # answer
-    if [ "x${ANSWER}" == "x" ] || [ "x${ANSWER}" == "x0" ]; then
-        return
-    fi
-    # TEST='^[0-9]+$'
-    # if ! [[ ${ANSWER} =~ ${TEST} ]]; then
-    #     return
+        IDX=0
+        while read VAL; do
+            IDX=$(( ${IDX} + 1 ))
+            printf "%3s. %s\n" "${IDX}" "${VAL}"
+        done < ${LIST}
+
+        if [ "${CNT}" != "1" ]; then
+            CNT="1-${CNT}"
+        fi
+
+        # select
+        question "${1:-"Select one"} (${CNT}) : " "^[0-9]+$"
+
+        # answer
+        if [ "x${ANSWER}" == "x" ] || [ "x${ANSWER}" == "x0" ]; then
+            return
+        fi
+        TEST='^[0-9]+$'
+        if ! [[ ${ANSWER} =~ ${TEST} ]]; then
+            return
+        fi
+        SELECTED=$(sed -n ${ANSWER}p ${LIST})
     # fi
-    SELECTED=$(sed -n ${ANSWER}p ${LIST})
 }
 
 progress() {
@@ -193,7 +199,7 @@ update_self() {
 }
 
 logo() {
-    if [ -z ${TPUT} ]; then
+    if [ "${TPUT}" != "" ]; then
         tput clear
         tput setaf 3
     fi
@@ -201,7 +207,7 @@ logo() {
     cat ${SHELL_DIR}/templates/kops-cui-logo.txt
     echo
 
-    if [ -z ${TPUT} ]; then
+    if [ "${TPUT}" != "" ]; then
         tput sgr0
     fi
 }
