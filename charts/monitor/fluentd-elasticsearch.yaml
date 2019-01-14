@@ -20,12 +20,14 @@ configMaps:
       @type elasticsearch
       @log_level info
       include_tag_key true
-      type_name fluentd
+      type_name _doc
       host "#{ENV['OUTPUT_HOST']}"
       port "#{ENV['OUTPUT_PORT']}"
+      scheme "#{ENV['OUTPUT_SCHEME']}"
+      ssl_version "#{ENV['OUTPUT_SSL_VERSION']}"
       logstash_format true
-      resurrect_after 5s
-      request_timeout 15s
+      logstash_prefix "#{ENV['LOGSTASH_PREFIX']}"
+      reconnect_on_error true
       reload_connections false
       reload_on_failure false
       <buffer>
@@ -42,4 +44,3 @@ configMaps:
         overflow_action block
       </buffer>
     </match>
-
