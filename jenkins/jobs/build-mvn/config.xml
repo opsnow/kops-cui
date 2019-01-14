@@ -7,29 +7,29 @@
     <hudson.model.ParametersDefinitionProperty>
     <parameterDefinitions>
         <hudson.model.StringParameterDefinition>
-        <name>NAME</name>
+        <name>REPOSITORY_URL</name>
         <description></description>
-        <defaultValue>sample-web</defaultValue>
+        <defaultValue>https://github.com/nalbam/sample-node.git</defaultValue>
         </hudson.model.StringParameterDefinition>
         <hudson.model.StringParameterDefinition>
-        <name>VERSION</name>
-        <description></description>
-        <defaultValue>latest</defaultValue>
-        </hudson.model.StringParameterDefinition>
-        <hudson.model.StringParameterDefinition>
-        <name>NAMESPACE</name>
-        <description></description>
-        <defaultValue>prod</defaultValue>
-        </hudson.model.StringParameterDefinition>
-        <hudson.model.StringParameterDefinition>
-        <name>CLUSTER</name>
-        <description></description>
-        <defaultValue>dev</defaultValue>
-        </hudson.model.StringParameterDefinition>
-        <hudson.model.StringParameterDefinition>
-        <name>BASE_DOMAIN</name>
+        <name>REPOSITORY_SECRET</name>
         <description></description>
         <defaultValue></defaultValue>
+        </hudson.model.StringParameterDefinition>
+        <hudson.model.StringParameterDefinition>
+        <name>BRANCH_NAME</name>
+        <description></description>
+        <defaultValue>master</defaultValue>
+        </hudson.model.StringParameterDefinition>
+        <hudson.model.StringParameterDefinition>
+        <name>SERVICE_GROUP</name>
+        <description></description>
+        <defaultValue>sample</defaultValue>
+        </hudson.model.StringParameterDefinition>
+        <hudson.model.StringParameterDefinition>
+        <name>SERVICE_NAME</name>
+        <description></description>
+        <defaultValue>node</defaultValue>
         </hudson.model.StringParameterDefinition>
         <hudson.model.StringParameterDefinition>
         <name>SLACK_TOKEN</name>
@@ -43,7 +43,7 @@
     </org.jenkinsci.plugins.workflow.job.properties.PipelineTriggersJobProperty>
 </properties>
 <definition class="org.jenkinsci.plugins.workflow.cps.CpsFlowDefinition" plugin="workflow-cps@2.54">
-    <script>// deploy-image
+    <script>// build-mvn
 REPLACE
     </script>
     <sandbox>true</sandbox>

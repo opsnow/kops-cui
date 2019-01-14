@@ -4,19 +4,25 @@
 nameOverride: nginx-ingress
 
 controller:
-  replicaCount: 2
+  replicaCount: 3
   # autoscaling:
   #   enabled: true
-  #   minReplicas: 2
-  #   maxReplicas: 9
-  #   targetCPUUtilizationPercentage: 50
-  #   targetMemoryUtilizationPercentage: 50
   service:
     annotations:
       service.beta.kubernetes.io/aws-load-balancer-ssl-cert: ""
       service.beta.kubernetes.io/aws-load-balancer-ssl-ports: "https"
       service.beta.kubernetes.io/aws-load-balancer-backend-protocol: "http"
       service.beta.kubernetes.io/aws-load-balancer-connection-idle-timeout: "3600"
+      external-dns.alpha.kubernetes.io/hostname: "demo.opsnow.com."
+      external-dns.alpha.kubernetes.io/ttl: 300
     targetPorts:
       http: http
       https: http
+  stats:
+    enabled: true
+  metrics:
+    enabled: true
+    service:
+      annotations:
+        prometheus.io/scrape: "true"
+        prometheus.io/port: "10254"

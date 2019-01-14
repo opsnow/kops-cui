@@ -7,9 +7,9 @@
     <hudson.model.ParametersDefinitionProperty>
     <parameterDefinitions>
         <hudson.model.StringParameterDefinition>
-        <name>NAME</name>
+        <name>CLUSTER</name>
         <description></description>
-        <defaultValue>sample-web</defaultValue>
+        <defaultValue>dev</defaultValue>
         </hudson.model.StringParameterDefinition>
         <hudson.model.StringParameterDefinition>
         <name>NAMESPACE</name>
@@ -17,9 +17,19 @@
         <defaultValue>prod</defaultValue>
         </hudson.model.StringParameterDefinition>
         <hudson.model.StringParameterDefinition>
-        <name>CLUSTER</name>
+        <name>SERVICE_GROUP</name>
         <description></description>
-        <defaultValue>dev</defaultValue>
+        <defaultValue>sample</defaultValue>
+        </hudson.model.StringParameterDefinition>
+        <hudson.model.StringParameterDefinition>
+        <name>SERVICE_NAME</name>
+        <description></description>
+        <defaultValue>node</defaultValue>
+        </hudson.model.StringParameterDefinition>
+        <hudson.model.StringParameterDefinition>
+        <name>REVISION</name>
+        <description></description>
+        <defaultValue>0</defaultValue>
         </hudson.model.StringParameterDefinition>
         <hudson.model.StringParameterDefinition>
         <name>SLACK_TOKEN</name>
@@ -33,7 +43,7 @@
     </org.jenkinsci.plugins.workflow.job.properties.PipelineTriggersJobProperty>
 </properties>
 <definition class="org.jenkinsci.plugins.workflow.cps.CpsFlowDefinition" plugin="workflow-cps@2.54">
-    <script>// remove-image
+    <script>// image-rollback
 REPLACE
     </script>
     <sandbox>true</sandbox>

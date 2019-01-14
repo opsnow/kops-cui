@@ -17,26 +17,16 @@ podTemplate(label: label, containers: [
         butler.prepare(IMAGE_NAME)
       }
     }
-    stage("Checkout") {
+    stage("Remove") {
       container("builder") {
         try {
-          if (REPOSITORY_SECRET) {
-            git(url: REPOSITORY_URL, branch: BRANCH_NAME, credentialsId: REPOSITORY_SECRET)
-          } else {
-            git(url: REPOSITORY_URL, branch: BRANCH_NAME)
-          }
+          // remove(cluster, namespace)
+          butler.remove(CLUSTER, NAMESPACE)
+          butler.success(SLACK_TOKEN, "Remove")
         } catch (e) {
-          butler.failure(SLACK_TOKEN_DEV, "Checkout")
+          butler.failure(SLACK_TOKEN, "Remove")
           throw e
         }
-        butler.scan()
-      }
-    }
-    stage("Command") {
-      container("builder") {
-        sh """
-          $COMMAND
-        """
       }
     }
   }

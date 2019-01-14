@@ -26,18 +26,34 @@ podTemplate(label: label, containers: [
             git(url: REPOSITORY_URL, branch: BRANCH_NAME)
           }
         } catch (e) {
-          butler.failure(SLACK_TOKEN_DEV, "Checkout")
+          butler.failure(SLACK_TOKEN, "Checkout")
           throw e
         }
-        butler.scan()
       }
     }
-    stage("Command") {
-      container("builder") {
-        sh """
-          $COMMAND
-        """
-      }
+    stage("Build Image") {
+      parallel(
+        "Build Docker": {
+          container("builder") {
+            try {
+              butler.build_image()
+            } catch (e) {
+              butler.failure(SLACK_TOKEN, "Build Docker")
+              throw e
+            }
+          }
+        },
+        "Build Charts": {
+          container("builder") {
+            try {
+              butler.build_chart()
+            } catch (e) {
+              butler.failure(SLACK_TOKEN, "Build Charts")
+              throw e
+            }
+          }
+        }
+      )
     }
   }
 }

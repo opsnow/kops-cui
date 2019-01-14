@@ -1,0 +1,92 @@
+@Library("github.com/opsnow-tools/valve-butler")
+def butler = new com.opsnow.valve.v7.Butler()
+def label = "worker-${UUID.randomUUID().toString()}"
+def IMAGE_NAME = "${SERVICE_GROUP}-${SERVICE_NAME}"
+properties([
+  buildDiscarder(logRotator(daysToKeepStr: "60", numToKeepStr: "30"))
+])
+podTemplate(label: label, containers: [
+  containerTemplate(name: "builder", image: "quay.io/opsnow-tools/valve-builder", command: "cat", ttyEnabled: true, alwaysPullImage: true),
+  containerTemplate(name: "maven", image: "maven:3.5.4-jdk-8-alpine", command: "cat", ttyEnabled: true)
+], volumes: [
+  hostPathVolume(mountPath: "/var/run/docker.sock", hostPath: "/var/run/docker.sock"),
+  hostPathVolume(mountPath: "/home/jenkins/.helm", hostPath: "/home/jenkins/.helm")
+]) {
+  node(label) {
+    stage("Prepare") {
+      container("builder") {
+        butler.prepare(IMAGE_NAME)
+      }
+    }
+    stage("Checkout") {
+      container("builder") {
+        try {
+          if (REPOSITORY_SECRET) {
+            git(url: REPOSITORY_URL, branch: BRANCH_NAME, credentialsId: REPOSITORY_SECRET)
+          } else {
+            git(url: REPOSITORY_URL, branch: BRANCH_NAME)
+          }
+        } catch (e) {
+          butler.failure(SLACK_TOKEN, "Checkout")
+          throw e
+        }
+        butler.scan("java")
+      }
+    }
+    stage("Build") {
+      container("maven") {
+        try {
+          butler.mvn_build()
+          butler.success(SLACK_TOKEN, "Build")
+        } catch (e) {
+          butler.failure(SLACK_TOKEN, "Build")
+          throw e
+        }
+      }
+    }
+    stage("Tests") {
+      container("maven") {
+        try {
+          butler.mvn_test()
+        } catch (e) {
+          butler.failure(SLACK_TOKEN, "Tests")
+          throw e
+        }
+      }
+    }
+    stage("Code Analysis") {
+      container("maven") {
+        try {
+          butler.mvn_sonar()
+        } catch (e) {
+          butler.failure(SLACK_TOKEN_DEV, "Code Analysis")
+          throw e
+        }
+      }
+    }
+    stage("Build Image") {
+      parallel(
+        "Build Docker": {
+          container("builder") {
+            try {
+              butler.build_image()
+            } catch (e) {
+              butler.failure(SLACK_TOKEN, "Build Docker")
+              throw e
+            }
+          }
+        },
+        "Build Charts": {
+          container("builder") {
+            try {
+              butler.build_chart()
+            } catch (e) {
+              butler.failure(SLACK_TOKEN, "Build Charts")
+              throw e
+            }
+          }
+        }
+      )
+    }
+  }
+}

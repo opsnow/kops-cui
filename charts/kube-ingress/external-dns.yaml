@@ -1,0 +1,15 @@
+# chart-repo: stable/external-dns
+# chart-version: latest
+
+nameOverride: external-dns
+
+sources:
+  - service
+  # - ingress
+
+aws:
+  accessKey: ""
+  secretKey: ""
+
+rbac:
+  create: true

@@ -7,19 +7,14 @@
     <hudson.model.ParametersDefinitionProperty>
     <parameterDefinitions>
         <hudson.model.StringParameterDefinition>
-        <name>REPOSITORY_URL</name>
+        <name>CLUSTER</name>
         <description></description>
-        <defaultValue>https://github.com/nalbam/sample-spring.git</defaultValue>
+        <defaultValue>dev</defaultValue>
         </hudson.model.StringParameterDefinition>
         <hudson.model.StringParameterDefinition>
-        <name>REPOSITORY_SECRET</name>
+        <name>NAMESPACE</name>
         <description></description>
-        <defaultValue></defaultValue>
-        </hudson.model.StringParameterDefinition>
-        <hudson.model.StringParameterDefinition>
-        <name>BRANCH_NAME</name>
-        <description></description>
-        <defaultValue>master</defaultValue>
+        <defaultValue>prod</defaultValue>
         </hudson.model.StringParameterDefinition>
         <hudson.model.StringParameterDefinition>
         <name>SERVICE_GROUP</name>
@@ -29,7 +24,12 @@
         <hudson.model.StringParameterDefinition>
         <name>SERVICE_NAME</name>
         <description></description>
-        <defaultValue>spring</defaultValue>
+        <defaultValue>node</defaultValue>
+        </hudson.model.StringParameterDefinition>
+        <hudson.model.StringParameterDefinition>
+        <name>SLACK_TOKEN</name>
+        <description></description>
+        <defaultValue></defaultValue>
         </hudson.model.StringParameterDefinition>
     </parameterDefinitions>
     </hudson.model.ParametersDefinitionProperty>
@@ -37,25 +37,11 @@
     <triggers/>
     </org.jenkinsci.plugins.workflow.job.properties.PipelineTriggersJobProperty>
 </properties>
-<definition class="org.jenkinsci.plugins.workflow.cps.CpsScmFlowDefinition" plugin="workflow-cps@2.54">
-    <scm class="hudson.plugins.git.GitSCM" plugin="git@3.9.1">
-    <configVersion>2</configVersion>
-    <userRemoteConfigs>
-        <hudson.plugins.git.UserRemoteConfig>
-        <url>$REPOSITORY_URL</url>
-        </hudson.plugins.git.UserRemoteConfig>
-    </userRemoteConfigs>
-    <branches>
-        <hudson.plugins.git.BranchSpec>
-        <name>$BRANCH_NAME</name>
-        </hudson.plugins.git.BranchSpec>
-    </branches>
-    <doGenerateSubmoduleConfigurations>false</doGenerateSubmoduleConfigurations>
-    <submoduleCfg class="list"/>
-    <extensions/>
-    </scm>
-    <scriptPath>Jenkinsfile</scriptPath>
-    <lightweight>false</lightweight>
+<definition class="org.jenkinsci.plugins.workflow.cps.CpsFlowDefinition" plugin="workflow-cps@2.54">
+    <script>// image-remove
+REPLACE
+    </script>
+    <sandbox>true</sandbox>
 </definition>
 <triggers/>
 <disabled>false</disabled>

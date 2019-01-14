@@ -1,4 +1,5 @@
 replicaCount: 1
+profile: default
 image:
   repository: nalbam/sample-tomcat
   tag: alpine
@@ -7,13 +8,21 @@ service:
   type: ClusterIP
   externalPort: 80
   internalPort: 8080
+ingress:
+  enabled: true
+  basedomain: 127.0.0.1.nip.io
+hpa:
+  enabled: true
+  min: 1
+  max: 5
+  cpu: 80
 resources:
   requests:
     cpu: 500m
     memory: 1024Mi
-  limits:
-    cpu: 1000m
-    memory: 2048Mi
+  # limits:
+  #   cpu: 1000m
+  #   memory: 2048Mi
 readinessProbe:
   httpGet:
     path: /
@@ -28,17 +37,3 @@ livenessProbe:
   initialDelaySeconds: 30
   periodSeconds: 15
   failureThreshold: 6
-ingress:
-  enabled: true
-  basedomain: 127.0.0.1.nip.io
-hpa:
-  enabled: true
-  min: 1
-  max: 5
-  cpu: 80
-  mem: 80
-profile: default
-configmap:
-  enabled: false
-secret:
-  enabled: false

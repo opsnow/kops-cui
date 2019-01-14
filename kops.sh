@@ -8,7 +8,7 @@ SHELL_DIR=$(dirname $0)
 ################################################################################
 
 title() {
-    if [ -z ${TPUT} ]; then
+    if [ "${TPUT}" != "" ]; then
         tput clear
     fi
 
@@ -56,8 +56,6 @@ waiting_for() {
 
 prepare() {
     logo
-
-    # get_kops_config
 
     mkdir -p ~/.ssh
     mkdir -p ~/.aws
@@ -156,6 +154,10 @@ cluster_menu() {
             fi
 
             kops_edit
+
+            hint_istio
+            hint_cluster_autoscaler
+
             press_enter cluster
             ;;
         3)
@@ -329,34 +331,13 @@ create_menu() {
             create_menu
             ;;
         c)
-            # KOPS_TERRAFORM=
-            # save_kops_config true
+            KOPS_TERRAFORM=
+            save_kops_config
 
             kops_create
 
-            _result "Edit Cluster for Istio"
-
-            echo "spec:"
-            echo "  kubeAPIServer:"
-            echo "    admissionControl:"
-            echo "    - NamespaceLifecycle"
-            echo "    - LimitRanger"
-            echo "    - ServiceAccount"
-            echo "    - PersistentVolumeLabel"
-            echo "    - DefaultStorageClass"
-            echo "    - DefaultTolerationSeconds"
-            echo "    - MutatingAdmissionWebhook"
-            echo "    - ValidatingAdmissionWebhook"
-            echo "    - ResourceQuota"
-            echo "    - NodeRestriction"
-            echo "    - Priority"
-
-            _result "Edit InstanceGroup (node) for Autoscaler"
-
-            echo "spec:"
-            echo "  cloudLabels:"
-            echo "    k8s.io/cluster-autoscaler/enabled: \"\""
-            echo "    kubernetes.io/cluster/${KOPS_CLUSTER_NAME}: owned"
+            hint_istio
+            hint_cluster_autoscaler
 
             press_enter
 
@@ -365,10 +346,12 @@ create_menu() {
             cluster_menu
             ;;
         t)
-            # KOPS_TERRAFORM=true
-            # save_kops_config true
+            KOPS_TERRAFORM=true
+            save_kops_config
 
             kops_create
+
+            hint_cluster_autoscaler
 
             press_enter
 
@@ -384,9 +367,45 @@ create_menu() {
     esac
 }
 
+hint_istio() {
+    _result "Edit Cluster for Istio"
+
+    echo "spec:"
+    echo "  kubeAPIServer:"
+    echo "    admissionControl:"
+    echo "    - NamespaceLifecycle"
+    echo "    - LimitRanger"
+    echo "    - ServiceAccount"
+    echo "    - PersistentVolumeLabel"
+    echo "    - DefaultStorageClass"
+    echo "    - DefaultTolerationSeconds"
+    echo "    - MutatingAdmissionWebhook"
+    echo "    - ValidatingAdmissionWebhook"
+    echo "    - ResourceQuota"
+    echo "    - NodeRestriction"
+    echo "    - Priority"
+}
+
+hint_cluster_autoscaler() {
+    _result "Edit InstanceGroup (node) for Autoscaler"
+
+    echo "spec:"
+    echo "  cloudLabels:"
+    echo "    k8s.io/cluster-autoscaler/enabled: \"\""
+    echo "    kubernetes.io/cluster/${KOPS_CLUSTER_NAME}: owned"
+}
+
 get_kops_cluster() {
     _command "kops get --name=${KOPS_CLUSTER_NAME} --state=s3://${KOPS_STATE_STORE} | wc -l | xargs"
     CLUSTER=$(kops get --name=${KOPS_CLUSTER_NAME} --state=s3://${KOPS_STATE_STORE} | wc -l | xargs)
+
+    _command "kubectl config current-context"
+    CURRENT=$(kubectl config current-context)
+
+    if [ "${CURRENT}" != "${KOPS_CLUSTER_NAME}" ]; then
+        _command "kubectl config unset current-context"
+        kubectl config unset current-context
+    fi
 }
 
 read_kops_config() {
@@ -439,18 +458,30 @@ save_kops_config() {
 }
 
 read_state_store() {
+    # state store list
+    LIST=${SHELL_DIR}/build/${THIS_NAME}-kops-state-store-list
+
+    _command "aws s3 ls | grep kops-state"
+    aws s3 ls | grep kops-state | awk '{print $3}' > ${LIST}
+
+    # select
+    select_one
+
+    KOPS_STATE_STORE="${SELECTED}"
+
     if [ -z ${KOPS_STATE_STORE} ]; then
         DEFAULT=$(aws s3 ls | grep kops-state | head -1 | awk '{print $3}')
         if [ -z ${DEFAULT} ]; then
             DEFAULT="kops-state-$(whoami)"
         fi
-    else
-        DEFAULT=${KOPS_STATE_STORE}
+
+        question "Enter cluster store [${DEFAULT}] : "
+
+        KOPS_STATE_STORE=${ANSWER:-${DEFAULT}}
     fi
-
-    question "Enter cluster store [${DEFAULT}] : "
-
-    KOPS_STATE_STORE=${ANSWER:-${DEFAULT}}
+    if [ -z ${KOPS_STATE_STORE} ]; then
+        _error
+    fi
 
     # S3 Bucket
     BUCKET=$(aws s3api get-bucket-acl --bucket ${KOPS_STATE_STORE} | jq -r '.Owner.ID')
@@ -462,7 +493,6 @@ read_state_store() {
 
         BUCKET=$(aws s3api get-bucket-acl --bucket ${KOPS_STATE_STORE} | jq -r '.Owner.ID')
         if [ -z ${BUCKET} ]; then
-            # clear_kops_config
             _error
         fi
     fi
@@ -485,7 +515,6 @@ read_cluster_list() {
     fi
 
     if [ "${KOPS_CLUSTER_NAME}" == "" ]; then
-        # clear_kops_config
         _error
     fi
 }
@@ -498,21 +527,24 @@ read_cluster_name() {
     select_one
 
     if [ "${SELECTED}" == "" ]; then
-        DEFAULT="dev"
+        DEFAULT="dev.k8s.local"
         question "Enter cluster name [${DEFAULT}] : "
 
-        SELECTED=${ANSWER:-${DEFAULT}}
+        KOPS_CLUSTER_NAME=${ANSWER:-${DEFAULT}}
+    else
+        KOPS_CLUSTER_NAME="${SELECTED}.k8s.local"
     fi
-
-    KOPS_CLUSTER_NAME="${SELECTED}.k8s.local"
 }
 
 kops_get() {
     _command "kops get --name=${KOPS_CLUSTER_NAME} --state=s3://${KOPS_STATE_STORE}"
     kops get --name=${KOPS_CLUSTER_NAME} --state=s3://${KOPS_STATE_STORE}
 
-    _command "kubectl get no"
-    kubectl get no
+    _command "kubectl cluster-info"
+    kubectl cluster-info
+
+    _command "kubectl get node"
+    kubectl get node
 }
 
 kops_create() {
@@ -540,12 +572,11 @@ kops_create() {
     fi
 
     if [ ! -z ${KOPS_TERRAFORM} ]; then
-        OUT_PATH="terraform-${cloud}-${KOPS_CLUSTER_NAME}"
-
-        mkdir -p ${OUT_PATH}
+        TF_PATH="terraform-${cloud}-${KOPS_CLUSTER_NAME}"
+        mkdir -p ${TF_PATH}
 
         echo "    --target=terraform " >> ${KOPS_CREATE}
-        echo "    --out=${OUT_PATH} "  >> ${KOPS_CREATE}
+        echo "    --out=${TF_PATH} "   >> ${KOPS_CREATE}
     fi
 
     cat ${KOPS_CREATE}
@@ -595,14 +626,22 @@ kops_update() {
         _command "kops update cluster --name=${KOPS_CLUSTER_NAME} --state=s3://${KOPS_STATE_STORE} --yes"
         kops update cluster --name=${KOPS_CLUSTER_NAME} --state=s3://${KOPS_STATE_STORE} --yes
     else
-        _command "kops update cluster --name=${KOPS_CLUSTER_NAME} --state=s3://${KOPS_STATE_STORE} --yes --target=terraform --out=terraform-${KOPS_CLUSTER_NAME}"
-        kops update cluster --name=${KOPS_CLUSTER_NAME} --state=s3://${KOPS_STATE_STORE} --yes --target=terraform --out=terraform-${KOPS_CLUSTER_NAME}
+        TF_PATH="terraform-${cloud}-${KOPS_CLUSTER_NAME}"
+        mkdir -p ${TF_PATH}
+
+        _command "kops update cluster --name=${KOPS_CLUSTER_NAME} --state=s3://${KOPS_STATE_STORE} --yes --target=terraform --out=${TF_PATH}"
+        kops update cluster --name=${KOPS_CLUSTER_NAME} --state=s3://${KOPS_STATE_STORE} --yes --target=terraform --out=${TF_PATH}
     fi
 }
 
 kops_rolling_update() {
-    _command "kops rolling-update cluster --name=${KOPS_CLUSTER_NAME} --state=s3://${KOPS_STATE_STORE} --yes"
-    kops rolling-update cluster --name=${KOPS_CLUSTER_NAME} --state=s3://${KOPS_STATE_STORE} --yes
+    if [ -z ${KOPS_TERRAFORM} ]; then
+        _command "kops rolling-update cluster --name=${KOPS_CLUSTER_NAME} --state=s3://${KOPS_STATE_STORE} --yes"
+        kops rolling-update cluster --name=${KOPS_CLUSTER_NAME} --state=s3://${KOPS_STATE_STORE} --yes
+    else
+        _command "kops rolling-update cluster --name=${KOPS_CLUSTER_NAME} --state=s3://${KOPS_STATE_STORE} --yes --cloudonly --force"
+        kops rolling-update cluster --name=${KOPS_CLUSTER_NAME} --state=s3://${KOPS_STATE_STORE} --yes --cloudonly --force
+    fi
 }
 
 kops_validate() {
@@ -617,8 +656,6 @@ kops_validate() {
 }
 
 kops_export() {
-    # rm -rf ~/.kube ~/.helm ~/.draft
-
     _command "kops export kubecfg --name ${KOPS_CLUSTER_NAME} --state=s3://${KOPS_STATE_STORE}"
     kops export kubecfg --name ${KOPS_CLUSTER_NAME} --state=s3://${KOPS_STATE_STORE}
 
@@ -642,17 +679,13 @@ kops_delete() {
     _command "kops delete cluster --name=${KOPS_CLUSTER_NAME} --state=s3://${KOPS_STATE_STORE} --yes"
     kops delete cluster --name=${KOPS_CLUSTER_NAME} --state=s3://${KOPS_STATE_STORE} --yes
 
-    _command "kubectl config unset ${KOPS_CLUSTER_NAME}"
-    kubectl config unset ${KOPS_CLUSTER_NAME}
-
-    # rm -rf ~/.kube ~/.helm ~/.draft
+    _command "kubectl config unset current-context"
+    kubectl config unset current-context
 
     _success
 }
 
 efs_delete() {
-    # config_load
-
     if [ "${EFS_ID}" != "" ]; then
         _result "EFS_ID: ${EFS_ID}"
 
