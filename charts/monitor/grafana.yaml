@@ -61,15 +61,15 @@ dashboardProviders:
 
 dashboards:
   default:
-    cluster:
-      # https://grafana.com/dashboards/9374
-      gnetId: 9374
-      revision: 6
+    kube-cluster:
+      # https://grafana.com/dashboards/9678
+      gnetId: 9678
+      revision: 1
       datasource: Prometheus
-    deployment:
-      # https://grafana.com/dashboards/9377
-      gnetId: 9377
-      revision: 10
+    kube-deployment:
+      # https://grafana.com/dashboards/9679
+      gnetId: 9679
+      revision: 1
       datasource: Prometheus
     # prometheus-stats:
     #   gnetId: 2
