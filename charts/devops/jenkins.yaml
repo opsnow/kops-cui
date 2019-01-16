@@ -14,7 +14,7 @@ Master:
   resources:
     requests:
       cpu: 250m
-      memory: 2Gi
+      memory: 3Gi
     limits:
       cpu: 1000m
       memory: 4Gi
