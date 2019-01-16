@@ -1511,6 +1511,6 @@
   },
   "timezone": "browser",
   "title": "Kubernetes Deployment Monitor (via Prometheus)",
-  "uid": "kube-mon-apps",
+  "uid": "kube-deployment",
   "version": 1
 }
