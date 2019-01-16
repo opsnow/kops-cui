@@ -39,9 +39,7 @@
       "enable": true,
       "hide": true,
       "iconColor": "rgba(0, 211, 255, 1)",
-      "limit": 100,
       "name": "Annotations & Alerts",
-      "showIn": 0,
       "type": "dashboard"
     }]
   },
@@ -49,7 +47,7 @@
   "editable": true,
   "gnetId": 9377,
   "graphTooltip": 0,
-  "iteration": 1547618387947,
+  "iteration": 1547632046930,
   "links": [],
   "panels": [{
       "collapsed": false,
@@ -67,11 +65,11 @@
     {
       "cacheTimeout": null,
       "colorBackground": false,
-      "colorValue": false,
+      "colorValue": true,
       "colors": [
-        "#299c46",
-        "rgba(237, 129, 40, 0.89)",
-        "#d44a3a"
+        "#e24d42",
+        "#f9934e",
+        "#e0f9d7"
       ],
       "datasource": "${DS_PROMETHEUS}",
       "decimals": null,
@@ -84,7 +82,7 @@
         "thresholdMarkers": true
       },
       "gridPos": {
-        "h": 7,
+        "h": 5,
         "w": 6,
         "x": 0,
         "y": 1
@@ -122,12 +120,13 @@
       },
       "tableColumn": "",
       "targets": [{
-        "expr": "sum (kube_pod_container_info{namespace=~\"^$Namespace\",pod=~\"^$Deployment-[a-z0-9]+-[a-z0-9]+\"})",
+        "expr": "sum( kube_deployment_status_replicas_available{namespace=~\"^$Namespace$\",deployment=~\"^$Deployment\"} )",
         "format": "time_series",
+        "instant": false,
         "intervalFactor": 1,
         "refId": "A"
       }],
-      "thresholds": "",
+      "thresholds": "1,2",
       "title": "Pods",
       "type": "singlestat",
       "valueFontSize": "200%",
@@ -145,9 +144,9 @@
       "colorPrefix": false,
       "colorValue": true,
       "colors": [
-        "#299c46",
-        "rgba(237, 129, 40, 0.89)",
-        "#d44a3a"
+        "#629e51",
+        "#f9934e",
+        "#e24d42"
       ],
       "datasource": "${DS_PROMETHEUS}",
       "format": "percent",
@@ -204,7 +203,7 @@
         "refId": "A"
       }],
       "thresholds": "65, 90",
-      "title": "CPU Usage / Requests",
+      "title": "CPU Usage",
       "type": "singlestat",
       "valueFontSize": "80%",
       "valueMaps": [{
@@ -274,7 +273,7 @@
       "timeFrom": null,
       "timeRegions": [],
       "timeShift": null,
-      "title": "Pods CPU usage (2m avg)",
+      "title": "CPU Usage (2m avg)",
       "tooltip": {
         "msResolution": true,
         "shared": true,
@@ -315,11 +314,160 @@
     {
       "cacheTimeout": null,
       "colorBackground": false,
+      "colorValue": true,
+      "colors": [
+        "#e24d42",
+        "#f9934e",
+        "#e0f9d7"
+      ],
+      "datasource": "${DS_PROMETHEUS}",
+      "decimals": null,
+      "format": "none",
+      "gauge": {
+        "maxValue": 100,
+        "minValue": 0,
+        "show": false,
+        "thresholdLabels": false,
+        "thresholdMarkers": true
+      },
+      "gridPos": {
+        "h": 2,
+        "w": 3,
+        "x": 0,
+        "y": 6
+      },
+      "id": 52,
+      "interval": null,
+      "links": [],
+      "mappingType": 1,
+      "mappingTypes": [{
+          "name": "value to text",
+          "value": 1
+        },
+        {
+          "name": "range to text",
+          "value": 2
+        }
+      ],
+      "maxDataPoints": 100,
+      "nullPointMode": "connected",
+      "nullText": null,
+      "postfix": "",
+      "postfixFontSize": "30%",
+      "prefix": "",
+      "prefixFontSize": "30%",
+      "rangeMaps": [{
+        "from": "null",
+        "text": "N/A",
+        "to": "null"
+      }],
+      "sparkline": {
+        "fillColor": "rgba(31, 118, 189, 0.18)",
+        "full": false,
+        "lineColor": "rgb(31, 120, 193)",
+        "show": false
+      },
+      "tableColumn": "",
+      "targets": [{
+        "expr": "sum( kube_deployment_status_replicas_updated{namespace=~\"^$Namespace$\",deployment=~\"^$Deployment\"} )",
+        "format": "time_series",
+        "intervalFactor": 1,
+        "refId": "A"
+      }],
+      "thresholds": "1,2",
+      "title": "Updated",
+      "type": "singlestat",
+      "valueFontSize": "50%",
+      "valueMaps": [{
+        "op": "=",
+        "text": "N/A",
+        "value": "null"
+      }],
+      "valueName": "current"
+    },
+    {
+      "cacheTimeout": null,
+      "colorBackground": false,
+      "colorPrefix": false,
+      "colorValue": true,
+      "colors": [
+        "#e0f9d7",
+        "#f9934e",
+        "#e24d42"
+      ],
+      "datasource": "${DS_PROMETHEUS}",
+      "decimals": null,
+      "format": "none",
+      "gauge": {
+        "maxValue": 100,
+        "minValue": 0,
+        "show": false,
+        "thresholdLabels": false,
+        "thresholdMarkers": true
+      },
+      "gridPos": {
+        "h": 2,
+        "w": 3,
+        "x": 3,
+        "y": 6
+      },
+      "id": 53,
+      "interval": null,
+      "links": [],
+      "mappingType": 1,
+      "mappingTypes": [{
+          "name": "value to text",
+          "value": 1
+        },
+        {
+          "name": "range to text",
+          "value": 2
+        }
+      ],
+      "maxDataPoints": 100,
+      "nullPointMode": "connected",
+      "nullText": null,
+      "postfix": "",
+      "postfixFontSize": "30%",
+      "prefix": "",
+      "prefixFontSize": "30%",
+      "rangeMaps": [{
+        "from": "null",
+        "text": "N/A",
+        "to": "null"
+      }],
+      "sparkline": {
+        "fillColor": "rgba(31, 118, 189, 0.18)",
+        "full": false,
+        "lineColor": "rgb(31, 120, 193)",
+        "show": false
+      },
+      "tableColumn": "",
+      "targets": [{
+        "expr": "sum( kube_deployment_status_replicas_unavailable{namespace=~\"^$Namespace$\",deployment=~\"^$Deployment\"} )",
+        "format": "time_series",
+        "intervalFactor": 1,
+        "refId": "A"
+      }],
+      "thresholds": "1,5",
+      "title": "Unavailable",
+      "type": "singlestat",
+      "valueFontSize": "50%",
+      "valueMaps": [{
+        "op": "=",
+        "text": "N/A",
+        "value": "null"
+      }],
+      "valueName": "current"
+    },
+    {
+      "cacheTimeout": null,
+      "colorBackground": false,
       "colorValue": false,
       "colors": [
-        "#299c46",
-        "rgba(237, 129, 40, 0.89)",
-        "#d44a3a"
+        "#629e51",
+        "#f9934e",
+        "#e24d42"
       ],
       "datasource": "${DS_PROMETHEUS}",
       "decimals": 3,
@@ -391,9 +539,9 @@
       "colorBackground": false,
       "colorValue": false,
       "colors": [
-        "#299c46",
-        "rgba(237, 129, 40, 0.89)",
-        "#d44a3a"
+        "#629e51",
+        "#f9934e",
+        "#e24d42"
       ],
       "datasource": "${DS_PROMETHEUS}",
       "decimals": 3,
@@ -465,9 +613,9 @@
       "colorBackground": false,
       "colorValue": false,
       "colors": [
-        "#299c46",
-        "rgba(237, 129, 40, 0.89)",
-        "#d44a3a"
+        "#629e51",
+        "#f9934e",
+        "#e24d42"
       ],
       "datasource": "${DS_PROMETHEUS}",
       "decimals": 3,
@@ -600,7 +748,7 @@
       "timeFrom": null,
       "timeRegions": [],
       "timeShift": null,
-      "title": "Current Replicas",
+      "title": "Replicas",
       "tooltip": {
         "shared": true,
         "sort": 2,
@@ -641,9 +789,9 @@
       "colorBackground": false,
       "colorValue": true,
       "colors": [
-        "#299c46",
-        "rgba(237, 129, 40, 0.89)",
-        "#d44a3a"
+        "#629e51",
+        "#f9934e",
+        "#e24d42"
       ],
       "datasource": "${DS_PROMETHEUS}",
       "format": "percent",
@@ -699,7 +847,7 @@
         "refId": "A"
       }],
       "thresholds": "65,90",
-      "title": "Memory Usage / Requests",
+      "title": "Memory Usage",
       "type": "singlestat",
       "valueFontSize": "80%",
       "valueMaps": [{
@@ -768,7 +916,7 @@
       "timeFrom": null,
       "timeRegions": [],
       "timeShift": null,
-      "title": "Pods memory usage",
+      "title": "Memory Usage",
       "tooltip": {
         "msResolution": false,
         "shared": true,
@@ -810,9 +958,9 @@
       "colorBackground": false,
       "colorValue": false,
       "colors": [
-        "#299c46",
-        "rgba(237, 129, 40, 0.89)",
-        "#d44a3a"
+        "#629e51",
+        "#f9934e",
+        "#e24d42"
       ],
       "datasource": "${DS_PROMETHEUS}",
       "decimals": 2,
@@ -884,9 +1032,9 @@
       "colorBackground": false,
       "colorValue": false,
       "colors": [
-        "#299c46",
-        "rgba(237, 129, 40, 0.89)",
-        "#d44a3a"
+        "#629e51",
+        "#f9934e",
+        "#e24d42"
       ],
       "datasource": "${DS_PROMETHEUS}",
       "decimals": 2,
@@ -958,9 +1106,9 @@
       "colorBackground": false,
       "colorValue": false,
       "colors": [
-        "#299c46",
-        "rgba(237, 129, 40, 0.89)",
-        "#d44a3a"
+        "#629e51",
+        "#f9934e",
+        "#e24d42"
       ],
       "datasource": "${DS_PROMETHEUS}",
       "decimals": 2,
@@ -1028,6 +1176,7 @@
       "valueName": "current"
     },
     {
+      "collapsed": false,
       "gridPos": {
         "h": 1,
         "w": 24,
@@ -1035,7 +1184,8 @@
         "y": 15
       },
       "id": 49,
-      "title": "Request",
+      "panels": [],
+      "title": "Ingress Controller",
       "type": "row"
     },
     {
@@ -1084,7 +1234,7 @@
       "stack": false,
       "steppedLine": false,
       "targets": [{
-        "expr": "sum (nginx_ingress_controller_request_size_count{namespace=~\"^$Namespace$\",service=~\"^$Deployment$\"}) by (status)",
+        "expr": "sum (rate (nginx_ingress_controller_bytes_sent_count{namespace=~\"^$Namespace$\",service=~\"^$Deployment$\"}[2m]) ) by (status)",
         "format": "time_series",
         "interval": "",
         "intervalFactor": 1,
@@ -1097,7 +1247,7 @@
       "timeFrom": null,
       "timeRegions": [],
       "timeShift": null,
-      "title": "Request size count",
+      "title": "Sent Count (2m avg)",
       "tooltip": {
         "msResolution": false,
         "shared": true,

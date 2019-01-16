@@ -8,6 +8,14 @@ fullnameOverride: chartmuseum
 env:
   open:
     DISABLE_API: false
+  # open:
+  #   STORAGE: amazon
+  #   STORAGE_AMAZON_BUCKET: my-s3-bucket
+  #   STORAGE_AMAZON_PREFIX:
+  #   STORAGE_AMAZON_REGION: us-east-1
+  # secret:
+  #   AWS_ACCESS_KEY_ID: "********" ## aws access key id value
+  #   AWS_SECRET_ACCESS_KEY: "********" ## aws access key secret value
 
 service:
   type: SERVICE_TYPE
