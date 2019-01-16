@@ -47,7 +47,8 @@
   "editable": true,
   "gnetId": 9374,
   "graphTooltip": 0,
-  "iteration": 1547453436001,
+  "id": 2,
+  "iteration": 1547643864534,
   "links": [],
   "panels": [{
       "collapsed": false,
@@ -57,7 +58,7 @@
         "x": 0,
         "y": 0
       },
-      "id": 33,
+      "id": 71,
       "panels": [],
       "title": "Total usage",
       "type": "row"
@@ -67,9 +68,9 @@
       "colorBackground": false,
       "colorValue": false,
       "colors": [
-        "rgba(50, 172, 45, 0.97)",
-        "rgba(237, 129, 40, 0.89)",
-        "rgba(245, 54, 54, 0.9)"
+        "#e0f9d7",
+        "#f9934e",
+        "#e24d42"
       ],
       "datasource": "${DS_PROMETHEUS}",
       "decimals": null,
@@ -85,7 +86,7 @@
       },
       "gridPos": {
         "h": 5,
-        "w": 4,
+        "w": 6,
         "x": 0,
         "y": 1
       },
@@ -147,9 +148,9 @@
       "colorBackground": false,
       "colorValue": true,
       "colors": [
-        "rgba(50, 172, 45, 0.97)",
-        "rgba(237, 129, 40, 0.89)",
-        "rgba(245, 54, 54, 0.9)"
+        "#629e51",
+        "#f9934e",
+        "#e24d42"
       ],
       "datasource": "${DS_PROMETHEUS}",
       "decimals": 2,
@@ -165,8 +166,8 @@
       },
       "gridPos": {
         "h": 5,
-        "w": 4,
-        "x": 4,
+        "w": 6,
+        "x": 6,
         "y": 1
       },
       "height": "180px",
@@ -227,9 +228,9 @@
       "colorBackground": false,
       "colorValue": true,
       "colors": [
-        "rgba(50, 172, 45, 0.97)",
-        "rgba(237, 129, 40, 0.89)",
-        "rgba(245, 54, 54, 0.9)"
+        "#629e51",
+        "#f9934e",
+        "#e24d42"
       ],
       "datasource": "${DS_PROMETHEUS}",
       "editable": true,
@@ -244,8 +245,8 @@
       },
       "gridPos": {
         "h": 5,
-        "w": 4,
-        "x": 8,
+        "w": 6,
+        "x": 12,
         "y": 1
       },
       "height": "180px",
@@ -307,9 +308,9 @@
       "colorBackground": false,
       "colorValue": true,
       "colors": [
-        "rgba(50, 172, 45, 0.97)",
-        "rgba(237, 129, 40, 0.89)",
-        "rgba(245, 54, 54, 0.9)"
+        "#629e51",
+        "#f9934e",
+        "#e24d42"
       ],
       "datasource": "${DS_PROMETHEUS}",
       "decimals": 2,
@@ -325,8 +326,8 @@
       },
       "gridPos": {
         "h": 5,
-        "w": 4,
-        "x": 12,
+        "w": 6,
+        "x": 18,
         "y": 1
       },
       "height": "180px",
@@ -389,9 +390,9 @@
       "colorBackground": false,
       "colorValue": false,
       "colors": [
-        "rgba(50, 172, 45, 0.97)",
-        "rgba(237, 129, 40, 0.89)",
-        "rgba(245, 54, 54, 0.9)"
+        "#e0f9d7",
+        "#f9934e",
+        "#e24d42"
       ],
       "datasource": "${DS_PROMETHEUS}",
       "decimals": null,
@@ -407,7 +408,7 @@
       },
       "gridPos": {
         "h": 3,
-        "w": 2,
+        "w": 3,
         "x": 0,
         "y": 6
       },
@@ -469,9 +470,9 @@
       "colorBackground": false,
       "colorValue": false,
       "colors": [
-        "rgba(50, 172, 45, 0.97)",
-        "rgba(237, 129, 40, 0.89)",
-        "rgba(245, 54, 54, 0.9)"
+        "#e0f9d7",
+        "#f9934e",
+        "#e24d42"
       ],
       "datasource": "${DS_PROMETHEUS}",
       "decimals": null,
@@ -487,8 +488,8 @@
       },
       "gridPos": {
         "h": 3,
-        "w": 2,
-        "x": 2,
+        "w": 3,
+        "x": 3,
         "y": 6
       },
       "height": "1px",
@@ -549,9 +550,9 @@
       "colorBackground": false,
       "colorValue": false,
       "colors": [
-        "rgba(50, 172, 45, 0.97)",
-        "rgba(237, 129, 40, 0.89)",
-        "rgba(245, 54, 54, 0.9)"
+        "#e0f9d7",
+        "#f9934e",
+        "#e24d42"
       ],
       "datasource": "${DS_PROMETHEUS}",
       "decimals": 2,
@@ -567,8 +568,8 @@
       },
       "gridPos": {
         "h": 3,
-        "w": 2,
-        "x": 4,
+        "w": 3,
+        "x": 6,
         "y": 6
       },
       "height": "1px",
@@ -628,9 +629,9 @@
       "colorBackground": false,
       "colorValue": false,
       "colors": [
-        "rgba(50, 172, 45, 0.97)",
-        "rgba(237, 129, 40, 0.89)",
-        "rgba(245, 54, 54, 0.9)"
+        "#e0f9d7",
+        "#f9934e",
+        "#e24d42"
       ],
       "datasource": "${DS_PROMETHEUS}",
       "decimals": 2,
@@ -646,8 +647,8 @@
       },
       "gridPos": {
         "h": 3,
-        "w": 2,
-        "x": 6,
+        "w": 3,
+        "x": 9,
         "y": 6
       },
       "height": "1px",
@@ -707,9 +708,9 @@
       "colorBackground": false,
       "colorValue": false,
       "colors": [
-        "rgba(50, 172, 45, 0.97)",
-        "rgba(237, 129, 40, 0.89)",
-        "rgba(245, 54, 54, 0.9)"
+        "#e0f9d7",
+        "#f9934e",
+        "#e24d42"
       ],
       "datasource": "${DS_PROMETHEUS}",
       "decimals": 2,
@@ -725,8 +726,8 @@
       },
       "gridPos": {
         "h": 3,
-        "w": 2,
-        "x": 8,
+        "w": 3,
+        "x": 12,
         "y": 6
       },
       "height": "1px",
@@ -786,9 +787,9 @@
       "colorBackground": false,
       "colorValue": false,
       "colors": [
-        "rgba(50, 172, 45, 0.97)",
-        "rgba(237, 129, 40, 0.89)",
-        "rgba(245, 54, 54, 0.9)"
+        "#e0f9d7",
+        "#f9934e",
+        "#e24d42"
       ],
       "datasource": "${DS_PROMETHEUS}",
       "decimals": 2,
@@ -804,8 +805,8 @@
       },
       "gridPos": {
         "h": 3,
-        "w": 2,
-        "x": 10,
+        "w": 3,
+        "x": 15,
         "y": 6
       },
       "height": "1px",
@@ -865,9 +866,9 @@
       "colorBackground": false,
       "colorValue": false,
       "colors": [
-        "rgba(50, 172, 45, 0.97)",
-        "rgba(237, 129, 40, 0.89)",
-        "rgba(245, 54, 54, 0.9)"
+        "#e0f9d7",
+        "#f9934e",
+        "#e24d42"
       ],
       "datasource": "${DS_PROMETHEUS}",
       "decimals": 2,
@@ -883,8 +884,8 @@
       },
       "gridPos": {
         "h": 3,
-        "w": 2,
-        "x": 12,
+        "w": 3,
+        "x": 18,
         "y": 6
       },
       "height": "1px",
@@ -944,9 +945,9 @@
       "colorBackground": false,
       "colorValue": false,
       "colors": [
-        "rgba(50, 172, 45, 0.97)",
-        "rgba(237, 129, 40, 0.89)",
-        "rgba(245, 54, 54, 0.9)"
+        "#e0f9d7",
+        "#f9934e",
+        "#e24d42"
       ],
       "datasource": "${DS_PROMETHEUS}",
       "decimals": 2,
@@ -962,8 +963,8 @@
       },
       "gridPos": {
         "h": 3,
-        "w": 2,
-        "x": 14,
+        "w": 3,
+        "x": 21,
         "y": 6
       },
       "height": "1px",
@@ -1026,9 +1027,9 @@
         "x": 0,
         "y": 9
       },
-      "id": 34,
+      "id": 33,
       "panels": [],
-      "title": "Network I/O pressure",
+      "title": "Ingress controller",
       "type": "row"
     },
     {
@@ -1049,16 +1050,127 @@
         "y": 10
       },
       "height": "200px",
-      "id": 32,
+      "id": 72,
       "isNew": true,
       "legend": {
-        "alignAsTable": false,
-        "avg": true,
+        "alignAsTable": true,
+        "avg": false,
         "current": true,
         "max": false,
         "min": false,
-        "rightSide": false,
-        "show": false,
+        "rightSide": true,
+        "show": true,
+        "sideWidth": 200,
+        "sort": "current",
+        "sortDesc": true,
+        "total": false,
+        "values": true
+      },
+      "lines": true,
+      "linewidth": 1,
+      "links": [],
+      "nullPointMode": "connected",
+      "percentage": false,
+      "pointradius": 5,
+      "points": false,
+      "renderer": "flot",
+      "seriesOverrides": [],
+      "spaceLength": 10,
+      "stack": true,
+      "steppedLine": false,
+      "targets": [{
+        "expr": "sum (rate (nginx_ingress_controller_bytes_sent_count{kubernetes_node=~\"^$Node$\"}[2m]) ) by (status)",
+        "format": "time_series",
+        "interval": "10s",
+        "intervalFactor": 1,
+        "legendFormat": "{{status}}",
+        "metric": "network",
+        "refId": "A",
+        "step": 10
+      }],
+      "thresholds": [],
+      "timeFrom": null,
+      "timeRegions": [],
+      "timeShift": null,
+      "title": "Sent count (2m avg)",
+      "tooltip": {
+        "msResolution": false,
+        "shared": true,
+        "sort": 0,
+        "value_type": "cumulative"
+      },
+      "transparent": false,
+      "type": "graph",
+      "xaxis": {
+        "buckets": null,
+        "mode": "time",
+        "name": null,
+        "show": true,
+        "values": []
+      },
+      "yaxes": [{
+          "format": "none",
+          "label": null,
+          "logBase": 1,
+          "max": null,
+          "min": null,
+          "show": true
+        },
+        {
+          "format": "Bps",
+          "label": null,
+          "logBase": 1,
+          "max": null,
+          "min": null,
+          "show": false
+        }
+      ],
+      "yaxis": {
+        "align": false,
+        "alignLevel": null
+      }
+    },
+    {
+      "collapsed": false,
+      "gridPos": {
+        "h": 1,
+        "w": 24,
+        "x": 0,
+        "y": 15
+      },
+      "id": 34,
+      "panels": [],
+      "title": "Network I/O",
+      "type": "row"
+    },
+    {
+      "aliasColors": {},
+      "bars": false,
+      "dashLength": 10,
+      "dashes": false,
+      "datasource": "${DS_PROMETHEUS}",
+      "decimals": 2,
+      "editable": true,
+      "error": false,
+      "fill": 1,
+      "grid": {},
+      "gridPos": {
+        "h": 5,
+        "w": 24,
+        "x": 0,
+        "y": 16
+      },
+      "height": "200px",
+      "id": 32,
+      "isNew": true,
+      "legend": {
+        "alignAsTable": true,
+        "avg": false,
+        "current": true,
+        "max": false,
+        "min": false,
+        "rightSide": true,
+        "show": true,
         "sideWidth": 200,
         "sort": "current",
         "sortDesc": true,
@@ -1102,7 +1214,7 @@
       "timeFrom": null,
       "timeRegions": [],
       "timeShift": null,
-      "title": "Network I/O pressure",
+      "title": "Network I/O (2m avg)",
       "tooltip": {
         "msResolution": false,
         "shared": true,
@@ -1146,7 +1258,7 @@
         "h": 1,
         "w": 24,
         "x": 0,
-        "y": 15
+        "y": 21
       },
       "id": 47,
       "panels": [],
@@ -1165,7 +1277,7 @@
         "h": 8,
         "w": 24,
         "x": 0,
-        "y": 16
+        "y": 22
       },
       "id": 51,
       "legend": {
@@ -1255,7 +1367,7 @@
         "h": 1,
         "w": 24,
         "x": 0,
-        "y": 24
+        "y": 30
       },
       "id": 35,
       "panels": [{
@@ -1273,7 +1385,7 @@
           "h": 7,
           "w": 24,
           "x": 0,
-          "y": 12
+          "y": 25
         },
         "height": "",
         "id": 17,
@@ -1316,6 +1428,7 @@
         }],
         "thresholds": [],
         "timeFrom": null,
+        "timeRegions": [],
         "timeShift": null,
         "title": "Pods CPU usage (2m avg)",
         "tooltip": {
@@ -1364,7 +1477,7 @@
         "h": 1,
         "w": 24,
         "x": 0,
-        "y": 25
+        "y": 31
       },
       "id": 36,
       "panels": [{
@@ -1473,7 +1586,7 @@
         "h": 1,
         "w": 24,
         "x": 0,
-        "y": 26
+        "y": 32
       },
       "id": 37,
       "panels": [{
@@ -1606,7 +1719,7 @@
         "h": 1,
         "w": 24,
         "x": 0,
-        "y": 27
+        "y": 33
       },
       "id": 38,
       "panels": [{
@@ -1714,7 +1827,7 @@
         "h": 1,
         "w": 24,
         "x": 0,
-        "y": 28
+        "y": 34
       },
       "id": 49,
       "panels": [],
@@ -1733,7 +1846,7 @@
         "h": 7,
         "w": 24,
         "x": 0,
-        "y": 29
+        "y": 35
       },
       "id": 53,
       "legend": {
@@ -1823,7 +1936,7 @@
         "h": 1,
         "w": 24,
         "x": 0,
-        "y": 36
+        "y": 42
       },
       "id": 39,
       "panels": [{
@@ -1930,7 +2043,7 @@
         "h": 1,
         "w": 24,
         "x": 0,
-        "y": 37
+        "y": 43
       },
       "id": 40,
       "panels": [{
@@ -2037,7 +2150,7 @@
         "h": 1,
         "w": 24,
         "x": 0,
-        "y": 38
+        "y": 44
       },
       "id": 41,
       "panels": [{
@@ -2165,7 +2278,7 @@
         "h": 1,
         "w": 24,
         "x": 0,
-        "y": 39
+        "y": 45
       },
       "id": 42,
       "panels": [{
@@ -2272,7 +2385,7 @@
         "h": 1,
         "w": 24,
         "x": 0,
-        "y": 40
+        "y": 46
       },
       "id": 55,
       "panels": [],
@@ -2291,7 +2404,7 @@
         "h": 7,
         "w": 24,
         "x": 0,
-        "y": 41
+        "y": 47
       },
       "id": 57,
       "legend": {
@@ -2397,7 +2510,7 @@
         "h": 1,
         "w": 24,
         "x": 0,
-        "y": 48
+        "y": 54
       },
       "id": 43,
       "panels": [{
@@ -2515,7 +2628,7 @@
         "h": 1,
         "w": 24,
         "x": 0,
-        "y": 49
+        "y": 55
       },
       "id": 44,
       "panels": [{
@@ -2679,7 +2792,7 @@
         "h": 1,
         "w": 24,
         "x": 0,
-        "y": 50
+        "y": 56
       },
       "id": 45,
       "panels": [{
@@ -2803,8 +2916,8 @@
     "list": [{
       "allValue": ".*",
       "current": {
-        "text": "",
-        "value": ""
+        "text": "All",
+        "value": "$__all"
       },
       "datasource": "${DS_PROMETHEUS}",
       "definition": "",
@@ -2827,7 +2940,7 @@
     }]
   },
   "time": {
-    "from": "now-5m",
+    "from": "now-30m",
     "to": "now"
   },
   "timepicker": {
