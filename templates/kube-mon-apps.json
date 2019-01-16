@@ -49,8 +49,7 @@
   "editable": true,
   "gnetId": 9377,
   "graphTooltip": 0,
-  "id": 4,
-  "iteration": 1547461033341,
+  "iteration": 1547616905248,
   "links": [],
   "panels": [{
       "collapsed": false,
@@ -60,9 +59,9 @@
         "x": 0,
         "y": 0
       },
-      "id": 43,
+      "id": 51,
       "panels": [],
-      "title": "Deployment Usage",
+      "title": "Usage",
       "type": "row"
     },
     {
@@ -1029,6 +1028,17 @@
       "valueName": "current"
     },
     {
+      "gridPos": {
+        "h": 1,
+        "w": 24,
+        "x": 0,
+        "y": 15
+      },
+      "id": 49,
+      "title": "Request",
+      "type": "row"
+    },
+    {
       "aliasColors": {},
       "bars": false,
       "dashLength": 10,
@@ -1043,7 +1053,116 @@
         "h": 6,
         "w": 24,
         "x": 0,
-        "y": 15
+        "y": 16
+      },
+      "id": 47,
+      "isNew": true,
+      "legend": {
+        "alignAsTable": true,
+        "avg": true,
+        "current": true,
+        "max": false,
+        "min": false,
+        "rightSide": true,
+        "show": true,
+        "sideWidth": null,
+        "sort": "current",
+        "sortDesc": true,
+        "total": false,
+        "values": true
+      },
+      "lines": true,
+      "linewidth": 1,
+      "links": [],
+      "nullPointMode": "connected",
+      "percentage": false,
+      "pointradius": 5,
+      "points": false,
+      "renderer": "flot",
+      "seriesOverrides": [],
+      "spaceLength": 10,
+      "stack": false,
+      "steppedLine": false,
+      "targets": [{
+        "expr": "sum (nginx_ingress_controller_request_duration_seconds_sum{namespace=~\"^$Namespace$\",service=~\"^$Deployment$\"}) by (status)",
+        "format": "time_series",
+        "interval": "",
+        "intervalFactor": 1,
+        "legendFormat": "{{ status }}",
+        "metric": "network",
+        "refId": "A",
+        "step": 10
+      }],
+      "thresholds": [],
+      "timeFrom": null,
+      "timeRegions": [],
+      "timeShift": null,
+      "title": "Request duration seconds",
+      "tooltip": {
+        "msResolution": false,
+        "shared": true,
+        "sort": 2,
+        "value_type": "cumulative"
+      },
+      "type": "graph",
+      "xaxis": {
+        "buckets": null,
+        "mode": "time",
+        "name": null,
+        "show": true,
+        "values": []
+      },
+      "yaxes": [{
+          "format": "Bps",
+          "label": null,
+          "logBase": 1,
+          "max": null,
+          "min": null,
+          "show": true
+        },
+        {
+          "format": "short",
+          "label": null,
+          "logBase": 1,
+          "max": null,
+          "min": null,
+          "show": false
+        }
+      ],
+      "yaxis": {
+        "align": false,
+        "alignLevel": null
+      }
+    },
+    {
+      "collapsed": false,
+      "gridPos": {
+        "h": 1,
+        "w": 24,
+        "x": 0,
+        "y": 22
+      },
+      "id": 43,
+      "panels": [],
+      "title": "Network",
+      "type": "row"
+    },
+    {
+      "aliasColors": {},
+      "bars": false,
+      "dashLength": 10,
+      "dashes": false,
+      "datasource": "${DS_PROMETHEUS}",
+      "decimals": 2,
+      "editable": true,
+      "error": false,
+      "fill": 1,
+      "grid": {},
+      "gridPos": {
+        "h": 6,
+        "w": 24,
+        "x": 0,
+        "y": 23
       },
       "id": 16,
       "isNew": true,
@@ -1112,7 +1231,7 @@
       "timeFrom": null,
       "timeRegions": [],
       "timeShift": null,
-      "title": "Pods network I/O (2m avg)",
+      "title": "Network I/O (2m avg)",
       "tooltip": {
         "msResolution": false,
         "shared": true,
@@ -1161,8 +1280,9 @@
     "list": [{
         "allValue": ".*",
         "current": {
-          "text": "",
-          "value": ""
+          "tags": [],
+          "text": "bb8-onepack-dev",
+          "value": "bb8-onepack-dev"
         },
         "datasource": "${DS_PROMETHEUS}",
         "definition": "",
@@ -1186,8 +1306,8 @@
       {
         "allValue": ".*",
         "current": {
-          "text": "",
-          "value": ""
+          "text": "bb8-onepack-opsnow-front-bb8-onepack-dev",
+          "value": "bb8-onepack-opsnow-front-bb8-onepack-dev"
         },
         "datasource": "${DS_PROMETHEUS}",
         "definition": "",
