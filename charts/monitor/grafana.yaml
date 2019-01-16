@@ -61,15 +61,15 @@ dashboardProviders:
 
 dashboards:
   default:
-    kube-mon:
+    cluster:
       # https://grafana.com/dashboards/9374
       gnetId: 9374
       revision: 5
       datasource: Prometheus
-    kube-mon-apps:
+    deployment:
       # https://grafana.com/dashboards/9377
       gnetId: 9377
-      revision: 9
+      revision: 10
       datasource: Prometheus
     # prometheus-stats:
     #   gnetId: 2
