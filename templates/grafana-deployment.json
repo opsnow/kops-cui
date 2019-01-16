@@ -1247,7 +1247,7 @@
       "timeFrom": null,
       "timeRegions": [],
       "timeShift": null,
-      "title": "Request Count (2m avg)",
+      "title": "Sent Count (2m avg)",
       "tooltip": {
         "msResolution": false,
         "shared": true,
