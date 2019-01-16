@@ -47,7 +47,7 @@
   "editable": true,
   "gnetId": 9377,
   "graphTooltip": 0,
-  "iteration": 1547632046930,
+  "iteration": 1547641751620,
   "links": [],
   "panels": [{
       "collapsed": false,
@@ -235,8 +235,8 @@
       "isNew": true,
       "legend": {
         "alignAsTable": true,
-        "avg": true,
-        "current": true,
+        "avg": false,
+        "current": false,
         "max": false,
         "min": false,
         "rightSide": true,
@@ -245,7 +245,7 @@
         "sort": "current",
         "sortDesc": true,
         "total": false,
-        "values": true
+        "values": false
       },
       "lines": true,
       "linewidth": 1,
@@ -878,8 +878,8 @@
       "isNew": true,
       "legend": {
         "alignAsTable": true,
-        "avg": true,
-        "current": true,
+        "avg": false,
+        "current": false,
         "max": false,
         "min": false,
         "rightSide": true,
@@ -888,7 +888,7 @@
         "sort": "current",
         "sortDesc": true,
         "total": false,
-        "values": true
+        "values": false
       },
       "lines": true,
       "linewidth": 1,
@@ -1209,7 +1209,7 @@
       "isNew": true,
       "legend": {
         "alignAsTable": true,
-        "avg": true,
+        "avg": false,
         "current": true,
         "max": false,
         "min": false,
@@ -1231,7 +1231,7 @@
       "renderer": "flot",
       "seriesOverrides": [],
       "spaceLength": 10,
-      "stack": false,
+      "stack": true,
       "steppedLine": false,
       "targets": [{
         "expr": "sum (rate (nginx_ingress_controller_bytes_sent_count{namespace=~\"^$Namespace$\",service=~\"^$Deployment$\"}[2m]) ) by (status)",
@@ -1263,6 +1263,7 @@
         "values": []
       },
       "yaxes": [{
+          "decimals": null,
           "format": "none",
           "label": null,
           "logBase": 1,
@@ -1318,7 +1319,7 @@
       "isNew": true,
       "legend": {
         "alignAsTable": true,
-        "avg": true,
+        "avg": false,
         "current": true,
         "max": false,
         "min": false,
@@ -1480,7 +1481,7 @@
     ]
   },
   "time": {
-    "from": "now-5m",
+    "from": "now-30m",
     "to": "now"
   },
   "timepicker": {
