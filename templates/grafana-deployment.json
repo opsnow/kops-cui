@@ -1430,9 +1430,8 @@
     "list": [{
         "allValue": ".*",
         "current": {
-          "tags": [],
-          "text": "sample-dev",
-          "value": "sample-dev"
+          "text": "",
+          "value": ""
         },
         "datasource": "${DS_PROMETHEUS}",
         "definition": "",
@@ -1456,8 +1455,8 @@
       {
         "allValue": ".*",
         "current": {
-          "text": "All",
-          "value": "$__all"
+          "text": "",
+          "value": ""
         },
         "datasource": "${DS_PROMETHEUS}",
         "definition": "",
