@@ -3,7 +3,7 @@
 # chart-ingress: true
 # chart-pvc: sonatype-nexus-data ReadWriteOnce 30Gi
 
-# nameOverride: sonatype-nexus
+nameOverride: sonatype-nexus
 
 statefulset:
   enabled: true

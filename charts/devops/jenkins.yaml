@@ -3,7 +3,7 @@
 # chart-ingress: true
 # chart-pvc: jenkins ReadWriteOnce 8Gi
 
-# nameOverride: jenkins
+nameOverride: jenkins
 
 rbac:
   install: true
