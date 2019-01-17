@@ -1,7 +1,6 @@
 # chart-repo: stable/grafana
 # chart-version: latest
 # chart-ingress: true
-# chart-pvc: grafana ReadWriteOnce 5Gi
 
 nameOverride: grafana
 
@@ -18,14 +17,6 @@ ingress:
     nginx.ingress.kubernetes.io/force-ssl-redirect: "true"
   hosts:
     - INGRESS_DOMAIN
-
-persistence:
-  enabled: true
-  accessModes:
-    - ReadWriteOnce
-  size: 5Gi
-  #:EFS:storageClassName: "efs"
-  existingClaim: grafana
 
 #:LDAP:grafana.ini:
 #:LDAP:  auth.ldap:
