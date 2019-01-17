@@ -45,9 +45,9 @@
   },
   "description": "Monitors Kubernetes deployment using Prometheus. Shows overall cluster CPU / Memory / Filesystem usage as well as individual pod, containers, systemd services statistics. Uses cAdvisor metrics only.",
   "editable": true,
-  "gnetId": 9377,
+  "gnetId": 9679,
   "graphTooltip": 0,
-  "iteration": 1547641751620,
+  "iteration": 1547719581341,
   "links": [],
   "panels": [{
       "collapsed": false,
@@ -114,9 +114,9 @@
       }],
       "sparkline": {
         "fillColor": "rgba(31, 118, 189, 0.18)",
-        "full": false,
+        "full": true,
         "lineColor": "rgb(31, 120, 193)",
-        "show": false
+        "show": true
       },
       "tableColumn": "",
       "targets": [{
@@ -363,9 +363,9 @@
       }],
       "sparkline": {
         "fillColor": "rgba(31, 118, 189, 0.18)",
-        "full": false,
+        "full": true,
         "lineColor": "rgb(31, 120, 193)",
-        "show": false
+        "show": true
       },
       "tableColumn": "",
       "targets": [{
@@ -438,9 +438,9 @@
       }],
       "sparkline": {
         "fillColor": "rgba(31, 118, 189, 0.18)",
-        "full": false,
+        "full": true,
         "lineColor": "rgb(31, 120, 193)",
-        "show": false
+        "show": true
       },
       "tableColumn": "",
       "targets": [{
@@ -512,9 +512,9 @@
       }],
       "sparkline": {
         "fillColor": "rgba(31, 118, 189, 0.18)",
-        "full": false,
+        "full": true,
         "lineColor": "rgb(31, 120, 193)",
-        "show": false
+        "show": true
       },
       "tableColumn": "",
       "targets": [{
@@ -586,9 +586,9 @@
       }],
       "sparkline": {
         "fillColor": "rgba(31, 118, 189, 0.18)",
-        "full": false,
+        "full": true,
         "lineColor": "rgb(31, 120, 193)",
-        "show": false
+        "show": true
       },
       "tableColumn": "",
       "targets": [{
@@ -660,9 +660,9 @@
       }],
       "sparkline": {
         "fillColor": "rgba(31, 118, 189, 0.18)",
-        "full": false,
+        "full": true,
         "lineColor": "rgb(31, 120, 193)",
-        "show": false
+        "show": true
       },
       "tableColumn": "",
       "targets": [{
@@ -1005,9 +1005,9 @@
       }],
       "sparkline": {
         "fillColor": "rgba(31, 118, 189, 0.18)",
-        "full": false,
+        "full": true,
         "lineColor": "rgb(31, 120, 193)",
-        "show": false
+        "show": true
       },
       "tableColumn": "",
       "targets": [{
@@ -1079,9 +1079,9 @@
       }],
       "sparkline": {
         "fillColor": "rgba(31, 118, 189, 0.18)",
-        "full": false,
+        "full": true,
         "lineColor": "rgb(31, 120, 193)",
-        "show": false
+        "show": true
       },
       "tableColumn": "",
       "targets": [{
@@ -1153,9 +1153,9 @@
       }],
       "sparkline": {
         "fillColor": "rgba(31, 118, 189, 0.18)",
-        "full": false,
+        "full": true,
         "lineColor": "rgb(31, 120, 193)",
-        "show": false
+        "show": true
       },
       "tableColumn": "",
       "targets": [{
@@ -1431,8 +1431,9 @@
     "list": [{
         "allValue": ".*",
         "current": {
-          "text": "",
-          "value": ""
+          "tags": [],
+          "text": "dev",
+          "value": "dev"
         },
         "datasource": "${DS_PROMETHEUS}",
         "definition": "",
@@ -1456,8 +1457,8 @@
       {
         "allValue": ".*",
         "current": {
-          "text": "",
-          "value": ""
+          "text": "All",
+          "value": "$__all"
         },
         "datasource": "${DS_PROMETHEUS}",
         "definition": "",
