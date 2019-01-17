@@ -9,7 +9,7 @@
         <hudson.model.StringParameterDefinition>
         <name>REPOSITORY_URL</name>
         <description></description>
-        <defaultValue>https://github.com/nalbam/sample-node.git</defaultValue>
+        <defaultValue>https://github.com/nalbam/sample-web.git</defaultValue>
         </hudson.model.StringParameterDefinition>
         <hudson.model.StringParameterDefinition>
         <name>REPOSITORY_SECRET</name>
@@ -29,7 +29,7 @@
         <hudson.model.StringParameterDefinition>
         <name>SERVICE_NAME</name>
         <description></description>
-        <defaultValue>node</defaultValue>
+        <defaultValue>web</defaultValue>
         </hudson.model.StringParameterDefinition>
         <hudson.model.StringParameterDefinition>
         <name>SLACK_TOKEN</name>
