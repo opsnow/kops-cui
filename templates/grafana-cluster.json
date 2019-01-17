@@ -45,10 +45,9 @@
   },
   "description": "Monitors Kubernetes cluster using Prometheus. Shows overall cluster CPU / Memory / Filesystem usage as well as individual pod, containers, systemd services statistics. Uses cAdvisor metrics only.",
   "editable": true,
-  "gnetId": 9374,
+  "gnetId": 9678,
   "graphTooltip": 0,
-  "id": 2,
-  "iteration": 1547643864534,
+  "iteration": 1547718646182,
   "links": [],
   "panels": [{
       "collapsed": false,
@@ -119,9 +118,9 @@
       }],
       "sparkline": {
         "fillColor": "rgba(31, 118, 189, 0.18)",
-        "full": false,
+        "full": true,
         "lineColor": "rgb(31, 120, 193)",
-        "show": false
+        "show": true
       },
       "tableColumn": "",
       "targets": [{
@@ -441,9 +440,9 @@
       }],
       "sparkline": {
         "fillColor": "rgba(31, 118, 189, 0.18)",
-        "full": false,
+        "full": true,
         "lineColor": "rgb(31, 120, 193)",
-        "show": false
+        "show": true
       },
       "tableColumn": "",
       "targets": [{
@@ -521,9 +520,9 @@
       }],
       "sparkline": {
         "fillColor": "rgba(31, 118, 189, 0.18)",
-        "full": false,
+        "full": true,
         "lineColor": "rgb(31, 120, 193)",
-        "show": false
+        "show": true
       },
       "tableColumn": "",
       "targets": [{
@@ -568,7 +567,7 @@
       },
       "gridPos": {
         "h": 3,
-        "w": 3,
+        "w": 2,
         "x": 6,
         "y": 6
       },
@@ -601,13 +600,14 @@
       }],
       "sparkline": {
         "fillColor": "rgba(31, 118, 189, 0.18)",
-        "full": false,
+        "full": true,
         "lineColor": "rgb(31, 120, 193)",
-        "show": false
+        "show": true
       },
       "tableColumn": "",
       "targets": [{
         "expr": "sum (rate (container_cpu_usage_seconds_total{id=\"/\",kubernetes_io_hostname=~\"^$Node$\"}[2m]))",
+        "format": "time_series",
         "interval": "10s",
         "intervalFactor": 1,
         "refId": "A",
@@ -647,8 +647,88 @@
       },
       "gridPos": {
         "h": 3,
-        "w": 3,
-        "x": 9,
+        "w": 2,
+        "x": 8,
+        "y": 6
+      },
+      "height": "1px",
+      "id": 73,
+      "interval": null,
+      "isNew": true,
+      "links": [],
+      "mappingType": 1,
+      "mappingTypes": [{
+          "name": "value to text",
+          "value": 1
+        },
+        {
+          "name": "range to text",
+          "value": 2
+        }
+      ],
+      "maxDataPoints": 100,
+      "nullPointMode": "connected",
+      "nullText": null,
+      "postfix": " cores",
+      "postfixFontSize": "30%",
+      "prefix": "",
+      "prefixFontSize": "50%",
+      "rangeMaps": [{
+        "from": "null",
+        "text": "N/A",
+        "to": "null"
+      }],
+      "sparkline": {
+        "fillColor": "rgba(31, 118, 189, 0.18)",
+        "full": true,
+        "lineColor": "rgb(31, 120, 193)",
+        "show": true
+      },
+      "tableColumn": "",
+      "targets": [{
+        "expr": "sum (kube_pod_container_resource_requests_cpu_cores{node=~\"^$Node$\"})",
+        "format": "time_series",
+        "interval": "10s",
+        "intervalFactor": 1,
+        "refId": "A",
+        "step": 10
+      }],
+      "thresholds": "",
+      "title": "Requests",
+      "type": "singlestat",
+      "valueFontSize": "50%",
+      "valueMaps": [{
+        "op": "=",
+        "text": "N/A",
+        "value": "null"
+      }],
+      "valueName": "current"
+    },
+    {
+      "cacheTimeout": null,
+      "colorBackground": false,
+      "colorValue": false,
+      "colors": [
+        "#e0f9d7",
+        "#f9934e",
+        "#e24d42"
+      ],
+      "datasource": "${DS_PROMETHEUS}",
+      "decimals": 2,
+      "editable": true,
+      "error": false,
+      "format": "none",
+      "gauge": {
+        "maxValue": 100,
+        "minValue": 0,
+        "show": false,
+        "thresholdLabels": false,
+        "thresholdMarkers": true
+      },
+      "gridPos": {
+        "h": 3,
+        "w": 2,
+        "x": 10,
         "y": 6
       },
       "height": "1px",
@@ -680,13 +760,14 @@
       }],
       "sparkline": {
         "fillColor": "rgba(31, 118, 189, 0.18)",
-        "full": false,
+        "full": true,
         "lineColor": "rgb(31, 120, 193)",
-        "show": false
+        "show": true
       },
       "tableColumn": "",
       "targets": [{
         "expr": "sum (machine_cpu_cores{kubernetes_io_hostname=~\"^$Node$\"})",
+        "format": "time_series",
         "interval": "10s",
         "intervalFactor": 1,
         "refId": "A",
@@ -726,7 +807,7 @@
       },
       "gridPos": {
         "h": 3,
-        "w": 3,
+        "w": 2,
         "x": 12,
         "y": 6
       },
@@ -759,13 +840,14 @@
       }],
       "sparkline": {
         "fillColor": "rgba(31, 118, 189, 0.18)",
-        "full": false,
+        "full": true,
         "lineColor": "rgb(31, 120, 193)",
-        "show": false
+        "show": true
       },
       "tableColumn": "",
       "targets": [{
         "expr": "sum (container_memory_working_set_bytes{id=\"/\",kubernetes_io_hostname=~\"^$Node$\"})",
+        "format": "time_series",
         "interval": "10s",
         "intervalFactor": 1,
         "refId": "A",
@@ -805,8 +887,88 @@
       },
       "gridPos": {
         "h": 3,
-        "w": 3,
-        "x": 15,
+        "w": 2,
+        "x": 14,
+        "y": 6
+      },
+      "height": "1px",
+      "id": 74,
+      "interval": null,
+      "isNew": true,
+      "links": [],
+      "mappingType": 1,
+      "mappingTypes": [{
+          "name": "value to text",
+          "value": 1
+        },
+        {
+          "name": "range to text",
+          "value": 2
+        }
+      ],
+      "maxDataPoints": 100,
+      "nullPointMode": "connected",
+      "nullText": null,
+      "postfix": "",
+      "postfixFontSize": "20%",
+      "prefix": "",
+      "prefixFontSize": "20%",
+      "rangeMaps": [{
+        "from": "null",
+        "text": "N/A",
+        "to": "null"
+      }],
+      "sparkline": {
+        "fillColor": "rgba(31, 118, 189, 0.18)",
+        "full": true,
+        "lineColor": "rgb(31, 120, 193)",
+        "show": true
+      },
+      "tableColumn": "",
+      "targets": [{
+        "expr": "sum (kube_pod_container_resource_requests_memory_bytes{node=~\"^$Node$\"})",
+        "format": "time_series",
+        "interval": "10s",
+        "intervalFactor": 1,
+        "refId": "A",
+        "step": 10
+      }],
+      "thresholds": "",
+      "title": "Requests",
+      "type": "singlestat",
+      "valueFontSize": "50%",
+      "valueMaps": [{
+        "op": "=",
+        "text": "N/A",
+        "value": "null"
+      }],
+      "valueName": "current"
+    },
+    {
+      "cacheTimeout": null,
+      "colorBackground": false,
+      "colorValue": false,
+      "colors": [
+        "#e0f9d7",
+        "#f9934e",
+        "#e24d42"
+      ],
+      "datasource": "${DS_PROMETHEUS}",
+      "decimals": 2,
+      "editable": true,
+      "error": false,
+      "format": "bytes",
+      "gauge": {
+        "maxValue": 100,
+        "minValue": 0,
+        "show": false,
+        "thresholdLabels": false,
+        "thresholdMarkers": true
+      },
+      "gridPos": {
+        "h": 3,
+        "w": 2,
+        "x": 16,
         "y": 6
       },
       "height": "1px",
@@ -838,13 +1000,14 @@
       }],
       "sparkline": {
         "fillColor": "rgba(31, 118, 189, 0.18)",
-        "full": false,
+        "full": true,
         "lineColor": "rgb(31, 120, 193)",
-        "show": false
+        "show": true
       },
       "tableColumn": "",
       "targets": [{
         "expr": "sum (machine_memory_bytes{kubernetes_io_hostname=~\"^$Node$\"})",
+        "format": "time_series",
         "interval": "10s",
         "intervalFactor": 1,
         "refId": "A",
@@ -917,13 +1080,14 @@
       }],
       "sparkline": {
         "fillColor": "rgba(31, 118, 189, 0.18)",
-        "full": false,
+        "full": true,
         "lineColor": "rgb(31, 120, 193)",
-        "show": false
+        "show": true
       },
       "tableColumn": "",
       "targets": [{
         "expr": "sum (container_fs_usage_bytes{device=~\"^/dev/.*$\",id=\"/\",kubernetes_io_hostname=~\"^$Node$\"})",
+        "format": "time_series",
         "interval": "10s",
         "intervalFactor": 1,
         "refId": "A",
@@ -996,13 +1160,14 @@
       }],
       "sparkline": {
         "fillColor": "rgba(31, 118, 189, 0.18)",
-        "full": false,
+        "full": true,
         "lineColor": "rgb(31, 120, 193)",
-        "show": false
+        "show": true
       },
       "tableColumn": "",
       "targets": [{
         "expr": "sum (container_fs_limit_bytes{device=~\"^/dev/.*$\",id=\"/\",kubernetes_io_hostname=~\"^$Node$\"})",
+        "format": "time_series",
         "interval": "10s",
         "intervalFactor": 1,
         "refId": "A",
@@ -1081,6 +1246,7 @@
       "targets": [{
         "expr": "sum (rate (nginx_ingress_controller_bytes_sent_count{kubernetes_node=~\"^$Node$\"}[2m]) ) by (status)",
         "format": "time_series",
+        "instant": false,
         "interval": "10s",
         "intervalFactor": 1,
         "legendFormat": "{{status}}",

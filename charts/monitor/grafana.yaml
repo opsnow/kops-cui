@@ -55,12 +55,12 @@ dashboards:
     kube-cluster:
       # https://grafana.com/dashboards/9678
       gnetId: 9678
-      revision: 1
+      revision: 2
       datasource: Prometheus
     kube-deployment:
       # https://grafana.com/dashboards/9679
       gnetId: 9679
-      revision: 1
+      revision: 2
       datasource: Prometheus
     # prometheus-stats:
     #   gnetId: 2
