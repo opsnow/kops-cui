@@ -6,8 +6,9 @@ nameOverride: fluentd-elasticsearch
 elasticsearch:
   host: CUSTOM_HOST
   port: CUSTOM_PORT
-  buffer_chunk_limit: 2M
-  buffer_queue_limit: 8
+  # buffer_chunk_limit: 2M
+  # buffer_queue_limit: 8
+  # logstash_prefix: 'logstash'
 
 configMaps:
   output.conf: |

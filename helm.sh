@@ -408,7 +408,7 @@ helm_install() {
         RELEASED=$?
         if [ "${RELEASED}" -gt "0" ]; then
             echo "  To use an existing volume, remove the PV's '.claimRef.uid' attribute to make the PV an 'Available' status and try again."
-            return;
+            return
         fi
     done < "${LIST}"
 
@@ -726,7 +726,7 @@ isBound() {
 
     PVC_STATUS=$(kubectl get pvc -n ${NAMESPACE} ${PVC_NAME} -o json | jq -r '.status.phase')
     if [ "${PVC_STATUS}" != "Bound" ]; then
-        return 1;
+        return 1
     fi
 }
 
@@ -746,11 +746,11 @@ isEFSAvailable() {
         # echo ${COUNT}/${FILE_SYSTEM_LENGH}
 
         if [ ${COUNT} -eq ${FILE_SYSTEM_LENGH} ]; then
-            return 0;
+            return 0
         fi
     fi
 
-    return 1;
+    return 1
 }
 
 isMountTargetAvailable() {
@@ -769,11 +769,11 @@ isMountTargetAvailable() {
         # echo ${COUNT}/${MOUNT_TARGET_LENGH}
 
         if [ ${COUNT} -eq ${MOUNT_TARGET_LENGH} ]; then
-            return 0;
+            return 0
         fi
     fi
 
-    return 1;
+    return 1
 }
 
 isMountTargetDeleted() {
@@ -795,7 +795,7 @@ efs_create() {
     # get vpc id & subent ids
     VPC_ID=$(aws ec2 describe-security-groups --filters "Name=group-name,Values=nodes.${CLUSTER_NAME}" | jq -r '.SecurityGroups[0].VpcId')
     VPC_PRIVATE_SUBNETS_LENGTH=$(aws ec2 describe-subnets --filters "Name=tag:KubernetesCluster,Values=${CLUSTER_NAME}" "Name=tag:SubnetType,Values=Private" | jq '.Subnets | length')
-    if [ ${VPC_PRIVATE_SUBNETS_LENGTH} -eq 2 ]; then
+    if [ ${VPC_PRIVATE_SUBNETS_LENGTH} -gt 0 ]; then
         VPC_SUBNETS=$(aws ec2 describe-subnets --filters "Name=tag:KubernetesCluster,Values=${CLUSTER_NAME}" "Name=tag:SubnetType,Values=Private" | jq -r '(.Subnets[].SubnetId)')
     else
         VPC_SUBNETS=$(aws ec2 describe-subnets --filters "Name=tag:KubernetesCluster,Values=${CLUSTER_NAME}" | jq -r '(.Subnets[].SubnetId)')
