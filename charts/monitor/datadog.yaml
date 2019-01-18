@@ -1,0 +1,7 @@
+# chart-repo: stable/datadog
+# chart-version: latest
+
+nameOverride: datadog
+
+datadog:
+  apiKey: API_KEY

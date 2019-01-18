@@ -342,6 +342,14 @@ helm_install() {
         fi
     fi
 
+    # for datadog
+    if [ "${NAME}" == "datadog" ]; then
+        # api key
+        question "Enter datadog API KEY : "
+        API_KEY="${ANSWER}"
+        _result "key: ${API_KEY}"
+    fi
+
     # for fluentd-elasticsearch
     if [ "${NAME}" == "fluentd-elasticsearch" ]; then
         # host
