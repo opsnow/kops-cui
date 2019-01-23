@@ -816,11 +816,11 @@ efs_create() {
     _result "K8S_NODE_SG_ID=${K8S_NODE_SG_ID}"
     _result "VPC_ID=${VPC_ID}"
     _result "VPC_SUBNETS=$(echo ${VPC_SUBNETS} | xargs)"
-    echo
 
     # create a security group for efs mount targets
     EFS_SG_LENGTH=$(aws ec2 describe-security-groups --filters "Name=group-name,Values=efs-sg.${CLUSTER_NAME}" | jq '.SecurityGroups | length')
     if [ ${EFS_SG_LENGTH} -eq 0 ]; then
+        echo
         echo "Creating a security group for mount targets"
 
         EFS_SG_ID=$(aws ec2 create-security-group \
@@ -841,11 +841,11 @@ efs_create() {
 
     # echo "Security group for mount targets:"
     _result "EFS_SG_ID=${EFS_SG_ID}"
-    echo
 
     # create an efs
     EFS_LENGTH=$(aws efs describe-file-systems --creation-token ${CLUSTER_NAME} | jq '.FileSystems | length')
     if [ ${EFS_LENGTH} -eq 0 ]; then
+        echo
         echo "Creating a elastic file system"
 
         EFS_ID=$(aws efs create-file-system --creation-token ${CLUSTER_NAME} --region ${REGION} | jq -r '.FileSystemId')
@@ -857,7 +857,7 @@ efs_create() {
         EFS_ID=$(aws efs describe-file-systems --creation-token ${CLUSTER_NAME} --region ${REGION} | jq -r '.FileSystems[].FileSystemId')
     fi
 
-    _result "EFS_ID=[${EFS_ID}]"
+    _result "EFS_ID=${EFS_ID}"
 
     # replace EFS_ID
     _replace "s/EFS_ID/${EFS_ID}/g" ${CHART}
@@ -885,10 +885,9 @@ efs_create() {
         EFS_MOUNT_TARGET_IDS=$(aws efs describe-mount-targets --file-system-id ${EFS_ID} --region ${REGION} | jq -r '.MountTargets[].MountTargetId')
     fi
 
-    _result "EFS_MOUNT_TARGET_IDS="
-    echo "${EFS_MOUNT_TARGET_IDS[@]}"
-    echo
+    _result "EFS_MOUNT_TARGET_IDS=$(echo ${EFS_MOUNT_TARGET_IDS[@]} | xargs)"
 
+    echo
     echo "Waiting for the state of the EFS mount targets to be available."
     waiting_for isMountTargetAvailable
 }
