@@ -421,8 +421,13 @@ helm_install() {
     done < "${LIST}"
 
     # helm install
-    _command "helm upgrade --install ${NAME} ${REPO} --namespace ${NAMESPACE} --values ${CHART}"
-    helm upgrade --install ${NAME} ${REPO} --namespace ${NAMESPACE} --values ${CHART}
+    if [ "${VERSION}" == "" ] || [ "${VERSION}" == "latest" ]; then
+        _command "helm upgrade --install ${NAME} ${REPO} --namespace ${NAMESPACE} --values ${CHART}"
+        helm upgrade --install ${NAME} ${REPO} --namespace ${NAMESPACE} --values ${CHART}
+    else
+        _command "helm upgrade --install ${NAME} ${REPO} --namespace ${NAMESPACE} --values ${CHART}" --version ${VERSION}
+        helm upgrade --install ${NAME} ${REPO} --namespace ${NAMESPACE} --values ${CHART} --version ${VERSION}
+    fi
 
     # nginx-ingress
     if [ "${NAME}" == "nginx-ingress" ]; then
