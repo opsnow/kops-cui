@@ -1,5 +1,5 @@
 # chart-repo: stable/efs-provisioner
-# chart-version: latest
+# chart-version: 0.1.1
 
 nameOverride: efs-provisioner
 
