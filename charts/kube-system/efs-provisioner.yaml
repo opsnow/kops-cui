@@ -1,12 +1,12 @@
 # chart-repo: stable/efs-provisioner
-# chart-version: 0.1.1
+# chart-version: latest
 
 nameOverride: efs-provisioner
 
-image:
-  repository: quay.io/external_storage/efs-provisioner
-  tag: v1.0.0-k8s1.10
-  pullPollicy: IfNotPresent
+# image:
+#   repository: quay.io/external_storage/efs-provisioner
+#   tag: v1.0.0-k8s1.10
+#   pullPollicy: IfNotPresent
 
 efsProvisioner:
   efsFileSystemId: EFS_ID
