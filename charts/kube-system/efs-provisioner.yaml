@@ -12,7 +12,7 @@ efsProvisioner:
   efsFileSystemId: EFS_ID
   awsRegion: AWS_REGION
   path: /shared
-  provisionerName: CLUSTER_NAME/aws-efs
+  provisionerName: CLUSTER_NAME/efs
   storageClass:
     name: efs
     isDefault: false
