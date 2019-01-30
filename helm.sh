@@ -425,7 +425,7 @@ helm_install() {
         _command "helm upgrade --install ${NAME} ${REPO} --namespace ${NAMESPACE} --values ${CHART}"
         helm upgrade --install ${NAME} ${REPO} --namespace ${NAMESPACE} --values ${CHART}
     else
-        _command "helm upgrade --install ${NAME} ${REPO} --namespace ${NAMESPACE} --values ${CHART}" --version ${VERSION}
+        _command "helm upgrade --install ${NAME} ${REPO} --namespace ${NAMESPACE} --values ${CHART} --version ${VERSION}"
         helm upgrade --install ${NAME} ${REPO} --namespace ${NAMESPACE} --values ${CHART} --version ${VERSION}
     fi
 
