@@ -24,7 +24,7 @@ Master:
   Ingress:
     Annotations:
       kubernetes.io/ingress.class: nginx
-      nginx.ingress.kubernetes.io/force-ssl-redirect: "true"
+      # nginx.ingress.kubernetes.io/force-ssl-redirect: "true"
   InstallPlugins:
     # https://github.com/helm/charts/blob/master/stable/jenkins/values.yaml
     - kubernetes:latest
