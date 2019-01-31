@@ -1,0 +1,9 @@
+# chart-repo: stable/prometheus-adapter
+# chart-version: v0.2.3
+# chart-ingress: false
+
+nameOverride: prometheus-adapter
+
+prometheus:
+  url: http://prometheus-server
+  port: 80

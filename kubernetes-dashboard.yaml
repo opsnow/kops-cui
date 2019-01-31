@@ -1,0 +1,35 @@
+# chart-repo: stable/kubernetes-dashboard
+# chart-version: 1.2.0
+# chart-ingress: true
+
+nameOverride: kubernetes-dashboard
+
+# extraArgs:
+#   - --enable-insecure-login=true
+#   - --port=9090
+#   - --insecure-port=9090
+#   - --insecure-bind-address=0.0.0.0
+
+enableInsecureLogin: true
+
+service:
+  type: SERVICE_TYPE
+  externalPort: 9090
+#   annotations:
+#     service.beta.kubernetes.io/aws-load-balancer-ssl-cert: ""
+#     service.beta.kubernetes.io/aws-load-balancer-ssl-ports: "https"
+#     service.beta.kubernetes.io/aws-load-balancer-proxy-protocol: "https"
+#     service.beta.kubernetes.io/aws-load-balancer-backend-protocol: "https"
+#     service.beta.kubernetes.io/aws-load-balancer-connection-idle-timeout: "3600"
+
+ingress:
+  enabled: INGRESS_ENABLED
+  annotations:
+    kubernetes.io/ingress.class: nginx
+    # nginx.ingress.kubernetes.io/force-ssl-redirect: "true"
+  hosts:
+    - INGRESS_DOMAIN
+
+# rbac:
+#   create: true
+#   clusterAdminRole: false

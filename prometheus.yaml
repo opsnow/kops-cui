@@ -1,0 +1,43 @@
+# chart-repo: stable/prometheus
+# chart-version: 8.4.8
+# chart-ingress: false
+# chart-pvc: prometheus-server ReadWriteOnce 8Gi
+# chart-pvc: prometheus-alertmanager ReadWriteOnce 2Gi
+
+nameOverride: prometheus
+
+server:
+  # service:
+  #   type: SERVICE_TYPE
+  # ingress:
+  #   enabled: INGRESS_ENABLED
+  #   annotations:
+  #     kubernetes.io/ingress.class: nginx
+  #     nginx.ingress.kubernetes.io/force-ssl-redirect: "true"
+  #   hosts:
+  #     - INGRESS_DOMAIN
+  persistentVolume:
+    enabled: true
+    accessModes:
+      - ReadWriteOnce
+    size: 8Gi
+    #:EFS:storageClass: "efs"
+    existingClaim: prometheus-server
+
+alertmanager:
+  # service:
+  #   type: SERVICE_TYPE
+  # ingress:
+  #   enabled: INGRESS_ENABLED
+  #   annotations:
+  #     kubernetes.io/ingress.class: nginx
+  #     nginx.ingress.kubernetes.io/force-ssl-redirect: "true"
+  #   hosts:
+  #     - alertmanager-INGRESS_DOMAIN
+  persistentVolume:
+    enabled: true
+    accessModes:
+      - ReadWriteOnce
+    size: 2Gi
+    #:EFS:storageClass: "efs"
+    existingClaim: prometheus-alertmanager

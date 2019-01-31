@@ -1,0 +1,72 @@
+# chart-repo: stable/grafana
+# chart-version: 1.25.4
+# chart-ingress: true
+
+nameOverride: grafana
+
+adminUser: admin
+adminPassword: PASSWORD
+
+service:
+  type: SERVICE_TYPE
+
+ingress:
+  enabled: INGRESS_ENABLED
+  annotations:
+    kubernetes.io/ingress.class: nginx
+    # nginx.ingress.kubernetes.io/force-ssl-redirect: "true"
+  hosts:
+    - INGRESS_DOMAIN
+
+#:LDAP:grafana.ini:
+#:LDAP:  auth.ldap:
+#:LDAP:    enabled: true
+#:LDAP:    allow_sign_up: true
+#:LDAP:    config_file: /etc/grafana/ldap.toml
+
+#:LDAP:ldap:
+#:LDAP:  existingSecret: "GRAFANA_LDAP"
+
+datasources:
+  datasources.yaml:
+    apiVersion: 1
+    datasources:
+    - name: Prometheus
+      type: prometheus
+      url: http://prometheus-server
+      access: proxy
+      isDefault: true
+
+dashboardProviders:
+  dashboardproviders.yaml:
+    apiVersion: 1
+    providers:
+    - name: 'default'
+      orgId: 1
+      folder: ''
+      type: file
+      disableDeletion: false
+      editable: true
+      options:
+        path: /var/lib/grafana/dashboards/default
+
+dashboards:
+  default:
+    kube-cluster:
+      # https://grafana.com/dashboards/9678
+      gnetId: 9678
+      revision: 2
+      datasource: Prometheus
+    kube-deployment:
+      # https://grafana.com/dashboards/9679
+      gnetId: 9679
+      revision: 2
+      datasource: Prometheus
+    # prometheus-stats:
+    #   gnetId: 2
+    #   revision: 2
+    #   datasource: Prometheus
+    # prometheus-cluster:
+    #   gnetId: 315
+    #   revision: 3
+    #   datasource: Prometheus
