@@ -310,16 +310,23 @@ helm_install() {
     if [ "${NAME}" == "external-dns" ]; then
         replace_secret ${CHART} accessKey
         replace_secret ${CHART} secretKey
+
+        EX_DNS=true
+        CONFIG_SAVE=true
     fi
 
     # for nginx-ingress
     if [ "${NAME}" == "nginx-ingress" ]; then
         get_base_domain
+
+        CONFIG_SAVE=true
     fi
 
     # for efs-provisioner
     if [ "${NAME}" == "efs-provisioner" ]; then
         efs_create
+
+        CONFIG_SAVE=true
     fi
 
     # for jenkins
@@ -440,8 +447,8 @@ helm_install() {
         helm upgrade --install ${NAME} ${REPO} --namespace ${NAMESPACE} --values ${CHART} --version ${VERSION}
     fi
 
-    # nginx-ingress
-    if [ "${NAME}" == "nginx-ingress" ]; then
+    # config save
+    if [ "${CONFIG_SAVE}" != "" ]; then
         config_save
     fi
 
@@ -515,13 +522,34 @@ helm_delete() {
         return
     fi
 
+    # for external-dns
+    if [ "${NAME}" == "external-dns" ]; then
+        EX_DNS=
+        CONFIG_SAVE=true
+    fi
+
+    # for nginx-ingress
+    if [ "${NAME}" == "nginx-ingress" ]; then
+        ROOT_DOMAIN=
+        BASE_DOMAIN=
+        CONFIG_SAVE=true
+    fi
+
     # for efs-provisioner
     if [ "${NAME}" == "efs-provisioner" ]; then
         efs_delete
+
+        CONFIG_SAVE=true
     fi
 
+    # helm delete
     _command "helm delete --purge ${NAME}"
     helm delete --purge ${NAME}
+
+    # config save
+    if [ "${CONFIG_SAVE}" != "" ]; then
+        config_save
+    fi
 }
 
 helm_check() {
@@ -878,9 +906,6 @@ efs_create() {
     # replace EFS_ID
     _replace "s/EFS_ID/${EFS_ID}/g" ${CHART}
 
-    # save config (EFS_ID)
-    config_save
-
     echo "Waiting for the state of the EFS to be available."
     waiting_for isEFSAvailable
 
@@ -936,9 +961,9 @@ efs_delete() {
         aws efs delete-file-system --file-system-id ${EFS_ID} --region ${REGION}
     fi
 
-    # save config (EFS_ID)
     EFS_ID=
-    config_save
+
+    _result "EFS_ID=${EFS_ID}"
 }
 
 istio_init() {
