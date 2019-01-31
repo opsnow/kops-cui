@@ -285,7 +285,7 @@ helm_install() {
     _result "${REPO} version: ${VERSION}"
 
     # installed chart version
-    LATEST=$(helm ls prometheus | grep prometheus | head -1 | awk '{print $9}')
+    LATEST=$(helm ls ${NAME} | grep ${NAME} | head -1 | awk '{print $9}')
 
     if [ "${LATEST}" != "" ]; then
         _result "installed version: ${LATEST}"
