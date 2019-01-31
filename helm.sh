@@ -282,7 +282,7 @@ helm_install() {
     INGRESS=$(cat ${CHART} | grep chart-ingress | awk '{print $3}')
     NODE=$(cat ${CHART} | grep chart-node | awk '{print $3}')
 
-    _result "this version: ${VERSION}"
+    _result "${NAME} version: ${VERSION}"
 
     # latest chart version
     LATEST=$(helm search "${NAME} " | grep ${NAME} | head -1 | awk '{print $2}')
