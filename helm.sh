@@ -284,8 +284,15 @@ helm_install() {
 
     _result "${REPO} version: ${VERSION}"
 
+    # installed chart version
+    LATEST=$(helm ls ${NAME} | grep ${NAME} | head -1 | awk '{print $9}')
+
+    if [ "${LATEST}" != "" ]; then
+        _result "installed version: ${LATEST}"
+    fi
+
     # latest chart version
-    LATEST=$(helm search ${NAME} | grep "${REPO} " | head -1 | awk '{print $2}')
+    LATEST=$(helm search ${NAME} | grep ${REPO} | head -1 | awk '{print $2}')
 
     if [ "${LATEST}" != "" ]; then
         _result "latest chart version: ${LATEST}"
