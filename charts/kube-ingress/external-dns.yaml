@@ -1,5 +1,5 @@
 # chart-repo: stable/external-dns
-# chart-version: latest
+# chart-version: 1.6.0
 
 nameOverride: external-dns
 

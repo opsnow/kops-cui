@@ -1,5 +1,5 @@
 # chart-repo: stable/prometheus-operator
-# chart-version: latest
+# chart-version: 2.1.0
 # chart-ingress: true
 
 nameOverride: prometheus-operator

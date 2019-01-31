@@ -282,12 +282,16 @@ helm_install() {
     INGRESS=$(cat ${CHART} | grep chart-ingress | awk '{print $3}')
     NODE=$(cat ${CHART} | grep chart-node | awk '{print $3}')
 
-    # chart version
-    if [ "${VERSION}" == "" ] || [ "${VERSION}" == "latest" ]; then
-        VERSION=$(helm search stable/${NAME} | grep ${NAME} | head -1 | awk '{printf $2}' | xargs)
+    _result "${REPO} version: ${VERSION}"
 
-        if [ "${VERSION}" != "" ]; then
-            _replace "s/chart-version:.*/chart-version: ${VERSION}/g" ${CHART}
+    # latest chart version
+    LATEST=$(helm search ${NAME} | grep "${REPO} " | head -1 | awk '{print $2}')
+
+    if [ "${LATEST}" != "" ]; then
+        _result "latest chart version: ${LATEST}"
+
+        if [ "${VERSION}" == "" ] || [ "${VERSION}" == "latest" ]; then
+            _replace "s/chart-version:.*/chart-version: ${LATEST}/g" ${CHART}
         fi
     fi
 

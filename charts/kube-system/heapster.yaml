@@ -1,7 +1,4 @@
 # chart-repo: stable/heapster
-# chart-version: latest
+# chart-version: 0.3.2
 
 nameOverride: heapster
-
-# image:
-#   tag: v1.4.0

@@ -1,5 +1,5 @@
 # chart-repo: stable/prometheus-adapter
-# chart-version: latest
+# chart-version: v0.4.1
 # chart-ingress: false
 
 nameOverride: prometheus-adapter
