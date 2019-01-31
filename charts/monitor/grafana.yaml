@@ -1,5 +1,5 @@
 # chart-repo: stable/grafana
-# chart-version: latest
+# chart-version: 1.25.4
 # chart-ingress: true
 
 nameOverride: grafana

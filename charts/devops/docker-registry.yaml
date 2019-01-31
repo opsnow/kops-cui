@@ -1,5 +1,5 @@
 # chart-repo: stable/docker-registry
-# chart-version: latest
+# chart-version: 1.7.0
 # chart-ingress: true
 # chart-pvc: docker-registry ReadWriteOnce 20Gi
 

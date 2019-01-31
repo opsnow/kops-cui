@@ -1,5 +1,5 @@
 # chart-repo: stable/datadog
-# chart-version: latest
+# chart-version: 1.18.1
 
 nameOverride: datadog
 

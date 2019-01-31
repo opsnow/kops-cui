@@ -1,4 +1,4 @@
 # chart-repo: stable/cert-manager
-# chart-version: latest
+# chart-version: v0.6.0
 
 nameOverride: cert-manager

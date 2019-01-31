@@ -1,5 +1,5 @@
 # chart-repo: stable/sonarqube
-# chart-version: latest
+# chart-version: 0.13.4
 # chart-ingress: true
 # chart-pvc: sonarqube-sonarqube ReadWriteOnce 10Gi
 # chart-pvc: sonarqube-postgresql ReadWriteOnce 8Gi
