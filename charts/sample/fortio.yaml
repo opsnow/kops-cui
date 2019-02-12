@@ -1,2 +1,7 @@
 # chart-repo: fortio
 # chart-version: latest
+
+pod:
+  labels:
+    spotinst.io/pods-contingency: "true"
+    spotinst.io/restrict-scale-down: "true"

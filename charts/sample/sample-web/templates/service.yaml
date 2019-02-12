@@ -6,10 +6,10 @@ metadata:
     draft: {{ default "draft-app" .Values.draft }}
     chart: "{{ .Chart.Name }}-{{ .Chart.Version | replace "+" "_" }}"
     app: {{ template "fullname" . }}
-{{- if .Values.ingress.labels }}
-{{ toYaml .Values.ingress.labels | indent 4 }}
+{{- if .Values.service.labels }}
+{{ toYaml .Values.service.labels | indent 4 }}
 {{- end }}
-{{- with .Values.ingress.annotations }}
+{{- with .Values.service.annotations }}
   annotations:
 {{ toYaml . | indent 4 }}
 {{- end }}
