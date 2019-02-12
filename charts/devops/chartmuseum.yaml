@@ -5,6 +5,10 @@
 
 fullnameOverride: chartmuseum
 
+replica:
+  annotations:
+    cluster-autoscaler.kubernetes.io/safe-to-evict: "true"
+
 env:
   open:
     DISABLE_API: false

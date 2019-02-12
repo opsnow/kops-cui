@@ -1,5 +1,5 @@
 # chart-repo: stable/prometheus
-# chart-version: 8.5.0
+# chart-version: 8.7.0
 # chart-ingress: false
 # chart-pvc: prometheus-server ReadWriteOnce 8Gi
 # chart-pvc: prometheus-alertmanager ReadWriteOnce 2Gi
@@ -7,6 +7,8 @@
 nameOverride: prometheus
 
 server:
+  podAnnotations:
+    cluster-autoscaler.kubernetes.io/safe-to-evict: "true"
   # service:
   #   type: SERVICE_TYPE
   # ingress:
@@ -25,6 +27,8 @@ server:
     existingClaim: prometheus-server
 
 alertmanager:
+  podAnnotations:
+    cluster-autoscaler.kubernetes.io/safe-to-evict: "true"
   # service:
   #   type: SERVICE_TYPE
   # ingress:
@@ -41,3 +45,11 @@ alertmanager:
     size: 2Gi
     #:EFS:storageClass: "efs"
     existingClaim: prometheus-alertmanager
+
+kubeStateMetrics:
+  podAnnotations:
+    cluster-autoscaler.kubernetes.io/safe-to-evict: "true"
+
+pushgateway:
+  podAnnotations:
+    cluster-autoscaler.kubernetes.io/safe-to-evict: "true"

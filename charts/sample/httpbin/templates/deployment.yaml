@@ -10,6 +10,10 @@ spec:
   replicas: {{ .Values.replicaCount }}
   template:
     metadata:
+{{- if .Values.pod.annotations }}
+      annotations:
+{{ toYaml .Values.pod.annotations | indent 8 }}
+{{- end }}
       labels:
         draft: {{ default "draft-app" .Values.draft }}
         app: {{ template "fullname" . }}

@@ -20,6 +20,10 @@ spec:
       app: {{ template "fullname" . }}-redis
   template:
     metadata:
+{{- if .Values.pod.annotations }}
+      annotations:
+{{ toYaml .Values.pod.annotations | indent 8 }}
+{{- end }}
       labels:
         app: {{ template "fullname" . }}-redis
         version: master
