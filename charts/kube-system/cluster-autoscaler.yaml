@@ -18,6 +18,7 @@ extraArgs:
   skip-nodes-with-local-storage: false
   skip-nodes-with-system-pods: false
   scale-down-enabled: true
+  max-total-unready-percentage: 25
   # scan-interval: 10s
   # scale-down-delay: 10m
   # scale-down-unneeded-time: 10m
