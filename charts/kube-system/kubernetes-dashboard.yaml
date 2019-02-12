@@ -12,9 +12,6 @@ nameOverride: kubernetes-dashboard
 
 enableInsecureLogin: true
 
-podAnnotations:
-  cluster-autoscaler.kubernetes.io/safe-to-evict: "true"
-
 service:
   type: SERVICE_TYPE
   externalPort: 9090

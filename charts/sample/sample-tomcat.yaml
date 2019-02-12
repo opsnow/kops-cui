@@ -8,10 +8,6 @@ image:
   repository: nalbam/sample-tomcat
   tag: alpine
 
-pod:
-  annotations:
-    cluster-autoscaler.kubernetes.io/safe-to-evict: "true"
-
 service:
   type: SERVICE_TYPE
 

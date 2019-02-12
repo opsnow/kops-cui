@@ -18,8 +18,6 @@ Master:
     limits:
       cpu: 1000m
       memory: 4Gi
-  PodAnnotations:
-    cluster-autoscaler.kubernetes.io/safe-to-evict: "true"
   JavaOpts: "-Dorg.apache.commons.jelly.tags.fmt.timeZone=Asia/Seoul"
   ServiceType: SERVICE_TYPE
   HostName: INGRESS_DOMAIN

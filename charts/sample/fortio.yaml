@@ -1,6 +1,2 @@
 # chart-repo: fortio
 # chart-version: latest
-
-pod:
-  annotations:
-    cluster-autoscaler.kubernetes.io/safe-to-evict: "true"

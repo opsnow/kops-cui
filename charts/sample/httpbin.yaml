@@ -2,13 +2,6 @@
 # chart-version: latest
 # chart-ingress: true
 
-pod:
-  labels:
-    spotinst.io/pods-contingency: "true"
-    spotinst.io/restrict-scale-down: "true"
-  annotations:
-    cluster-autoscaler.kubernetes.io/safe-to-evict: "true"
-
 service:
   type: SERVICE_TYPE
 

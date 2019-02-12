@@ -17,8 +17,6 @@ nexus:
     limits:
       cpu: 1000m
       memory: 4Gi
-  podAnnotations:
-    cluster-autoscaler.kubernetes.io/safe-to-evict: "true"
   livenessProbe:
     initialDelaySeconds: 100
     periodSeconds: 30

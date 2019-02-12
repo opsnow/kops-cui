@@ -3,9 +3,6 @@
 
 nameOverride: efs-provisioner
 
-podAnnotations:
-  cluster-autoscaler.kubernetes.io/safe-to-evict: "true"
-
 efsProvisioner:
   efsFileSystemId: EFS_ID
   awsRegion: AWS_REGION

@@ -7,8 +7,6 @@
 nameOverride: prometheus
 
 server:
-  podAnnotations:
-    cluster-autoscaler.kubernetes.io/safe-to-evict: "true"
   # service:
   #   type: SERVICE_TYPE
   # ingress:
@@ -27,8 +25,6 @@ server:
     existingClaim: prometheus-server
 
 alertmanager:
-  podAnnotations:
-    cluster-autoscaler.kubernetes.io/safe-to-evict: "true"
   # service:
   #   type: SERVICE_TYPE
   # ingress:
@@ -45,11 +41,3 @@ alertmanager:
     size: 2Gi
     #:EFS:storageClass: "efs"
     existingClaim: prometheus-alertmanager
-
-kubeStateMetrics:
-  podAnnotations:
-    cluster-autoscaler.kubernetes.io/safe-to-evict: "true"
-
-pushgateway:
-  podAnnotations:
-    cluster-autoscaler.kubernetes.io/safe-to-evict: "true"

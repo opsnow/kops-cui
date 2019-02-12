@@ -4,9 +4,6 @@
 
 nameOverride: cluster-autoscaler
 
-podAnnotations:
-  cluster-autoscaler.kubernetes.io/safe-to-evict: "true"
-
 autoDiscovery:
   enabled: true
   clusterName: CLUSTER_NAME
