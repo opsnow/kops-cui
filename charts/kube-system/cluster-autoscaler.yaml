@@ -19,15 +19,6 @@ extraArgs:
   max-total-unready-percentage: 25
   skip-nodes-with-local-storage: false
   skip-nodes-with-system-pods: false
-  # scan-interval: 10s
-  # scale-down-delay: 10m
-  # scale-down-unneeded-time: 10m
-  # scale-down-utilization-threshold: 0.5
-  # scale-down-non-empty-candidates-count: 5
-  # leader-elect: true
-  # write-status-configmap: true
-  # balance-similar-node-groups: true
-  # max-node-provision-time: 15m0s
 
 #:MASTER:nodeSelector:
 #:MASTER:  kubernetes.io/role: master
