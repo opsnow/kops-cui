@@ -2,10 +2,10 @@
 # chart-version: latest
 # chart-ingress: true
 
-pod:
-  labels:
-    spotinst.io/pods-contingency: "true"
-    spotinst.io/restrict-scale-down: "true"
+# pod:
+#   labels:
+#     spotinst.io/pods-contingency: "true"
+#     spotinst.io/restrict-scale-down: "true"
 
 service:
   type: SERVICE_TYPE
