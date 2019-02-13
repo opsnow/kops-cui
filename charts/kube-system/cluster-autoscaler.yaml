@@ -16,7 +16,7 @@ extraArgs:
   logtostderr: true
   expander: least-waste
   scale-down-enabled: true
-  max-total-unready-percentage: 25
+  scale-down-utilization-threshold: 0.75
   skip-nodes-with-local-storage: false
   skip-nodes-with-system-pods: false
 
