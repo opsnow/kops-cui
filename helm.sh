@@ -707,7 +707,7 @@ create_pdb() {
     PDB_NAME=${2}
     PDB_SIZE=${3}
 
-    YAML=${SHELL_DIR}/build/${THIS_NAME}-pdb-${PVC_NAME}.yaml
+    YAML=${SHELL_DIR}/build/${THIS_NAME}-pdb-${PDB_NAME}.yaml
     get_template templates/pdb.yaml ${YAML}
 
     _replace "s/PDB_NAME/${PDB_NAME}/g" ${YAML}
