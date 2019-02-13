@@ -267,7 +267,7 @@ helm_install() {
     get_template charts/${NAMESPACE}/${NAME}.yaml ${CHART}
 
     # chart repository
-    REPO=$(cat ${CHART} | grep chart-repo | awk '{print $3}')
+    REPO=$(cat ${CHART} | grep '# chart-repo:' | awk '{print $3}')
     if [ "${REPO}" == "" ]; then
         REPO="stable/${NAME}"
     else
@@ -278,9 +278,10 @@ helm_install() {
     fi
 
     # chart config
-    VERSION=$(cat ${CHART} | grep chart-version | awk '{print $3}')
-    INGRESS=$(cat ${CHART} | grep chart-ingress | awk '{print $3}')
-    NODE=$(cat ${CHART} | grep chart-node | awk '{print $3}')
+    VERSION=$(cat ${CHART} | grep '# chart-version:' | awk '{print $3}')
+    INGRESS=$(cat ${CHART} | grep '# chart-ingress:' | awk '{print $3}')
+    NODE=$(cat ${CHART} | grep '# chart-node:' | awk '{print $3}')
+    PDB=$(cat ${CHART} | grep '# chart-pdb:' | awk '{print $3}')
 
     _result "${REPO} version: ${VERSION}"
 
@@ -384,7 +385,7 @@ helm_install() {
     fi
 
     # for efs-mount
-    if [ ! -z ${EFS_ID} ]; then
+    if [ "${EFS_ID}" != "" ]; then
         _replace "s/#:EFS://g" ${CHART}
     fi
 
@@ -427,7 +428,7 @@ helm_install() {
 
     # check exist persistent volume
     LIST=${SHELL_DIR}/build/${THIS_NAME}-pvc-${NAME}-yaml
-    cat ${CHART} | grep chart-pvc | awk '{print $3,$4,$5}' > ${LIST}
+    cat ${CHART} | grep '# chart-pvc:' | awk '{print $3,$4,$5}' > ${LIST}
     while IFS='' read -r line || [[ -n "$line" ]]; do
         ARR=(${line})
         check_exist_pv ${NAMESPACE} ${ARR[0]} ${ARR[1]} ${ARR[2]}
@@ -445,6 +446,11 @@ helm_install() {
     else
         _command "helm upgrade --install ${NAME} ${REPO} --namespace ${NAMESPACE} --values ${CHART} --version ${VERSION}"
         helm upgrade --install ${NAME} ${REPO} --namespace ${NAMESPACE} --values ${CHART} --version ${VERSION}
+    fi
+
+    # pdb
+    if [ "${PDB}" != "" ]; then
+        create_pdb ${NAMESPACE} ${NAME} ${PDB}
     fi
 
     # config save
@@ -696,6 +702,23 @@ elb_security() {
 
 }
 
+create_pdb() {
+    NAMESPACE=${1}
+    PDB_NAME=${2}
+    PDB_SIZE=${3}
+
+    YAML=${SHELL_DIR}/build/${THIS_NAME}-pdb-${PVC_NAME}.yaml
+    get_template templates/pdb.yaml ${YAML}
+
+    _replace "s/PDB_NAME/${PDB_NAME}/g" ${YAML}
+    _replace "s/PDB_SIZE/${PDB_SIZE}/g" ${YAML}
+
+    echo ${YAML}
+
+    _command "kubectl apply -n ${NAMESPACE} -f ${YAML}"
+    kubectl apply -n ${NAMESPACE} -f ${YAML}
+}
+
 check_exist_pv() {
     NAMESPACE=${1}
     PVC_NAME=${2}
@@ -743,28 +766,28 @@ create_pvc() {
     PVC_SIZE=${4}
     PV_NAME=${5}
 
-    PVC=${SHELL_DIR}/build/${THIS_NAME}-pvc-${PVC_NAME}.yaml
-    get_template templates/pvc.yaml ${PVC}
+    YAML=${SHELL_DIR}/build/${THIS_NAME}-pvc-${PVC_NAME}.yaml
+    get_template templates/pvc.yaml ${YAML}
 
-    _replace "s/PVC_NAME/${PVC_NAME}/g" ${PVC}
-    _replace "s/PVC_ACCESS_MODE/${PVC_ACCESS_MODE}/g" ${PVC}
-    _replace "s/PVC_SIZE/${PVC_SIZE}/g" ${PVC}
+    _replace "s/PVC_NAME/${PVC_NAME}/g" ${YAML}
+    _replace "s/PVC_SIZE/${PVC_SIZE}/g" ${YAML}
+    _replace "s/PVC_ACCESS_MODE/${PVC_ACCESS_MODE}/g" ${YAML}
 
     # for efs-provisioner
     if [ ! -z ${EFS_ID} ]; then
-        _replace "s/#:EFS://g" ${PVC}
+        _replace "s/#:EFS://g" ${YAML}
     fi
 
     # for static pvc
     if [ ! -z ${PV_NAME} ]; then
-        _replace "s/#:PV://g" ${PVC}
-        _replace "s/PV_NAME/${PV_NAME}/g" ${PVC}
+        _replace "s/#:PV://g" ${YAML}
+        _replace "s/PV_NAME/${PV_NAME}/g" ${YAML}
     fi
 
-    echo ${PVC}
+    echo ${YAML}
 
-    _command "kubectl create -n ${NAMESPACE} -f ${PVC}"
-    kubectl create -n ${NAMESPACE} -f ${PVC}
+    _command "kubectl create -n ${NAMESPACE} -f ${YAML}"
+    kubectl create -n ${NAMESPACE} -f ${YAML}
 
     waiting_for isBound ${NAMESPACE} ${PVC_NAME}
 
@@ -976,7 +999,7 @@ istio_init() {
     mkdir -p ${ISTIO_TMP}
 
     CHART=${SHELL_DIR}/charts/istio/istio.yaml
-    VERSION=$(cat ${CHART} | grep chart-version | awk '{print $3}')
+    VERSION=$(cat ${CHART} | grep '# chart-version:' | awk '{print $3}')
 
     if [ "${VERSION}" == "" ] || [ "${VERSION}" == "latest" ]; then
         VERSION=$(curl -s https://api.github.com/repos/istio/istio/releases/latest | jq -r '.tag_name')
@@ -1118,7 +1141,7 @@ sample_install() {
     _replace "s/profile:.*/profile: ${NAMESPACE}/g" ${CHART}
 
     # ingress
-    INGRESS=$(cat ${CHART} | grep chart-ingress | awk '{print $3}')
+    INGRESS=$(cat ${CHART} | grep '# chart-ingress:' | awk '{print $3}')
 
     if [ "${INGRESS}" == "true" ]; then
         if [ -z ${BASE_DOMAIN} ]; then

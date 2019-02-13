@@ -1,5 +1,6 @@
 # chart-repo: stable/metrics-server
 # chart-version: 2.3.0
+# chart-pdb: 1
 
 nameOverride: metrics-server
 
