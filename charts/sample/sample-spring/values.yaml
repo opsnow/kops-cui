@@ -9,6 +9,7 @@ annotations: {}
 pod:
   labels: {}
   annotations: {}
+pdb: {}
 service:
   type: ClusterIP
   labels: {}
