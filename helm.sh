@@ -672,6 +672,10 @@ create_pdb() {
         return
     fi
 
+    if [ "${PDB_NAME}" == "heapster" ]; then
+        APP_NAME="heapster-heapster"
+    fi
+
     YAML=${SHELL_DIR}/build/${THIS_NAME}-pdb-${PDB_NAME}.yaml
     get_template templates/pdb-${LABELS}.yaml ${YAML}
 
