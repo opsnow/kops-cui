@@ -570,14 +570,17 @@ helm_check() {
 helm_init() {
     NAMESPACE="kube-system"
     ACCOUNT="tiller"
+    NAME="tiller"
 
     create_cluster_role_binding cluster-admin ${NAMESPACE} ${ACCOUNT}
 
     _command "helm init --upgrade --service-account=${ACCOUNT}"
     helm init --upgrade --service-account=${ACCOUNT}
 
+    create_pdb ${NAMESPACE} ${NAME} 1
+
     # waiting 5
-    waiting_pod "${NAMESPACE}" "tiller"
+    waiting_pod "${NAMESPACE}" "${NAME}"
 
     _command "kubectl get pod,svc -n ${NAMESPACE}"
     kubectl get pod,svc -n ${NAMESPACE}
