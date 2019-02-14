@@ -22,16 +22,16 @@ spec:
       app: {{ template "fullname" . }}
   template:
     metadata:
-      annotations:
-        buildID: {{ .Values.buildID }}
-{{- if .Values.pod.annotations }}
-{{ toYaml .Values.pod.annotations | indent 8 }}
-{{- end }}
       labels:
         app: {{ template "fullname" . }}
         version: canary
 {{- if .Values.pod.labels }}
 {{ toYaml .Values.pod.labels | indent 8 }}
+{{- end }}
+      annotations:
+        buildID: {{ .Values.buildID }}
+{{- if .Values.pod.annotations }}
+{{ toYaml .Values.pod.annotations | indent 8 }}
 {{- end }}
     spec:
       containers:
