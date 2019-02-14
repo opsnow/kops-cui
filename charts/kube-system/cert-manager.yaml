@@ -3,3 +3,6 @@
 # chart-pdb: N 1
 
 nameOverride: cert-manager
+
+podAnnotations:
+  cluster-autoscaler.kubernetes.io/safe-to-evict: "true"

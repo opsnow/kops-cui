@@ -5,6 +5,9 @@
 
 nameOverride: kubernetes-dashboard
 
+podAnnotations:
+  cluster-autoscaler.kubernetes.io/safe-to-evict: "true"
+
 enableInsecureLogin: true
 
 service:

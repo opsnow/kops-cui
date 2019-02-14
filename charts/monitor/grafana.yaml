@@ -1,11 +1,15 @@
 # chart-repo: stable/grafana
 # chart-version: 1.26.1
 # chart-ingress: true
+# chart-pdb: N 1
 
 nameOverride: grafana
 
 adminUser: admin
 adminPassword: PASSWORD
+
+podAnnotations:
+  cluster-autoscaler.kubernetes.io/safe-to-evict: "true"
 
 service:
   type: SERVICE_TYPE
