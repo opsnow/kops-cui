@@ -1,4 +1,5 @@
 # chart-repo: stable/heapster
 # chart-version: 0.3.2
+# chart-pdb: N 1
 
 nameOverride: heapster

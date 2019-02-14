@@ -1,4 +1,5 @@
 # chart-repo: stable/cert-manager
 # chart-version: v0.6.0
+# chart-pdb: N 1
 
 nameOverride: cert-manager

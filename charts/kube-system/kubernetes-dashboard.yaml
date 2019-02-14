@@ -1,6 +1,7 @@
 # chart-repo: stable/kubernetes-dashboard
 # chart-version: 1.2.0
 # chart-ingress: true
+# chart-pdb: N 1
 
 nameOverride: kubernetes-dashboard
 
