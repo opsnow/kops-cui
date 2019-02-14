@@ -24,7 +24,7 @@ ingress:
 
 hpa:
   enabled: true
-  min: 20
+  min: 10
   max: 30
   cpu: 65
 
