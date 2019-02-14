@@ -651,12 +651,12 @@ create_cluster_role_binding() {
 }
 
 default_pdb() {
-    create_pdb ${NAMESPACE} tiller-deploy N 1
-
     create_pdb ${NAMESPACE} coredns 1 N
 
-    create_pdb ${NAMESPACE} kube-dns-autoscaler N 1
     create_pdb ${NAMESPACE} kube-dns 1 N
+    create_pdb ${NAMESPACE} kube-dns-autoscaler N 1
+
+    create_pdb ${NAMESPACE} tiller-deploy N 1
 }
 
 create_pdb() {
