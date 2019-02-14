@@ -8,8 +8,8 @@ sources:
   # - ingress
 
 aws:
-  accessKey: ""
-  secretKey: ""
+  accessKey: AWS_ACCESS_KEY
+  secretKey: AWS_SECRET_KEY
 
 rbac:
   create: true
