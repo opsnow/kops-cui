@@ -20,8 +20,8 @@ extraArgs:
   expander: least-waste
   scale-down-enabled: true
   scale-down-utilization-threshold: 0.75
-  skip-nodes-with-local-storage: true
-  skip-nodes-with-system-pods: true
+  skip-nodes-with-local-storage: false
+  # skip-nodes-with-system-pods: false
 
 #:MASTER:nodeSelector:
 #:MASTER:  kubernetes.io/role: master
