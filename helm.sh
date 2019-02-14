@@ -651,19 +651,21 @@ create_cluster_role_binding() {
 }
 
 default_pdb() {
-    create_pdb ${NAMESPACE} coredns 1 N
+    create_pdb ${NAMESPACE} coredns 1 N k8s-app kube-dns
 
-    create_pdb ${NAMESPACE} kube-dns 1 N
-    create_pdb ${NAMESPACE} kube-dns-autoscaler N 1
+    create_pdb ${NAMESPACE} kube-dns 1 N k8s-app
+    create_pdb ${NAMESPACE} kube-dns-autoscaler N 1 k8s-app
 
-    create_pdb ${NAMESPACE} tiller-deploy N 1
+    create_pdb ${NAMESPACE} tiller-deploy N 1 tiller
 }
 
 create_pdb() {
     NAMESPACE=${1}
     PDB_NAME=${2}
-    PDB_MIN=${3}
-    PDB_MAX=${4}
+    PDB_MIN=${3:-N}
+    PDB_MAX=${4:-N}
+    LABELS=${5:-app}
+    APP_NAME=${6:-${PDB_NAME}}
 
     COUNT=$(kubectl get deploy -n kube-system | grep ${PDB_NAME} | grep -v NAME | wc -l | xargs)
     if [ "x${COUNT}" == "x0" ]; then
@@ -671,23 +673,17 @@ create_pdb() {
     fi
 
     YAML=${SHELL_DIR}/build/${THIS_NAME}-pdb-${PDB_NAME}.yaml
-
-    if [ "${PDB_NAME}" == "tiller" ]; then
-       get_template templates/pdb-tiller.yaml ${YAML}
-    elif [ "${PDB_NAME}" == "coredns" ]; then
-       get_template templates/pdb-coredns.yaml ${YAML}
-    else
-       get_template templates/pdb.yaml ${YAML}
-    fi
+    get_template templates/pdb-${LABELS}.yaml ${YAML}
 
     _replace "s/PDB_NAME/${PDB_NAME}/g" ${YAML}
+    _replace "s/APP_NAME/${APP_NAME}/g" ${YAML}
 
-    if [ "${PDB_MIN}" != "" ] && [ "${PDB_MIN}" != "N" ]; then
+    if [ "${PDB_MIN}" != "N" ]; then
         _replace "s/PDB_MIN/${PDB_MIN}/g" ${YAML}
         _replace "s/#:MIN://g" ${YAML}
     fi
 
-    if [ "${PDB_MAX}" != "" ] && [ "${PDB_MAX}" != "N" ]; then
+    if [ "${PDB_MAX}" != "N" ]; then
         _replace "s/PDB_MAX/${PDB_MAX}/g" ${YAML}
         _replace "s/#:MAX://g" ${YAML}
     fi
