@@ -303,8 +303,8 @@ helm_install() {
 
     # for external-dns
     if [ "${NAME}" == "external-dns" ]; then
-        replace_secret ${CHART} accessKey
-        replace_secret ${CHART} secretKey
+        replace_password ${CHART} AWS_ACCESS_KEY XXXXXXXXXX
+        replace_password ${CHART} AWS_SECRET_KEY XXXXXXXXXX
 
         EX_DNS=true
         CONFIG_SAVE=true
@@ -1000,12 +1000,23 @@ istio_init() {
     ISTIO_DIR=${ISTIO_TMP}/${NAME}-${VERSION}/install/kubernetes/helm/istio
 }
 
+istio_secret() {
+    YAML=${SHELL_DIR}/build/${THIS_NAME}-istio-secret.yaml
+    get_template templates/istio-secret.yaml ${YAML}
+
+    replace_base64 ${YAML} USERNAME admin
+    replace_base64 ${YAML} PASSWORD password
+
+    _command "kubectl apply -n ${NAMESPACE} -f ${YAML}"
+    kubectl apply -n ${NAMESPACE} -f ${YAML}
+}
+
 istio_install() {
     istio_init
 
     create_namespace ${NAMESPACE}
 
-    CHART=${SHELL_DIR}/build/${THIS_NAME}-istio-${NAME}.yaml
+    CHART=${SHELL_DIR}/build/${THIS_NAME}-${NAME}.yaml
     get_template charts/istio/${NAME}.yaml ${CHART}
 
     # ingress
@@ -1018,14 +1029,14 @@ istio_install() {
         _replace "s/BASE_DOMAIN/${BASE_DOMAIN}/g" ${CHART}
     fi
 
-    # admin password
-    replace_password ${CHART}
+    # istio secret
+    istio_secret
 
     # helm install
     _command "helm upgrade --install ${NAME} ${ISTIO_DIR} --namespace ${NAMESPACE} --values ${CHART}"
     helm upgrade --install ${NAME} ${ISTIO_DIR} --namespace ${NAMESPACE} --values ${CHART}
 
-    # for kiali
+    # kiali sa
     create_cluster_role_binding view ${NAMESPACE} kiali-service-account
 
     # save config (ISTIO)
@@ -1086,15 +1097,14 @@ istio_delete() {
     _command "helm delete --purge ${NAME}"
     helm delete --purge ${NAME}
 
-    # _command "kubectl delete -f ${ISTIO_DIR}/templates/crds.yaml"
-    # kubectl delete -f ${ISTIO_DIR}/templates/crds.yaml
-
+    # delete crds
     LIST="$(kubectl get crds | grep istio.io | awk '{print $1}')"
     if [ "${LIST}" != "" ]; then
         _command "kubectl delete crds *.istio.io"
         kubectl delete crds ${LIST}
     fi
 
+    # delete ns
     _command "kubectl delete namespace ${NAMESPACE}"
     kubectl delete namespace ${NAMESPACE}
 
@@ -1492,24 +1502,25 @@ get_base_domain() {
 }
 
 replace_password() {
-    CHART=${1}
-    KEY=${2:-PASSWORD}
-    DEFAULT=${3:-password}
+    _CHART=${1}
+    _KEY=${2:-PASSWORD}
+    _DEFAULT=${3:-password}
 
-    password "Enter ${KEY} [${DEFAULT}] : "
+    password "Enter ${_KEY} [${_DEFAULT}] : "
     echo
 
-    _replace "s/${KEY}/${PASSWORD:-${DEFAULT}}/g" ${CHART}
+    _replace "s/${_KEY}/${PASSWORD:-${_DEFAULT}}/g" ${_CHART}
 }
 
-replace_secret() {
-    CHART=${1}
-    KEY=${2:-KEY}
+replace_base64() {
+    _CHART=${1}
+    _KEY=${2:-PASSWORD}
+    _DEFAULT=${3:-password}
 
-    password "Enter ${KEY} : "
+    password "Enter ${_KEY} [${_DEFAULT}] : "
     echo
 
-    _replace "s/${KEY}:.*/${KEY}: \"${PASSWORD}\"/g" ${CHART}
+    _replace "s/${_KEY}/$(echo ${PASSWORD:-${_DEFAULT}} | base64)/g" ${_CHART}
 }
 
 waiting_for() {
