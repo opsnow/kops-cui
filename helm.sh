@@ -573,9 +573,8 @@ helm_init() {
     _command "helm init --upgrade --service-account=${ACCOUNT}"
     helm init --upgrade --service-account=${ACCOUNT}
 
-    # pdb
-    create_pdb ${NAMESPACE} tiller-deploy N 1
-    create_pdb ${NAMESPACE} coredns 1 N
+    # default pdb
+    default_pdb
 
     # waiting 5
     waiting_pod "${NAMESPACE}" "tiller"
@@ -651,11 +650,22 @@ create_cluster_role_binding() {
     fi
 }
 
+default_pdb() {
+    create_pdb ${NAMESPACE} tiller-deploy N 1
+    create_pdb ${NAMESPACE} kube-dns 1 N
+    create_pdb ${NAMESPACE} coredns 1 N
+}
+
 create_pdb() {
     NAMESPACE=${1}
     PDB_NAME=${2}
     PDB_MIN=${3}
     PDB_MAX=${4}
+
+    COUNT=$(kubectl get deploy -n kube-system | grep ${PDB_NAME} | grep -v NAME | wc -l | xargs)
+    if [ "x${COUNT}" == "x0" ]; then
+        return
+    fi
 
     YAML=${SHELL_DIR}/build/${THIS_NAME}-pdb-${PDB_NAME}.yaml
 
