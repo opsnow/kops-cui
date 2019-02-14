@@ -137,10 +137,6 @@ main_menu() {
             helm_delete
             press_enter main
             ;;
-        s)
-            elb_security
-            press_enter main
-            ;;
         u)
             update_self
             press_enter cluster
@@ -280,8 +276,6 @@ helm_install() {
     # chart config
     VERSION=$(cat ${CHART} | grep '# chart-version:' | awk '{print $3}')
     INGRESS=$(cat ${CHART} | grep '# chart-ingress:' | awk '{print $3}')
-    NODE=$(cat ${CHART} | grep '# chart-node:' | awk '{print $3}')
-    PDB=$(cat ${CHART} | grep '# chart-pdb:' | awk '{print $3}')
 
     _result "${REPO} version: ${VERSION}"
 
@@ -390,6 +384,7 @@ helm_install() {
     fi
 
     # for master node
+    NODE=$(cat ${CHART} | grep '# chart-node:' | awk '{print $3}')
     if [ "${NODE}" == "master" ]; then
         COUNT=$(kubectl get no | grep Ready | grep master | wc -l | xargs)
         if [ "x${COUNT}" != "x0" ]; then
@@ -449,8 +444,10 @@ helm_install() {
     fi
 
     # pdb
-    if [ "${PDB}" != "" ]; then
-        create_pdb ${NAMESPACE} ${NAME} ${PDB}
+    PDB_MIN=$(cat ${CHART} | grep '# chart-pdb:' | awk '{print $3}')
+    PDB_MAX=$(cat ${CHART} | grep '# chart-pdb:' | awk '{print $4}')
+    if [ "${PDB_MIN}" != "" ] || [ "${PDB_MAX}" != "" ]; then
+        create_pdb ${NAMESPACE} ${NAME} ${PDB_MIN:-N} ${PDB_MAX:-N}
     fi
 
     # config save
@@ -570,17 +567,18 @@ helm_check() {
 helm_init() {
     NAMESPACE="kube-system"
     ACCOUNT="tiller"
-    NAME="tiller"
 
     create_cluster_role_binding cluster-admin ${NAMESPACE} ${ACCOUNT}
 
     _command "helm init --upgrade --service-account=${ACCOUNT}"
     helm init --upgrade --service-account=${ACCOUNT}
 
-    create_pdb ${NAMESPACE} ${NAME} 1
+    # pdb
+    create_pdb ${NAMESPACE} tiller-deploy N 1
+    create_pdb ${NAMESPACE} coredns 1 N
 
     # waiting 5
-    waiting_pod "${NAMESPACE}" "${NAME}"
+    waiting_pod "${NAMESPACE}" "tiller"
 
     _command "kubectl get pod,svc -n ${NAMESPACE}"
     kubectl get pod,svc -n ${NAMESPACE}
@@ -653,73 +651,49 @@ create_cluster_role_binding() {
     fi
 }
 
-elb_security() {
-    LIST=${SHELL_DIR}/build/${THIS_NAME}-elb-list
-
-    # elb list
-    _command "kubectl get svc --all-namespaces | grep LoadBalancer"
-    kubectl get svc --all-namespaces | grep LoadBalancer | awk '{printf "%-20s %-30s %s\n", $1, $2, $5}' > ${LIST}
-
-    # select
-    select_one
-
-    if [ "${SELECTED}" == "" ]; then
-        return
-    fi
-
-    ELB_NAME=$(echo "${SELECTED}" | awk '{print $3}' | cut -d'-' -f1 | xargs)
-
-    if [ "${ELB_NAME}" == "" ]; then
-        return
-    fi
-
-    # security groups
-    _command "aws elb describe-load-balancers --load-balancer-name ${ELB_NAME}"
-    aws elb describe-load-balancers --load-balancer-name ${ELB_NAME} \
-        | jq -r '.LoadBalancerDescriptions[].SecurityGroups[]' > ${LIST}
-
-    # select
-    select_one
-
-    if [ "${SELECTED}" == "" ]; then
-        return
-    fi
-
-    # ingress rules
-    _command "aws ec2 describe-security-groups --group-ids ${SELECTED}"
-    aws ec2 describe-security-groups --group-ids ${SELECTED} \
-        | jq -r '.SecurityGroups[].IpPermissions[] | "\(.IpProtocol) \(.FromPort) \(.IpRanges[].CidrIp)"' > ${LIST}
-
-    # select
-    select_one
-
-    if [ "${SELECTED}" == "" ]; then
-        return
-    fi
-
-    # aws ec2 describe-security-groups --group-ids ${SELECTED} | jq '.SecurityGroups[].IpPermissions'
-
-    # aws ec2 authorize-security-group-ingress --group-id ${SELECTED} --protocol tcp --port 8080 --cidr 203.0.113.0/24
-
-    # aws ec2 revoke-security-group-ingress --group-id ${SELECTED} --protocol tcp --port 8080 --cidr 203.0.113.0/24
-
-}
-
 create_pdb() {
     NAMESPACE=${1}
     PDB_NAME=${2}
-    PDB_SIZE=${3}
+    PDB_MIN=${3}
+    PDB_MAX=${4}
 
     YAML=${SHELL_DIR}/build/${THIS_NAME}-pdb-${PDB_NAME}.yaml
-    get_template templates/pdb.yaml ${YAML}
+
+    if [ "${PDB_NAME}" == "tiller" ]; then
+       get_template templates/pdb-tiller.yaml ${YAML}
+    elif [ "${PDB_NAME}" == "coredns" ]; then
+       get_template templates/pdb-coredns.yaml ${YAML}
+    else
+       get_template templates/pdb.yaml ${YAML}
+    fi
 
     _replace "s/PDB_NAME/${PDB_NAME}/g" ${YAML}
-    _replace "s/PDB_SIZE/${PDB_SIZE}/g" ${YAML}
 
-    echo ${YAML}
+    if [ "${PDB_MIN}" != "" ] && [ "${PDB_MIN}" != "N" ]; then
+        _replace "s/PDB_MIN/${PDB_MIN}/g" ${YAML}
+        _replace "s/#:MIN://g" ${YAML}
+    fi
+
+    if [ "${PDB_MAX}" != "" ] && [ "${PDB_MAX}" != "N" ]; then
+        _replace "s/PDB_MAX/${PDB_MAX}/g" ${YAML}
+        _replace "s/#:MAX://g" ${YAML}
+    fi
+
+    delete_pdb ${NAMESPACE} ${PDB_NAME}
 
     _command "kubectl apply -n ${NAMESPACE} -f ${YAML}"
     kubectl apply -n ${NAMESPACE} -f ${YAML}
+}
+
+delete_pdb() {
+    NAMESPACE=${1}
+    PDB_NAME=${2}
+
+    COUNT=$(kubectl get pdb -n kube-system | grep ${PDB_NAME} | grep -v NAME | wc -l | xargs)
+    if [ "x${COUNT}" != "x0" ]; then
+        _command "kubectl delete pdb ${PDB_NAME} -n ${NAMESPACE}"
+        kubectl delete pdb ${PDB_NAME} -n ${NAMESPACE}
+    fi
 }
 
 check_exist_pv() {
@@ -786,8 +760,6 @@ create_pvc() {
         _replace "s/#:PV://g" ${YAML}
         _replace "s/PV_NAME/${PV_NAME}/g" ${YAML}
     fi
-
-    echo ${YAML}
 
     _command "kubectl create -n ${NAMESPACE} -f ${YAML}"
     kubectl create -n ${NAMESPACE} -f ${YAML}

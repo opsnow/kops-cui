@@ -8,6 +8,10 @@ image:
   repository: nalbam/sample-spring
   tag: alpine
 
+pod:
+  annotations:
+    cluster-autoscaler.kubernetes.io/safe-to-evict: "true"
+
 service:
   type: SERVICE_TYPE
 
@@ -20,7 +24,7 @@ ingress:
 
 hpa:
   enabled: true
-  min: 1
+  min: 20
   max: 30
   cpu: 65
 
