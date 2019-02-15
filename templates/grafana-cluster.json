@@ -47,7 +47,7 @@
   "editable": true,
   "gnetId": 9678,
   "graphTooltip": 0,
-  "iteration": 1547718646182,
+  "iteration": 1550205713783,
   "links": [],
   "panels": [{
       "collapsed": false,
@@ -407,12 +407,92 @@
       },
       "gridPos": {
         "h": 3,
-        "w": 3,
+        "w": 2,
         "x": 0,
         "y": 6
       },
       "height": "1px",
       "id": 59,
+      "interval": null,
+      "isNew": true,
+      "links": [],
+      "mappingType": 1,
+      "mappingTypes": [{
+          "name": "value to text",
+          "value": 1
+        },
+        {
+          "name": "range to text",
+          "value": 2
+        }
+      ],
+      "maxDataPoints": 100,
+      "nullPointMode": "connected",
+      "nullText": null,
+      "postfix": "",
+      "postfixFontSize": "30%",
+      "prefix": "",
+      "prefixFontSize": "50%",
+      "rangeMaps": [{
+        "from": "null",
+        "text": "N/A",
+        "to": "null"
+      }],
+      "sparkline": {
+        "fillColor": "rgba(31, 118, 189, 0.18)",
+        "full": true,
+        "lineColor": "rgb(31, 120, 193)",
+        "show": true
+      },
+      "tableColumn": "",
+      "targets": [{
+        "expr": "count (kube_deployment_labels{kubernetes_node=~\"^$Node$\"})",
+        "format": "time_series",
+        "interval": "10s",
+        "intervalFactor": 1,
+        "refId": "A",
+        "step": 10
+      }],
+      "thresholds": "",
+      "title": "Deployments",
+      "type": "singlestat",
+      "valueFontSize": "50%",
+      "valueMaps": [{
+        "op": "=",
+        "text": "N/A",
+        "value": "null"
+      }],
+      "valueName": "current"
+    },
+    {
+      "cacheTimeout": null,
+      "colorBackground": false,
+      "colorValue": false,
+      "colors": [
+        "#e0f9d7",
+        "#f9934e",
+        "#e24d42"
+      ],
+      "datasource": "${DS_PROMETHEUS}",
+      "decimals": null,
+      "editable": true,
+      "error": false,
+      "format": "none",
+      "gauge": {
+        "maxValue": 100,
+        "minValue": 0,
+        "show": false,
+        "thresholdLabels": false,
+        "thresholdMarkers": true
+      },
+      "gridPos": {
+        "h": 3,
+        "w": 2,
+        "x": 2,
+        "y": 6
+      },
+      "height": "1px",
+      "id": 75,
       "interval": null,
       "isNew": true,
       "links": [],
@@ -487,8 +567,8 @@
       },
       "gridPos": {
         "h": 3,
-        "w": 3,
-        "x": 3,
+        "w": 2,
+        "x": 4,
         "y": 6
       },
       "height": "1px",
