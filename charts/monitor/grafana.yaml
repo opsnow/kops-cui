@@ -1,5 +1,5 @@
 # chart-repo: stable/grafana
-# chart-version: 1.26.1
+# chart-version: 2.0.1
 # chart-ingress: true
 # chart-pvc: grafana ReadWriteOnce 5Gi
 # chart-pdb: N 1
