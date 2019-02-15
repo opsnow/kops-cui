@@ -1,5 +1,5 @@
 # chart-repo: stable/prometheus
-# chart-version: 8.7.0
+# chart-version: 8.7.1
 # chart-ingress: false
 # chart-pvc: prometheus-server ReadWriteOnce 8Gi
 # chart-pvc: prometheus-alertmanager ReadWriteOnce 2Gi
@@ -7,15 +7,15 @@
 nameOverride: prometheus
 
 server:
-  # service:
-  #   type: SERVICE_TYPE
-  # ingress:
-  #   enabled: INGRESS_ENABLED
-  #   annotations:
-  #     kubernetes.io/ingress.class: nginx
-  #     nginx.ingress.kubernetes.io/force-ssl-redirect: "true"
-  #   hosts:
-  #     - INGRESS_DOMAIN
+  service:
+    type: SERVICE_TYPE
+  ingress:
+    enabled: INGRESS_ENABLED
+    annotations:
+      kubernetes.io/ingress.class: nginx
+      nginx.ingress.kubernetes.io/force-ssl-redirect: "true"
+    hosts:
+      - INGRESS_DOMAIN
   persistentVolume:
     enabled: true
     accessModes:
@@ -25,15 +25,15 @@ server:
     existingClaim: prometheus-server
 
 alertmanager:
-  # service:
-  #   type: SERVICE_TYPE
-  # ingress:
-  #   enabled: INGRESS_ENABLED
-  #   annotations:
-  #     kubernetes.io/ingress.class: nginx
-  #     nginx.ingress.kubernetes.io/force-ssl-redirect: "true"
-  #   hosts:
-  #     - alertmanager-INGRESS_DOMAIN
+  service:
+    type: SERVICE_TYPE
+  ingress:
+    enabled: INGRESS_ENABLED
+    annotations:
+      kubernetes.io/ingress.class: nginx
+      nginx.ingress.kubernetes.io/force-ssl-redirect: "true"
+    hosts:
+      - alertmanager-INGRESS_DOMAIN
   persistentVolume:
     enabled: true
     accessModes:
