@@ -45,9 +45,9 @@
   },
   "description": "Monitors Kubernetes cluster using Prometheus. Shows overall cluster CPU / Memory / Filesystem usage as well as individual pod, containers, systemd services statistics. Uses cAdvisor metrics only.",
   "editable": true,
-  "gnetId": 9678,
+  "gnetId": 9797,
   "graphTooltip": 0,
-  "iteration": 1550205713783,
+  "iteration": 1550221974993,
   "links": [],
   "panels": [{
       "collapsed": false,
@@ -204,7 +204,7 @@
       },
       "tableColumn": "",
       "targets": [{
-        "expr": "sum (rate (container_cpu_usage_seconds_total{id=\"/\",kubernetes_io_hostname=~\"^$Node$\"}[2m])) / sum (machine_cpu_cores{kubernetes_io_hostname=~\"^$Node$\"}) * 100",
+        "expr": "sum (kube_pod_container_resource_requests_cpu_cores{node=~\"^$Node$\"}) / sum (machine_cpu_cores{kubernetes_io_hostname=~\"^$Node$\"}) * 100",
         "format": "time_series",
         "interval": "10s",
         "intervalFactor": 1,
@@ -283,7 +283,7 @@
       },
       "tableColumn": "",
       "targets": [{
-        "expr": "sum (container_memory_working_set_bytes{id=\"/\",kubernetes_io_hostname=~\"^$Node$\"}) / sum (machine_memory_bytes{kubernetes_io_hostname=~\"^$Node$\"}) * 100",
+        "expr": "sum (kube_pod_container_resource_requests_memory_bytes{node=~\"^$Node$\"}) / sum (machine_memory_bytes{kubernetes_io_hostname=~\"^$Node$\"}) * 100",
         "format": "time_series",
         "interval": "10s",
         "intervalFactor": 1,
@@ -3217,5 +3217,5 @@
   "timezone": "browser",
   "title": "Kubernetes Cluster Monitor (via Prometheus)",
   "uid": "kube-cluster",
-  "version": 1
+  "version": 2
 }
