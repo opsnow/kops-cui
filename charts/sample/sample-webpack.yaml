@@ -9,12 +9,14 @@ image:
   tag: alpine
 
 pod:
+  labels:
+    spotinst.io/pods-contingency: "true"
   annotations:
     cluster-autoscaler.kubernetes.io/safe-to-evict: "true"
 
 pdb:
-  #minAvailable: 1
-  maxUnavailable: 1
+  #minAvailable: "20%"
+  maxUnavailable: "20%"
 
 service:
   type: SERVICE_TYPE
