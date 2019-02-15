@@ -3,4 +3,4 @@ description: A Helm chart for Kubernetes
 icon: https://avatars0.githubusercontent.com/u/38965494
 name: sample-webpack
 version: v0.0.0
-appVersion: 0.0.0
+appVersion: v0.0.0
