@@ -1,4 +1,8 @@
 # chart-repo: stable/cert-manager
 # chart-version: v0.6.0
+# chart-pdb: N 1
 
 nameOverride: cert-manager
+
+podAnnotations:
+  cluster-autoscaler.kubernetes.io/safe-to-evict: "true"

@@ -8,6 +8,16 @@ image:
   repository: nalbam/sample-spring
   tag: alpine
 
+pod:
+  labels:
+    spotinst.io/pods-contingency: "true"
+  annotations:
+    cluster-autoscaler.kubernetes.io/safe-to-evict: "true"
+
+pdb:
+  minAvailable: "20%"
+  # maxUnavailable: "20%"
+
 service:
   type: SERVICE_TYPE
 
@@ -20,10 +30,15 @@ ingress:
 
 hpa:
   enabled: true
-  min: 1
+  min: 10
   max: 30
   cpu: 65
 
 canary:
   enabled: false
   tag: alpine
+
+configmap:
+  enabled: false
+secret:
+  enabled: false

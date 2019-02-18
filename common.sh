@@ -258,11 +258,7 @@ config_load() {
     if [ "x${COUNT}" != "x0" ]; then
         CONFIG=${SHELL_DIR}/build/${THIS_NAME}-config.sh
 
-        if [ "${OS_NAME}" == "darwin" ]; then
-            kubectl get secret ${THIS_NAME}-config -n default -o json | jq -r '.data.text' | base64 -D > ${CONFIG}
-        else
-            kubectl get secret ${THIS_NAME}-config -n default -o json | jq -r '.data.text' | base64 -d > ${CONFIG}
-        fi
+        kubectl get secret ${THIS_NAME}-config -n default -o json | jq -r '.data.text' | base64 --decode > ${CONFIG}
 
         _command "load ${THIS_NAME}-config"
         cat ${CONFIG}

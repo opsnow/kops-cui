@@ -45,9 +45,9 @@
   },
   "description": "Monitors Kubernetes cluster using Prometheus. Shows overall cluster CPU / Memory / Filesystem usage as well as individual pod, containers, systemd services statistics. Uses cAdvisor metrics only.",
   "editable": true,
-  "gnetId": 9678,
+  "gnetId": 9797,
   "graphTooltip": 0,
-  "iteration": 1547718646182,
+  "iteration": 1550221974993,
   "links": [],
   "panels": [{
       "collapsed": false,
@@ -204,7 +204,7 @@
       },
       "tableColumn": "",
       "targets": [{
-        "expr": "sum (rate (container_cpu_usage_seconds_total{id=\"/\",kubernetes_io_hostname=~\"^$Node$\"}[2m])) / sum (machine_cpu_cores{kubernetes_io_hostname=~\"^$Node$\"}) * 100",
+        "expr": "sum (kube_pod_container_resource_requests_cpu_cores{node=~\"^$Node$\"}) / sum (machine_cpu_cores{kubernetes_io_hostname=~\"^$Node$\"}) * 100",
         "format": "time_series",
         "interval": "10s",
         "intervalFactor": 1,
@@ -283,7 +283,7 @@
       },
       "tableColumn": "",
       "targets": [{
-        "expr": "sum (container_memory_working_set_bytes{id=\"/\",kubernetes_io_hostname=~\"^$Node$\"}) / sum (machine_memory_bytes{kubernetes_io_hostname=~\"^$Node$\"}) * 100",
+        "expr": "sum (kube_pod_container_resource_requests_memory_bytes{node=~\"^$Node$\"}) / sum (machine_memory_bytes{kubernetes_io_hostname=~\"^$Node$\"}) * 100",
         "format": "time_series",
         "interval": "10s",
         "intervalFactor": 1,
@@ -407,12 +407,92 @@
       },
       "gridPos": {
         "h": 3,
-        "w": 3,
+        "w": 2,
         "x": 0,
         "y": 6
       },
       "height": "1px",
       "id": 59,
+      "interval": null,
+      "isNew": true,
+      "links": [],
+      "mappingType": 1,
+      "mappingTypes": [{
+          "name": "value to text",
+          "value": 1
+        },
+        {
+          "name": "range to text",
+          "value": 2
+        }
+      ],
+      "maxDataPoints": 100,
+      "nullPointMode": "connected",
+      "nullText": null,
+      "postfix": "",
+      "postfixFontSize": "30%",
+      "prefix": "",
+      "prefixFontSize": "50%",
+      "rangeMaps": [{
+        "from": "null",
+        "text": "N/A",
+        "to": "null"
+      }],
+      "sparkline": {
+        "fillColor": "rgba(31, 118, 189, 0.18)",
+        "full": true,
+        "lineColor": "rgb(31, 120, 193)",
+        "show": true
+      },
+      "tableColumn": "",
+      "targets": [{
+        "expr": "count (kube_deployment_labels{kubernetes_node=~\"^$Node$\"})",
+        "format": "time_series",
+        "interval": "10s",
+        "intervalFactor": 1,
+        "refId": "A",
+        "step": 10
+      }],
+      "thresholds": "",
+      "title": "Deployments",
+      "type": "singlestat",
+      "valueFontSize": "50%",
+      "valueMaps": [{
+        "op": "=",
+        "text": "N/A",
+        "value": "null"
+      }],
+      "valueName": "current"
+    },
+    {
+      "cacheTimeout": null,
+      "colorBackground": false,
+      "colorValue": false,
+      "colors": [
+        "#e0f9d7",
+        "#f9934e",
+        "#e24d42"
+      ],
+      "datasource": "${DS_PROMETHEUS}",
+      "decimals": null,
+      "editable": true,
+      "error": false,
+      "format": "none",
+      "gauge": {
+        "maxValue": 100,
+        "minValue": 0,
+        "show": false,
+        "thresholdLabels": false,
+        "thresholdMarkers": true
+      },
+      "gridPos": {
+        "h": 3,
+        "w": 2,
+        "x": 2,
+        "y": 6
+      },
+      "height": "1px",
+      "id": 75,
       "interval": null,
       "isNew": true,
       "links": [],
@@ -487,8 +567,8 @@
       },
       "gridPos": {
         "h": 3,
-        "w": 3,
-        "x": 3,
+        "w": 2,
+        "x": 4,
         "y": 6
       },
       "height": "1px",
@@ -3137,5 +3217,5 @@
   "timezone": "browser",
   "title": "Kubernetes Cluster Monitor (via Prometheus)",
   "uid": "kube-cluster",
-  "version": 1
+  "version": 2
 }

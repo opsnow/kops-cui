@@ -3,8 +3,11 @@ image:
   repository: docker.io/citizenstig/httpbin
   tag: latest
   pullPolicy: Always
-istio:
-  enabled: false
+labels: {}
+annotations: {}
+pod:
+  labels: {}
+  annotations: {}
 service:
   type: ClusterIP
   externalPort: 80
@@ -12,3 +15,5 @@ service:
 ingress:
   enabled: false
   basedomain: 127.0.0.1.nip.io
+istio:
+  enabled: false

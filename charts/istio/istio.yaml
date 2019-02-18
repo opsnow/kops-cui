@@ -1,12 +1,9 @@
 # chart-repo: istio
-# chart-version: 1.0.5
+# chart-version: 1.0.6
 # chart-ingress: true
 
 # global:
 #   configValidation: false
-
-# sidecarInjectorWebhook:
-#   enabled: false
 
 ingress:
   enabled: true
@@ -19,40 +16,39 @@ kiali:
   ingress:
     enabled: INGRESS_ENABLED
     annotations:
-      kubernetes.io/ingress.class: nginx
-      nginx.ingress.kubernetes.io/force-ssl-redirect: "true"
+    - kubernetes.io/ingress.class: nginx
+    - nginx.ingress.kubernetes.io/force-ssl-redirect: true
     hosts:
     - kiali-istio.BASE_DOMAIN
   dashboard:
-    username: admin
-    passphrase: PASSWORD
-    grafanaURL: http://grafana:3000
-    jaegerURL: https://jaeger-istio.BASE_DOMAIN
+    secretName: istio-secret
+    # grafanaURL: http://grafana:3000
+    # jaegerURL: https://jaeger-istio.BASE_DOMAIN
 
 tracing:
   enabled: true
-  ingress:
-    enabled: INGRESS_ENABLED
-    annotations:
-      kubernetes.io/ingress.class: nginx
-      nginx.ingress.kubernetes.io/force-ssl-redirect: "true"
-    hosts:
-    - tracing-istio.BASE_DOMAIN
-  jaeger:
-    ingress:
-      enabled: INGRESS_ENABLED
-      annotations:
-        kubernetes.io/ingress.class: nginx
-        nginx.ingress.kubernetes.io/force-ssl-redirect: "true"
-      hosts:
-      - jaeger-istio.BASE_DOMAIN
+  # ingress:
+  #   enabled: INGRESS_ENABLED
+  #   annotations:
+  #   - kubernetes.io/ingress.class: nginx
+  #   - nginx.ingress.kubernetes.io/force-ssl-redirect: true
+  #   hosts:
+  #   - tracing-istio.BASE_DOMAIN
+  # jaeger:
+  #   ingress:
+  #     enabled: INGRESS_ENABLED
+  #     annotations:
+  #     - kubernetes.io/ingress.class: nginx
+  #     - nginx.ingress.kubernetes.io/force-ssl-redirect: true
+  #     hosts:
+  #     - jaeger-istio.BASE_DOMAIN
 
 servicegraph:
   enabled: true
   # ingress:
   #   enabled: INGRESS_ENABLED
   #   annotations:
-  #     kubernetes.io/ingress.class: nginx
-  #     nginx.ingress.kubernetes.io/force-ssl-redirect: "true"
+  #   - kubernetes.io/ingress.class: nginx
+  #   - nginx.ingress.kubernetes.io/force-ssl-redirect: true
   #   hosts:
-  #   - servicegraph.local
+  #   - servicegraph-istio.BASE_DOMAIN

@@ -4,6 +4,9 @@
 
 nameOverride: cluster-autoscaler
 
+podAnnotations:
+  cluster-autoscaler.kubernetes.io/safe-to-evict: "true"
+
 autoDiscovery:
   enabled: true
   clusterName: CLUSTER_NAME
@@ -15,18 +18,10 @@ extraArgs:
   stderrthreshold: info
   logtostderr: true
   expander: least-waste
-  skip-nodes-with-local-storage: false
-  skip-nodes-with-system-pods: false
   scale-down-enabled: true
-  # scan-interval: 10s
-  # scale-down-delay: 10m
-  # scale-down-unneeded-time: 10m
-  # scale-down-utilization-threshold: 0.5
-  # scale-down-non-empty-candidates-count: 5
-  # leader-elect: true
-  # write-status-configmap: true
-  # balance-similar-node-groups: true
-  # max-node-provision-time: 15m0s
+  scale-down-utilization-threshold: 0.75
+  # skip-nodes-with-local-storage: false
+  # skip-nodes-with-system-pods: false
 
 #:MASTER:nodeSelector:
 #:MASTER:  kubernetes.io/role: master

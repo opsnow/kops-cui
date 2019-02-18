@@ -1,0 +1,12 @@
+apiVersion: policy/v1beta1
+kind: PodDisruptionBudget
+metadata:
+  labels:
+    app: APP_NAME
+  name: PDB_NAME
+spec:
+  #:MIN:minAvailable: PDB_MIN
+  #:MAX:maxUnavailable: PDB_MAX
+  selector:
+    matchLabels:
+      app: APP_NAME

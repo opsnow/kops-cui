@@ -1,5 +1,5 @@
 # chart-repo: stable/gocd
-# chart-version: 1.6.5
+# chart-version: 1.6.6
 # chart-ingress: true
 # chart-pvc: gocd-server ReadWriteOnce 2Gi
 

@@ -137,10 +137,6 @@ main_menu() {
             helm_delete
             press_enter main
             ;;
-        s)
-            elb_security
-            press_enter main
-            ;;
         u)
             update_self
             press_enter cluster
@@ -267,7 +263,7 @@ helm_install() {
     get_template charts/${NAMESPACE}/${NAME}.yaml ${CHART}
 
     # chart repository
-    REPO=$(cat ${CHART} | grep chart-repo | awk '{print $3}')
+    REPO=$(cat ${CHART} | grep '# chart-repo:' | awk '{print $3}')
     if [ "${REPO}" == "" ]; then
         REPO="stable/${NAME}"
     else
@@ -278,9 +274,8 @@ helm_install() {
     fi
 
     # chart config
-    VERSION=$(cat ${CHART} | grep chart-version | awk '{print $3}')
-    INGRESS=$(cat ${CHART} | grep chart-ingress | awk '{print $3}')
-    NODE=$(cat ${CHART} | grep chart-node | awk '{print $3}')
+    VERSION=$(cat ${CHART} | grep '# chart-version:' | awk '{print $3}')
+    INGRESS=$(cat ${CHART} | grep '# chart-ingress:' | awk '{print $3}')
 
     _result "${REPO} version: ${VERSION}"
 
@@ -308,8 +303,8 @@ helm_install() {
 
     # for external-dns
     if [ "${NAME}" == "external-dns" ]; then
-        replace_secret ${CHART} accessKey
-        replace_secret ${CHART} secretKey
+        replace_password ${CHART} AWS_ACCESS_KEY XXXXXXXXXX
+        replace_password ${CHART} AWS_SECRET_KEY XXXXXXXXXX
 
         EX_DNS=true
         CONFIG_SAVE=true
@@ -384,11 +379,12 @@ helm_install() {
     fi
 
     # for efs-mount
-    if [ ! -z ${EFS_ID} ]; then
+    if [ "${EFS_ID}" != "" ]; then
         _replace "s/#:EFS://g" ${CHART}
     fi
 
     # for master node
+    NODE=$(cat ${CHART} | grep '# chart-node:' | awk '{print $3}')
     if [ "${NODE}" == "master" ]; then
         COUNT=$(kubectl get no | grep Ready | grep master | wc -l | xargs)
         if [ "x${COUNT}" != "x0" ]; then
@@ -427,7 +423,7 @@ helm_install() {
 
     # check exist persistent volume
     LIST=${SHELL_DIR}/build/${THIS_NAME}-pvc-${NAME}-yaml
-    cat ${CHART} | grep chart-pvc | awk '{print $3,$4,$5}' > ${LIST}
+    cat ${CHART} | grep '# chart-pvc:' | awk '{print $3,$4,$5}' > ${LIST}
     while IFS='' read -r line || [[ -n "$line" ]]; do
         ARR=(${line})
         check_exist_pv ${NAMESPACE} ${ARR[0]} ${ARR[1]} ${ARR[2]}
@@ -445,6 +441,13 @@ helm_install() {
     else
         _command "helm upgrade --install ${NAME} ${REPO} --namespace ${NAMESPACE} --values ${CHART} --version ${VERSION}"
         helm upgrade --install ${NAME} ${REPO} --namespace ${NAMESPACE} --values ${CHART} --version ${VERSION}
+    fi
+
+    # pdb
+    PDB_MIN=$(cat ${CHART} | grep '# chart-pdb:' | awk '{print $3}')
+    PDB_MAX=$(cat ${CHART} | grep '# chart-pdb:' | awk '{print $4}')
+    if [ "${PDB_MIN}" != "" ] || [ "${PDB_MAX}" != "" ]; then
+        create_pdb ${NAMESPACE} ${NAME} ${PDB_MIN:-N} ${PDB_MAX:-N}
     fi
 
     # config save
@@ -570,6 +573,9 @@ helm_init() {
     _command "helm init --upgrade --service-account=${ACCOUNT}"
     helm init --upgrade --service-account=${ACCOUNT}
 
+    # default pdb
+    default_pdb
+
     # waiting 5
     waiting_pod "${NAMESPACE}" "tiller"
 
@@ -644,56 +650,63 @@ create_cluster_role_binding() {
     fi
 }
 
-elb_security() {
-    LIST=${SHELL_DIR}/build/${THIS_NAME}-elb-list
+default_pdb() {
+    create_pdb ${NAMESPACE} coredns 1 N k8s-app kube-dns
 
-    # elb list
-    _command "kubectl get svc --all-namespaces | grep LoadBalancer"
-    kubectl get svc --all-namespaces | grep LoadBalancer | awk '{printf "%-20s %-30s %s\n", $1, $2, $5}' > ${LIST}
+    create_pdb ${NAMESPACE} kube-dns 1 N k8s-app
+    create_pdb ${NAMESPACE} kube-dns-autoscaler N 1 k8s-app
 
-    # select
-    select_one
+    create_pdb ${NAMESPACE} tiller-deploy N 1 tiller
+}
 
-    if [ "${SELECTED}" == "" ]; then
+create_pdb() {
+    NAMESPACE=${1}
+    PDB_NAME=${2}
+    PDB_MIN=${3:-N}
+    PDB_MAX=${4:-N}
+    LABELS=${5:-app}
+    APP_NAME=${6:-${PDB_NAME}}
+
+    COUNT=$(kubectl get deploy -n kube-system | grep ${PDB_NAME} | grep -v NAME | wc -l | xargs)
+    if [ "x${COUNT}" == "x0" ]; then
         return
     fi
 
-    ELB_NAME=$(echo "${SELECTED}" | awk '{print $3}' | cut -d'-' -f1 | xargs)
-
-    if [ "${ELB_NAME}" == "" ]; then
-        return
+    if [ "${PDB_NAME}" == "heapster" ]; then
+        APP_NAME="heapster-heapster"
     fi
 
-    # security groups
-    _command "aws elb describe-load-balancers --load-balancer-name ${ELB_NAME}"
-    aws elb describe-load-balancers --load-balancer-name ${ELB_NAME} \
-        | jq -r '.LoadBalancerDescriptions[].SecurityGroups[]' > ${LIST}
+    YAML=${SHELL_DIR}/build/${THIS_NAME}-pdb-${PDB_NAME}.yaml
+    get_template templates/pdb-${LABELS}.yaml ${YAML}
 
-    # select
-    select_one
+    _replace "s/PDB_NAME/${PDB_NAME}/g" ${YAML}
+    _replace "s/APP_NAME/${APP_NAME}/g" ${YAML}
 
-    if [ "${SELECTED}" == "" ]; then
-        return
+    if [ "${PDB_MIN}" != "N" ]; then
+        _replace "s/PDB_MIN/${PDB_MIN}/g" ${YAML}
+        _replace "s/#:MIN://g" ${YAML}
     fi
 
-    # ingress rules
-    _command "aws ec2 describe-security-groups --group-ids ${SELECTED}"
-    aws ec2 describe-security-groups --group-ids ${SELECTED} \
-        | jq -r '.SecurityGroups[].IpPermissions[] | "\(.IpProtocol) \(.FromPort) \(.IpRanges[].CidrIp)"' > ${LIST}
-
-    # select
-    select_one
-
-    if [ "${SELECTED}" == "" ]; then
-        return
+    if [ "${PDB_MAX}" != "N" ]; then
+        _replace "s/PDB_MAX/${PDB_MAX}/g" ${YAML}
+        _replace "s/#:MAX://g" ${YAML}
     fi
 
-    # aws ec2 describe-security-groups --group-ids ${SELECTED} | jq '.SecurityGroups[].IpPermissions'
+    delete_pdb ${NAMESPACE} ${PDB_NAME}
 
-    # aws ec2 authorize-security-group-ingress --group-id ${SELECTED} --protocol tcp --port 8080 --cidr 203.0.113.0/24
+    _command "kubectl apply -n ${NAMESPACE} -f ${YAML}"
+    kubectl apply -n ${NAMESPACE} -f ${YAML}
+}
 
-    # aws ec2 revoke-security-group-ingress --group-id ${SELECTED} --protocol tcp --port 8080 --cidr 203.0.113.0/24
+delete_pdb() {
+    NAMESPACE=${1}
+    PDB_NAME=${2}
 
+    COUNT=$(kubectl get pdb -n kube-system | grep ${PDB_NAME} | grep -v NAME | wc -l | xargs)
+    if [ "x${COUNT}" != "x0" ]; then
+        _command "kubectl delete pdb ${PDB_NAME} -n ${NAMESPACE}"
+        kubectl delete pdb ${PDB_NAME} -n ${NAMESPACE}
+    fi
 }
 
 check_exist_pv() {
@@ -743,28 +756,26 @@ create_pvc() {
     PVC_SIZE=${4}
     PV_NAME=${5}
 
-    PVC=${SHELL_DIR}/build/${THIS_NAME}-pvc-${PVC_NAME}.yaml
-    get_template templates/pvc.yaml ${PVC}
+    YAML=${SHELL_DIR}/build/${THIS_NAME}-pvc-${PVC_NAME}.yaml
+    get_template templates/pvc.yaml ${YAML}
 
-    _replace "s/PVC_NAME/${PVC_NAME}/g" ${PVC}
-    _replace "s/PVC_ACCESS_MODE/${PVC_ACCESS_MODE}/g" ${PVC}
-    _replace "s/PVC_SIZE/${PVC_SIZE}/g" ${PVC}
+    _replace "s/PVC_NAME/${PVC_NAME}/g" ${YAML}
+    _replace "s/PVC_SIZE/${PVC_SIZE}/g" ${YAML}
+    _replace "s/PVC_ACCESS_MODE/${PVC_ACCESS_MODE}/g" ${YAML}
 
     # for efs-provisioner
     if [ ! -z ${EFS_ID} ]; then
-        _replace "s/#:EFS://g" ${PVC}
+        _replace "s/#:EFS://g" ${YAML}
     fi
 
     # for static pvc
     if [ ! -z ${PV_NAME} ]; then
-        _replace "s/#:PV://g" ${PVC}
-        _replace "s/PV_NAME/${PV_NAME}/g" ${PVC}
+        _replace "s/#:PV://g" ${YAML}
+        _replace "s/PV_NAME/${PV_NAME}/g" ${YAML}
     fi
 
-    echo ${PVC}
-
-    _command "kubectl create -n ${NAMESPACE} -f ${PVC}"
-    kubectl create -n ${NAMESPACE} -f ${PVC}
+    _command "kubectl create -n ${NAMESPACE} -f ${YAML}"
+    kubectl create -n ${NAMESPACE} -f ${YAML}
 
     waiting_for isBound ${NAMESPACE} ${PVC_NAME}
 
@@ -976,7 +987,7 @@ istio_init() {
     mkdir -p ${ISTIO_TMP}
 
     CHART=${SHELL_DIR}/charts/istio/istio.yaml
-    VERSION=$(cat ${CHART} | grep chart-version | awk '{print $3}')
+    VERSION=$(cat ${CHART} | grep '# chart-version:' | awk '{print $3}')
 
     if [ "${VERSION}" == "" ] || [ "${VERSION}" == "latest" ]; then
         VERSION=$(curl -s https://api.github.com/repos/istio/istio/releases/latest | jq -r '.tag_name')
@@ -1002,12 +1013,23 @@ istio_init() {
     ISTIO_DIR=${ISTIO_TMP}/${NAME}-${VERSION}/install/kubernetes/helm/istio
 }
 
+istio_secret() {
+    YAML=${SHELL_DIR}/build/${THIS_NAME}-istio-secret.yaml
+    get_template templates/istio-secret.yaml ${YAML}
+
+    replace_base64 ${YAML} USERNAME admin
+    replace_base64 ${YAML} PASSWORD password
+
+    _command "kubectl apply -n ${NAMESPACE} -f ${YAML}"
+    kubectl apply -n ${NAMESPACE} -f ${YAML}
+}
+
 istio_install() {
     istio_init
 
     create_namespace ${NAMESPACE}
 
-    CHART=${SHELL_DIR}/build/${THIS_NAME}-istio-${NAME}.yaml
+    CHART=${SHELL_DIR}/build/${THIS_NAME}-${NAME}.yaml
     get_template charts/istio/${NAME}.yaml ${CHART}
 
     # ingress
@@ -1020,14 +1042,14 @@ istio_install() {
         _replace "s/BASE_DOMAIN/${BASE_DOMAIN}/g" ${CHART}
     fi
 
-    # admin password
-    replace_password ${CHART}
+    # istio secret
+    istio_secret
 
     # helm install
     _command "helm upgrade --install ${NAME} ${ISTIO_DIR} --namespace ${NAMESPACE} --values ${CHART}"
     helm upgrade --install ${NAME} ${ISTIO_DIR} --namespace ${NAMESPACE} --values ${CHART}
 
-    # for kiali
+    # kiali sa
     create_cluster_role_binding view ${NAMESPACE} kiali-service-account
 
     # save config (ISTIO)
@@ -1088,15 +1110,14 @@ istio_delete() {
     _command "helm delete --purge ${NAME}"
     helm delete --purge ${NAME}
 
-    # _command "kubectl delete -f ${ISTIO_DIR}/templates/crds.yaml"
-    # kubectl delete -f ${ISTIO_DIR}/templates/crds.yaml
-
+    # delete crds
     LIST="$(kubectl get crds | grep istio.io | awk '{print $1}')"
     if [ "${LIST}" != "" ]; then
         _command "kubectl delete crds *.istio.io"
         kubectl delete crds ${LIST}
     fi
 
+    # delete ns
     _command "kubectl delete namespace ${NAMESPACE}"
     kubectl delete namespace ${NAMESPACE}
 
@@ -1118,7 +1139,7 @@ sample_install() {
     _replace "s/profile:.*/profile: ${NAMESPACE}/g" ${CHART}
 
     # ingress
-    INGRESS=$(cat ${CHART} | grep chart-ingress | awk '{print $3}')
+    INGRESS=$(cat ${CHART} | grep '# chart-ingress:' | awk '{print $3}')
 
     if [ "${INGRESS}" == "true" ]; then
         if [ -z ${BASE_DOMAIN} ]; then
@@ -1494,24 +1515,25 @@ get_base_domain() {
 }
 
 replace_password() {
-    CHART=${1}
-    KEY=${2:-PASSWORD}
-    DEFAULT=${3:-password}
+    _CHART=${1}
+    _KEY=${2:-PASSWORD}
+    _DEFAULT=${3:-password}
 
-    password "Enter ${KEY} [${DEFAULT}] : "
+    password "Enter ${_KEY} [${_DEFAULT}] : "
     echo
 
-    _replace "s/${KEY}/${PASSWORD:-${DEFAULT}}/g" ${CHART}
+    _replace "s/${_KEY}/${PASSWORD:-${_DEFAULT}}/g" ${_CHART}
 }
 
-replace_secret() {
-    CHART=${1}
-    KEY=${2:-KEY}
+replace_base64() {
+    _CHART=${1}
+    _KEY=${2:-PASSWORD}
+    _DEFAULT=${3:-password}
 
-    password "Enter ${KEY} : "
+    password "Enter ${_KEY} [${_DEFAULT}] : "
     echo
 
-    _replace "s/${KEY}:.*/${KEY}: \"${PASSWORD}\"/g" ${CHART}
+    _replace "s/${_KEY}/$(echo ${PASSWORD:-${_DEFAULT}} | base64)/g" ${_CHART}
 }
 
 waiting_for() {

@@ -8,6 +8,16 @@ image:
   repository: nalbam/sample-webpack
   tag: alpine
 
+pod:
+  labels:
+    spotinst.io/pods-contingency: "true"
+  annotations:
+    cluster-autoscaler.kubernetes.io/safe-to-evict: "true"
+
+pdb:
+  #minAvailable: "20%"
+  maxUnavailable: "20%"
+
 service:
   type: SERVICE_TYPE
 
@@ -17,3 +27,8 @@ ingress:
   annotations:
     kubernetes.io/ingress.class: nginx
     nginx.ingress.kubernetes.io/force-ssl-redirect: "true"
+
+configmap:
+  enabled: false
+secret:
+  enabled: false

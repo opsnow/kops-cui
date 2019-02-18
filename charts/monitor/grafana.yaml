@@ -1,11 +1,16 @@
 # chart-repo: stable/grafana
-# chart-version: 1.25.4
+# chart-version: 2.0.1
 # chart-ingress: true
+# chart-pvc: grafana ReadWriteOnce 5Gi
+# chart-pdb: N 1
 
 nameOverride: grafana
 
 adminUser: admin
 adminPassword: PASSWORD
+
+podAnnotations:
+  cluster-autoscaler.kubernetes.io/safe-to-evict: "true"
 
 service:
   type: SERVICE_TYPE
@@ -17,6 +22,14 @@ ingress:
     nginx.ingress.kubernetes.io/force-ssl-redirect: "true"
   hosts:
     - INGRESS_DOMAIN
+
+persistence:
+  enabled: true
+  accessModes:
+    - ReadWriteOnce
+  size: 5Gi
+  #:EFS:storageClassName: "efs"
+  existingClaim: grafana
 
 #:LDAP:grafana.ini:
 #:LDAP:  auth.ldap:
@@ -53,8 +66,8 @@ dashboardProviders:
 dashboards:
   default:
     kube-cluster:
-      # https://grafana.com/dashboards/9678
-      gnetId: 9678
+      # https://grafana.com/dashboards/9797
+      gnetId: 9797
       revision: 2
       datasource: Prometheus
     kube-deployment:

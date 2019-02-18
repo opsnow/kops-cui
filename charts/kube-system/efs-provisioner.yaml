@@ -1,7 +1,11 @@
 # chart-repo: stable/efs-provisioner
 # chart-version: 0.1.5
+# chart-pdb: N 1
 
 nameOverride: efs-provisioner
+
+podAnnotations:
+  cluster-autoscaler.kubernetes.io/safe-to-evict: "true"
 
 efsProvisioner:
   efsFileSystemId: EFS_ID

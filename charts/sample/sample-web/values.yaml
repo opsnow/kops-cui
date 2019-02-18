@@ -4,12 +4,22 @@ image:
   repository: nalbam/sample-web
   tag: alpine
   pullPolicy: Always
+labels: {}
+annotations: {}
+pod:
+  labels: {}
+  annotations: {}
+pdb: {}
 service:
   type: ClusterIP
+  labels: {}
+  annotations: {}
   externalPort: 80
   internalPort: 80
 ingress:
   enabled: true
+  labels: {}
+  annotations: {}
   basedomain: 127.0.0.1.nip.io
 hpa:
   enabled: true
@@ -20,9 +30,9 @@ resources:
   requests:
     cpu: 100m
     memory: 128Mi
-  # limits:
-  #   cpu: 200m
-  #   memory: 256Mi
+  limits:
+    cpu: 150m
+    memory: 256Mi
 readinessProbe:
   httpGet:
     path: /
