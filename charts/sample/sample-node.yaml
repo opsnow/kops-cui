@@ -14,9 +14,9 @@ pod:
   annotations:
     cluster-autoscaler.kubernetes.io/safe-to-evict: "true"
 
-pdb:
-  #minAvailable: "20%"
-  maxUnavailable: "20%"
+# pdb:
+#   minAvailable: "20%"
+#   maxUnavailable: "20%"
 
 service:
   type: SERVICE_TYPE

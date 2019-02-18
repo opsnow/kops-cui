@@ -1427,9 +1427,10 @@ set_record_alias() {
 
     cat ${RECORD}
 
+    # TODO remove
     # update route53 record
     _command "aws route53 change-resource-record-sets --hosted-zone-id ${ZONE_ID} --change-batch file://${RECORD}"
-    aws route53 change-resource-record-sets --hosted-zone-id ${ZONE_ID} --change-batch file://${RECORD}
+    # aws route53 change-resource-record-sets --hosted-zone-id ${ZONE_ID} --change-batch file://${RECORD}
 }
 
 set_record_delete() {
