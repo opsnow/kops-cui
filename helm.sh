@@ -1042,6 +1042,7 @@ istio_secret() {
 
     _command "kubectl apply -n ${NAMESPACE} -f ${YAML}"
     kubectl apply -n ${NAMESPACE} -f ${YAML}
+}
 
 istio_show_pod_ips() {
     export PILOT_POD_IP=$(kubectl -n istio-system get pod -l istio=pilot -o jsonpath='{.items[0].status.podIP}')
