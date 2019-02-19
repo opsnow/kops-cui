@@ -16,6 +16,7 @@ _echo() {
 }
 
 _read() {
+    echo
     if [ "${3}" == "S" ]; then
         if [ "${TPUT}" != "" ] && [ "$2" != "" ]; then
             read -s -p "${L_PAD}$(tput setaf $2)$1$(tput sgr0)" PASSWORD
@@ -67,7 +68,6 @@ _exit() {
 }
 
 question() {
-    echo
     _read "${1:-"Enter your choice : "}" 6
 
     if [ ! -z ${2} ]; then
@@ -78,11 +78,12 @@ question() {
 }
 
 password() {
-    echo
     _read "${1:-"Enter your password : "}" 6 S
 }
 
 select_one() {
+    OPT=$1
+
     SELECTED=
 
     CNT=$(cat ${LIST} | wc -l | xargs)
@@ -90,34 +91,36 @@ select_one() {
         return
     fi
 
-    # if [ "${FZF}" != "" ]; then
-    #     SELECTED=$(cat ${LIST} | fzf --reverse --no-mouse --height=10 --bind=left:page-up,right:page-down)
-    # else
-        echo
+    if [ "${OPT}" != "" ] && [ "x${CNT}" == "x1" ]; then
+        SELECTED="$(cat ${LIST} | xargs)"
+    else
+        # if [ "${FZF}" != "" ]; then
+        #     SELECTED=$(cat ${LIST} | fzf --reverse --no-mouse --height=10 --bind=left:page-up,right:page-down)
+        # else
+            echo
 
-        IDX=0
-        while read VAL; do
-            IDX=$(( ${IDX} + 1 ))
-            printf "%3s. %s\n" "${IDX}" "${VAL}"
-        done < ${LIST}
+            IDX=0
+            while read VAL; do
+                IDX=$(( ${IDX} + 1 ))
+                printf "%3s. %s\n" "${IDX}" "${VAL}"
+            done < ${LIST}
 
-        if [ "${CNT}" != "1" ]; then
-            CNT="1-${CNT}"
-        fi
+            if [ "${CNT}" != "1" ]; then
+                CNT="1-${CNT}"
+            fi
 
-        # select
-        question "${1:-"Select one"} (${CNT}) : " "^[0-9]+$"
+            _read "Please select one. (${CNT}) : " 6
 
-        # answer
-        if [ "x${ANSWER}" == "x" ] || [ "x${ANSWER}" == "x0" ]; then
-            return
-        fi
-        TEST='^[0-9]+$'
-        if ! [[ ${ANSWER} =~ ${TEST} ]]; then
-            return
-        fi
-        SELECTED=$(sed -n ${ANSWER}p ${LIST})
-    # fi
+            if [ -z ${ANSWER} ]; then
+                return
+            fi
+            TEST='^[0-9]+$'
+            if ! [[ ${ANSWER} =~ ${TEST} ]]; then
+                return
+            fi
+            SELECTED=$(sed -n ${ANSWER}p ${LIST})
+        # fi
+    fi
 }
 
 progress() {

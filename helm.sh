@@ -57,7 +57,7 @@ run() {
 
 press_enter() {
     _result "$(date)"
-    echo
+
     _read "Press Enter to continue..." 5
     echo
 
@@ -96,12 +96,11 @@ main_menu() {
     _echo "3. kube-system.."
     _echo "4. monitor.."
     _echo "5. devops.."
-    _echo "6. sample.."
-    _echo "7. istio.."
     echo
-    _echo "9. remove"
-    # echo
-    # _echo "s. security"
+    _echo "s. sample.."
+    _echo "i. istio.."
+    echo
+    _echo "d. remove"
     echo
     _echo "u. update self"
     _echo "t. update tools"
@@ -127,13 +126,13 @@ main_menu() {
         5)
             charts_menu "devops"
             ;;
-        6)
+        s|7)
             sample_menu
             ;;
-        7)
+        i|8)
             istio_menu
             ;;
-        9)
+        d|9)
             helm_delete
             press_enter main
             ;;
@@ -1205,7 +1204,7 @@ get_cluster() {
     kubectl config view -o json | jq -r '.contexts[].name' | sort > ${LIST}
 
     # select
-    select_one
+    select_one true
 
     if [ "${SELECTED}" == "" ]; then
         _error
@@ -1320,7 +1319,7 @@ read_root_domain() {
     aws route53 list-hosted-zones | jq -r '.HostedZones[] | .Name' | sed 's/.$//' > ${LIST}
 
     # select
-    select_one
+    select_one true
 
     ROOT_DOMAIN=${SELECTED}
 }
