@@ -1,5 +1,5 @@
 # chart-repo: stable/fluentd-elasticsearch
-# chart-version: 0.1.5
+# chart-version: 2.0.7
 
 nameOverride: fluentd-elasticsearch
 
