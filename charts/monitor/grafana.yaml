@@ -23,13 +23,18 @@ ingress:
   hosts:
     - INGRESS_DOMAIN
 
-persistence:
-  enabled: true
-  accessModes:
-    - ReadWriteOnce
-  size: 5Gi
-  #:EFS:storageClassName: "efs"
-  existingClaim: grafana
+# env:
+#   GF_AUTH_GOOGLE_ENABLED: true
+#   GF_AUTH_GOOGLE_CLIENT_ID: "G_CLIENT_ID"
+#   GF_AUTH_GOOGLE_CLIENT_SECRET: "G_CLIENT_SECRET"
+#   GF_AUTH_GOOGLE_ALLOWED_DOMAINS: "G_ALLOWED_DOMAINS"
+#   GF_SERVER_ROOT_URL: https://INGRESS_DOMAIN
+
+# extraSecretMounts:
+#   - name: grafana-custom
+#     mountPath: /usr/share/grafana/conf/custom.ini
+#     secretName: grafana-custom
+#     readOnly: true
 
 #:LDAP:grafana.ini:
 #:LDAP:  auth.ldap:
@@ -39,6 +44,14 @@ persistence:
 
 #:LDAP:ldap:
 #:LDAP:  existingSecret: "GRAFANA_LDAP"
+
+persistence:
+  enabled: true
+  accessModes:
+    - ReadWriteOnce
+  size: 5Gi
+  #:EFS:storageClassName: "efs"
+  existingClaim: grafana
 
 datasources:
   datasources.yaml:
