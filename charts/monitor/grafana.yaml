@@ -1,5 +1,5 @@
 # chart-repo: stable/grafana
-# chart-version: 2.0.1
+# chart-version: 2.0.2
 # chart-ingress: true
 # chart-pvc: grafana ReadWriteOnce 5Gi
 # chart-pdb: N 1
@@ -23,12 +23,12 @@ ingress:
   hosts:
     - INGRESS_DOMAIN
 
-# env:
-#   GF_AUTH_GOOGLE_ENABLED: true
-#   GF_AUTH_GOOGLE_CLIENT_ID: "G_CLIENT_ID"
-#   GF_AUTH_GOOGLE_CLIENT_SECRET: "G_CLIENT_SECRET"
-#   GF_AUTH_GOOGLE_ALLOWED_DOMAINS: "G_ALLOWED_DOMAINS"
-#   GF_SERVER_ROOT_URL: https://INGRESS_DOMAIN
+env:
+  GF_SERVER_ROOT_URL: https://INGRESS_DOMAIN
+#:G_AUTH:  GF_AUTH_GOOGLE_ENABLED: true
+#:G_AUTH:  GF_AUTH_GOOGLE_CLIENT_ID: "G_CLIENT_ID"
+#:G_AUTH:  GF_AUTH_GOOGLE_CLIENT_SECRET: "G_CLIENT_SECRET"
+#:G_AUTH:  GF_AUTH_GOOGLE_ALLOWED_DOMAINS: "G_ALLOWED_DOMAINS"
 
 # extraSecretMounts:
 #   - name: grafana-custom

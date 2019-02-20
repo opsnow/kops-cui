@@ -302,8 +302,8 @@ helm_install() {
 
     # for external-dns
     if [ "${NAME}" == "external-dns" ]; then
-        replace_password ${CHART} AWS_ACCESS_KEY XXXXXXXXXX
-        replace_password ${CHART} AWS_SECRET_KEY XXXXXXXXXX
+        replace_password ${CHART} "AWS_ACCESS_KEY" "****"
+        replace_password ${CHART} "AWS_SECRET_KEY" "****"
 
         EX_DNS=true
         CONFIG_SAVE=true
@@ -343,14 +343,21 @@ helm_install() {
         # admin password
         replace_password ${CHART}
 
-        # ldap
-        question "Enter grafana LDAP secret : "
-        GRAFANA_LDAP="${ANSWER}"
-        _result "secret: ${GRAFANA_LDAP}"
+        # auth.google
+        replace_password ${CHART} "G_CLIENT_ID" "****"
 
-        if [ "${GRAFANA_LDAP}" != "" ]; then
+        if [ "${ANSWER}" != "****" ]; then
+            _replace "s/#:G_AUTH://g" ${CHART}
+
+            replace_password ${CHART} "G_CLIENT_SECRET" "****"
+            replace_chart ${CHART} "G_ALLOWED_DOMAINS"
+        fi
+
+        # auth.ldap
+        replace_chart ${CHART} "GRAFANA_LDAP"
+
+        if [ "${ANSWER}" != "" ]; then
             _replace "s/#:LDAP://g" ${CHART}
-            _replace "s/GRAFANA_LDAP/${GRAFANA_LDAP}/g" ${CHART}
         fi
     fi
 
@@ -1319,7 +1326,7 @@ read_root_domain() {
     aws route53 list-hosted-zones | jq -r '.HostedZones[] | .Name' | sed 's/.$//' > ${LIST}
 
     # select
-    select_one true
+    select_one
 
     ROOT_DOMAIN=${SELECTED}
 }
@@ -1426,10 +1433,15 @@ set_record_alias() {
 
     cat ${RECORD}
 
-    # TODO remove
-    # update route53 record
-    _command "aws route53 change-resource-record-sets --hosted-zone-id ${ZONE_ID} --change-batch file://${RECORD}"
-    # aws route53 change-resource-record-sets --hosted-zone-id ${ZONE_ID} --change-batch file://${RECORD}
+    question "Would you like to change route53? (YES/[no]) : "
+
+    if [ "${ANSWER}" == "YES" ]; then
+        # update route53 record
+        _command "aws route53 change-resource-record-sets --hosted-zone-id ${ZONE_ID} --change-batch file://${RECORD}"
+        aws route53 change-resource-record-sets --hosted-zone-id ${ZONE_ID} --change-batch file://${RECORD}
+    else
+        _command "aws route53 change-resource-record-sets --hosted-zone-id ${ZONE_ID} --change-batch file://${RECORD}"
+    fi
 }
 
 set_record_delete() {
@@ -1514,13 +1526,31 @@ get_base_domain() {
     fi
 }
 
+replace_chart() {
+    _CHART=${1}
+    _KEY=${2}
+    _DEFAULT=${3}
+
+    if [ "${_DEFAULT}" != "" ]; then
+        question "Enter ${_KEY} [${_DEFAULT}] : "
+    else
+        question "Enter ${_KEY} : "
+    fi
+
+    _result "${_KEY}: ${ANSWER}"
+
+    _replace "s/${_KEY}/${ANSWER}/g" ${CHART}
+}
+
 replace_password() {
     _CHART=${1}
     _KEY=${2:-PASSWORD}
     _DEFAULT=${3:-password}
 
     password "Enter ${_KEY} [${_DEFAULT}] : "
+
     echo
+    _result "${_KEY}: ****"
 
     _replace "s/${_KEY}/${PASSWORD:-${_DEFAULT}}/g" ${_CHART}
 }
@@ -1531,7 +1561,9 @@ replace_base64() {
     _DEFAULT=${3:-password}
 
     password "Enter ${_KEY} [${_DEFAULT}] : "
+
     echo
+    _result "${_KEY}: [encoded]"
 
     _replace "s/${_KEY}/$(echo ${PASSWORD:-${_DEFAULT}} | base64)/g" ${_CHART}
 }
