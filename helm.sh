@@ -351,13 +351,13 @@ helm_install() {
 
             replace_password ${CHART} "G_CLIENT_SECRET" "****"
             replace_chart ${CHART} "G_ALLOWED_DOMAINS"
-        fi
+        else
+            # auth.ldap
+            replace_chart ${CHART} "GRAFANA_LDAP"
 
-        # auth.ldap
-        replace_chart ${CHART} "GRAFANA_LDAP"
-
-        if [ "${ANSWER}" != "" ]; then
-            _replace "s/#:LDAP://g" ${CHART}
+            if [ "${ANSWER}" != "" ]; then
+                _replace "s/#:LDAP://g" ${CHART}
+            fi
         fi
     fi
 
