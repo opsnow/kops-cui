@@ -1,5 +1,5 @@
 # chart-repo: stable/jenkins
-# chart-version: 0.28.10
+# chart-version: 0.32.8
 # chart-ingress: true
 # chart-pvc: jenkins ReadWriteOnce 8Gi
 
