@@ -1481,6 +1481,9 @@ set_base_domain() {
 get_base_domain() {
     SUB_DOMAIN=${1:-"*"}
 
+    PREV_ROOT_DOMAIN="${ROOT_DOMAIN}"
+    PREV_BASE_DOMAIN="${BASE_DOMAIN}"
+
     ROOT_DOMAIN=
     BASE_DOMAIN=
 
@@ -1488,9 +1491,13 @@ get_base_domain() {
 
     # base domain
     if [ ! -z ${ROOT_DOMAIN} ]; then
-        WORD=$(echo ${CLUSTER_NAME} | cut -d'.' -f1)
+        if [ "${PREV_ROOT_DOMAIN}" != "" ] && [ "${ROOT_DOMAIN}" == "${PREV_ROOT_DOMAIN}" ]; then
+            DEFAULT="${PREV_BASE_DOMAIN}"
+        else
+            WORD=$(echo ${CLUSTER_NAME} | cut -d'.' -f1)
+            DEFAULT="${WORD}.${ROOT_DOMAIN}"
+        fi
 
-        DEFAULT="${WORD}.${ROOT_DOMAIN}"
         question "Enter your ingress domain [${DEFAULT}] : "
 
         BASE_DOMAIN=${ANSWER:-${DEFAULT}}
