@@ -217,6 +217,11 @@ fi
 
 draft version --short | xargs
 
+# aws-iam-authenticator
+echo "================================================================================"
+_result "install aws-iam-authenticator..."
+
+
 # guard
 echo "================================================================================"
 _result "install guard..."
