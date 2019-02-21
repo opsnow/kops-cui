@@ -194,15 +194,17 @@ else
     fi
 fi
 
-helm version --client --short | xargs | awk '{print $2}'
+helm version --client --short | xargs | awk '{print $2}' | cut -d'+' -f1
 
 # draft
 echo "================================================================================"
 _result "install draft..."
 
-#if [ "${OS_TYPE}" == "brew" ]; then
-#    command -v draft > /dev/null || brew install draft
-#else
+if [ "${OS_TYPE}" == "brew" ]; then
+    if [ "$(command -v draft)" == "" ]; then
+        brew tap azure/draft && brew install azure/draft/draft
+    fi
+else
     VERSION=$(curl -s https://api.github.com/repos/Azure/draft/releases/latest | jq -r '.tag_name')
 
     if [ "${DRAFT}" != "${VERSION}" ] || [ "$(command -v draft)" == "" ]; then
@@ -213,9 +215,31 @@ _result "install draft..."
 
         DRAFT="${VERSION}"
     fi
-#fi
+fi
 
-draft version --short | xargs
+draft version --short | xargs | cut -d'+' -f1
+
+# aws-iam-authenticator
+echo "================================================================================"
+_result "install aws-iam-authenticator..."
+
+VERSION=0.3.0
+
+if [ "${OS_TYPE}" == "brew" ]; then
+    command -v aws-iam-authenticator > /dev/null || brew install aws-iam-authenticator
+else
+    if [ "${AWS_AUTH}" != "${VERSION}" ] || [ "$(command -v draft)" == "" ]; then
+        _result " ${AWS_AUTH} >> ${VERSION}"
+
+        URL="https://github.com/kubernetes-sigs/aws-iam-authenticator/releases/download/v${VERSION}/heptio-authenticator-aws_${VERSION}_${OS_NAME}_amd64"
+        curl -L -o ${TMP}/aws-iam-authenticator ${URL}
+        chmod +x ${TMP}/aws-iam-authenticator && sudo mv ${TMP}/aws-iam-authenticator /usr/local/bin/aws-iam-authenticator
+
+        AWS_AUTH="${VERSION}"
+    fi
+fi
+
+echo "${VERSION}"
 
 # guard
 echo "================================================================================"
