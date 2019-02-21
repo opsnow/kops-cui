@@ -329,7 +329,7 @@ helm_install() {
         replace_password ${CHART}
 
         # jenkins jobs
-        ${SHELL_DIR}/jenkins/jobs.sh ${CHART}
+        ${SHELL_DIR}/templates/jenkins/jobs.sh ${CHART}
     fi
 
     # for sonatype-nexus
@@ -346,7 +346,7 @@ helm_install() {
         # auth.google
         replace_password ${CHART} "G_CLIENT_ID" "****"
 
-        if [ "${ANSWER}" != "****" ]; then
+        if [ "${ANSWER}" != "" ]; then
             _replace "s/#:G_AUTH://g" ${CHART}
 
             replace_password ${CHART} "G_CLIENT_SECRET" "****"
@@ -364,24 +364,15 @@ helm_install() {
     # for datadog
     if [ "${NAME}" == "datadog" ]; then
         # api key
-        question "Enter datadog API KEY : "
-        API_KEY="${ANSWER}"
-        _result "key: ${API_KEY}"
+        replace_password ${CHART} "API_KEY" "****"
     fi
 
     # for fluentd-elasticsearch
     if [ "${NAME}" == "fluentd-elasticsearch" ]; then
         # host
-        question "Enter elasticsearch host [elasticsearch-client] : "
-        CUSTOM_HOST=${ANSWER:-elasticsearch-client}
-        _result "host: ${CUSTOM_HOST}"
-        _replace "s/CUSTOM_HOST/${CUSTOM_HOST}/g" ${CHART}
-
+        replace_chart ${CHART} "CUSTOM_HOST" "elasticsearch-client"
         # port
-        question "Enter elasticsearch port [9200]: "
-        CUSTOM_PORT=${ANSWER:-9200}
-        _result "port: ${CUSTOM_PORT}"
-        _replace "s/CUSTOM_PORT/${CUSTOM_PORT}/g" ${CHART}
+        replace_chart ${CHART} "CUSTOM_PORT" "9200"
     fi
 
     # for efs-mount
@@ -1023,8 +1014,8 @@ istio_secret() {
     YAML=${SHELL_DIR}/build/${THIS_NAME}-istio-secret.yaml
     get_template templates/istio-secret.yaml ${YAML}
 
-    replace_base64 ${YAML} USERNAME admin
-    replace_base64 ${YAML} PASSWORD password
+    replace_base64 ${YAML} "USERNAME" "admin"
+    replace_base64 ${YAML} "PASSWORD" "password"
 
     _command "kubectl apply -n ${NAMESPACE} -f ${YAML}"
     kubectl apply -n ${NAMESPACE} -f ${YAML}
@@ -1537,9 +1528,9 @@ replace_chart() {
         question "Enter ${_KEY} : "
     fi
 
-    _result "${_KEY}: ${ANSWER}"
+    _result "${_KEY}: ${ANSWER:-${_DEFAULT}}"
 
-    _replace "s/${_KEY}/${ANSWER}/g" ${CHART}
+    _replace "s/${_KEY}/${ANSWER:-${_DEFAULT}}/g" ${CHART}
 }
 
 replace_password() {
@@ -1550,9 +1541,9 @@ replace_password() {
     password "Enter ${_KEY} [${_DEFAULT}] : "
 
     echo
-    _result "${_KEY}: ****"
+    _result "${_KEY}: [hidden]"
 
-    _replace "s/${_KEY}/${PASSWORD:-${_DEFAULT}}/g" ${_CHART}
+    _replace "s/${_KEY}/${ANSWER:-${_DEFAULT}}/g" ${_CHART}
 }
 
 replace_base64() {
@@ -1565,7 +1556,7 @@ replace_base64() {
     echo
     _result "${_KEY}: [encoded]"
 
-    _replace "s/${_KEY}/$(echo ${PASSWORD:-${_DEFAULT}} | base64)/g" ${_CHART}
+    _replace "s/${_KEY}/$(echo ${ANSWER:-${_DEFAULT}} | base64)/g" ${_CHART}
 }
 
 waiting_for() {
