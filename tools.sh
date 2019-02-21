@@ -194,7 +194,7 @@ else
     fi
 fi
 
-helm version --client --short | xargs | awk '{print $2}'
+helm version --client --short | xargs | awk '{print $2}' | cut -d'+' -f1
 
 # draft
 echo "================================================================================"
@@ -217,7 +217,7 @@ else
     fi
 fi
 
-draft version --short | xargs
+draft version --short | xargs | cut -d'+' -f1
 
 # aws-iam-authenticator
 echo "================================================================================"
