@@ -19,9 +19,9 @@ _read() {
     echo
     if [ "${3}" == "S" ]; then
         if [ "${TPUT}" != "" ] && [ "$2" != "" ]; then
-            read -s -p "${L_PAD}$(tput setaf $2)$1$(tput sgr0)" PASSWORD
+            read -s -p "${L_PAD}$(tput setaf $2)$1$(tput sgr0)" ANSWER
         else
-            read -s -p "${L_PAD}$1" PASSWORD
+            read -s -p "${L_PAD}$1" ANSWER
         fi
     else
         if [ "${TPUT}" != "" ] && [ "$2" != "" ]; then

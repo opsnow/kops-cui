@@ -1,5 +1,5 @@
 # chart-repo: stable/grafana
-# chart-version: 2.0.1
+# chart-version: 2.0.2
 # chart-ingress: true
 # chart-pvc: grafana ReadWriteOnce 5Gi
 # chart-pdb: N 1
@@ -23,13 +23,18 @@ ingress:
   hosts:
     - INGRESS_DOMAIN
 
-persistence:
-  enabled: true
-  accessModes:
-    - ReadWriteOnce
-  size: 5Gi
-  #:EFS:storageClassName: "efs"
-  existingClaim: grafana
+env:
+  GF_SERVER_ROOT_URL: https://INGRESS_DOMAIN
+#:G_AUTH:  GF_AUTH_GOOGLE_ENABLED: true
+#:G_AUTH:  GF_AUTH_GOOGLE_CLIENT_ID: "G_CLIENT_ID"
+#:G_AUTH:  GF_AUTH_GOOGLE_CLIENT_SECRET: "G_CLIENT_SECRET"
+#:G_AUTH:  GF_AUTH_GOOGLE_ALLOWED_DOMAINS: "G_ALLOWED_DOMAINS"
+
+# extraSecretMounts:
+#   - name: grafana-custom
+#     mountPath: /usr/share/grafana/conf/custom.ini
+#     secretName: grafana-custom
+#     readOnly: true
 
 #:LDAP:grafana.ini:
 #:LDAP:  auth.ldap:
@@ -39,6 +44,14 @@ persistence:
 
 #:LDAP:ldap:
 #:LDAP:  existingSecret: "GRAFANA_LDAP"
+
+persistence:
+  enabled: true
+  accessModes:
+    - ReadWriteOnce
+  size: 5Gi
+  #:EFS:storageClassName: "efs"
+  existingClaim: grafana
 
 datasources:
   datasources.yaml:
@@ -75,11 +88,7 @@ dashboards:
       gnetId: 9679
       revision: 2
       datasource: Prometheus
-    # prometheus-stats:
-    #   gnetId: 2
-    #   revision: 2
-    #   datasource: Prometheus
-    # prometheus-cluster:
-    #   gnetId: 315
-    #   revision: 3
-    #   datasource: Prometheus
+    # custom-dashboard:
+    #   file: dashboards/custom-dashboard.json
+    # local-dashboard:
+    #   url: https://raw.githubusercontent.com/user/repository/master/dashboards/dashboard.json

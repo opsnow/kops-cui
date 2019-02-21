@@ -2,7 +2,7 @@
 
 SHELL_DIR=$(dirname $0)
 
-PARENT_DIR=$(dirname ${SHELL_DIR})
+PARENT_DIR=$(dirname $(dirname ${SHELL_DIR}))
 
 . ${PARENT_DIR}/default.sh
 . ${PARENT_DIR}/common.sh

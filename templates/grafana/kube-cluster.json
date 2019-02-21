@@ -212,7 +212,7 @@
         "step": 10
       }],
       "thresholds": "65, 90",
-      "title": "CPU Usage (2m avg)",
+      "title": "CPU Usage",
       "type": "singlestat",
       "valueFontSize": "70%",
       "valueMaps": [{

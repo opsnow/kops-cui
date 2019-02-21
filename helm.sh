@@ -302,8 +302,8 @@ helm_install() {
 
     # for external-dns
     if [ "${NAME}" == "external-dns" ]; then
-        replace_password ${CHART} AWS_ACCESS_KEY XXXXXXXXXX
-        replace_password ${CHART} AWS_SECRET_KEY XXXXXXXXXX
+        replace_password ${CHART} "AWS_ACCESS_KEY" "****"
+        replace_password ${CHART} "AWS_SECRET_KEY" "****"
 
         EX_DNS=true
         CONFIG_SAVE=true
@@ -329,7 +329,7 @@ helm_install() {
         replace_password ${CHART}
 
         # jenkins jobs
-        ${SHELL_DIR}/jenkins/jobs.sh ${CHART}
+        ${SHELL_DIR}/templates/jenkins/jobs.sh ${CHART}
     fi
 
     # for sonatype-nexus
@@ -343,38 +343,36 @@ helm_install() {
         # admin password
         replace_password ${CHART}
 
-        # ldap
-        question "Enter grafana LDAP secret : "
-        GRAFANA_LDAP="${ANSWER}"
-        _result "secret: ${GRAFANA_LDAP}"
+        # auth.google
+        replace_password ${CHART} "G_CLIENT_ID" "****"
 
-        if [ "${GRAFANA_LDAP}" != "" ]; then
-            _replace "s/#:LDAP://g" ${CHART}
-            _replace "s/GRAFANA_LDAP/${GRAFANA_LDAP}/g" ${CHART}
+        if [ "${ANSWER}" != "" ]; then
+            _replace "s/#:G_AUTH://g" ${CHART}
+
+            replace_password ${CHART} "G_CLIENT_SECRET" "****"
+            replace_chart ${CHART} "G_ALLOWED_DOMAINS"
+        else
+            # auth.ldap
+            replace_chart ${CHART} "GRAFANA_LDAP"
+
+            if [ "${ANSWER}" != "" ]; then
+                _replace "s/#:LDAP://g" ${CHART}
+            fi
         fi
     fi
 
     # for datadog
     if [ "${NAME}" == "datadog" ]; then
         # api key
-        question "Enter datadog API KEY : "
-        API_KEY="${ANSWER}"
-        _result "key: ${API_KEY}"
+        replace_password ${CHART} "API_KEY" "****"
     fi
 
     # for fluentd-elasticsearch
     if [ "${NAME}" == "fluentd-elasticsearch" ]; then
         # host
-        question "Enter elasticsearch host [elasticsearch-client] : "
-        CUSTOM_HOST=${ANSWER:-elasticsearch-client}
-        _result "host: ${CUSTOM_HOST}"
-        _replace "s/CUSTOM_HOST/${CUSTOM_HOST}/g" ${CHART}
-
+        replace_chart ${CHART} "CUSTOM_HOST" "elasticsearch-client"
         # port
-        question "Enter elasticsearch port [9200]: "
-        CUSTOM_PORT=${ANSWER:-9200}
-        _result "port: ${CUSTOM_PORT}"
-        _replace "s/CUSTOM_PORT/${CUSTOM_PORT}/g" ${CHART}
+        replace_chart ${CHART} "CUSTOM_PORT" "9200"
     fi
 
     # for efs-mount
@@ -1016,8 +1014,8 @@ istio_secret() {
     YAML=${SHELL_DIR}/build/${THIS_NAME}-istio-secret.yaml
     get_template templates/istio-secret.yaml ${YAML}
 
-    replace_base64 ${YAML} USERNAME admin
-    replace_base64 ${YAML} PASSWORD password
+    replace_base64 ${YAML} "USERNAME" "admin"
+    replace_base64 ${YAML} "PASSWORD" "password"
 
     _command "kubectl apply -n ${NAMESPACE} -f ${YAML}"
     kubectl apply -n ${NAMESPACE} -f ${YAML}
@@ -1319,7 +1317,7 @@ read_root_domain() {
     aws route53 list-hosted-zones | jq -r '.HostedZones[] | .Name' | sed 's/.$//' > ${LIST}
 
     # select
-    select_one true
+    select_one
 
     ROOT_DOMAIN=${SELECTED}
 }
@@ -1426,10 +1424,15 @@ set_record_alias() {
 
     cat ${RECORD}
 
-    # TODO remove
-    # update route53 record
-    _command "aws route53 change-resource-record-sets --hosted-zone-id ${ZONE_ID} --change-batch file://${RECORD}"
-    # aws route53 change-resource-record-sets --hosted-zone-id ${ZONE_ID} --change-batch file://${RECORD}
+    question "Would you like to change route53? (YES/[no]) : "
+
+    if [ "${ANSWER}" == "YES" ]; then
+        # update route53 record
+        _command "aws route53 change-resource-record-sets --hosted-zone-id ${ZONE_ID} --change-batch file://${RECORD}"
+        aws route53 change-resource-record-sets --hosted-zone-id ${ZONE_ID} --change-batch file://${RECORD}
+    else
+        _command "aws route53 change-resource-record-sets --hosted-zone-id ${ZONE_ID} --change-batch file://${RECORD}"
+    fi
 }
 
 set_record_delete() {
@@ -1478,6 +1481,9 @@ set_base_domain() {
 get_base_domain() {
     SUB_DOMAIN=${1:-"*"}
 
+    PREV_ROOT_DOMAIN="${ROOT_DOMAIN}"
+    PREV_BASE_DOMAIN="${BASE_DOMAIN}"
+
     ROOT_DOMAIN=
     BASE_DOMAIN=
 
@@ -1485,9 +1491,13 @@ get_base_domain() {
 
     # base domain
     if [ ! -z ${ROOT_DOMAIN} ]; then
-        WORD=$(echo ${CLUSTER_NAME} | cut -d'.' -f1)
+        if [ "${PREV_ROOT_DOMAIN}" != "" ] && [ "${ROOT_DOMAIN}" == "${PREV_ROOT_DOMAIN}" ]; then
+            DEFAULT="${PREV_BASE_DOMAIN}"
+        else
+            WORD=$(echo ${CLUSTER_NAME} | cut -d'.' -f1)
+            DEFAULT="${WORD}.${ROOT_DOMAIN}"
+        fi
 
-        DEFAULT="${WORD}.${ROOT_DOMAIN}"
         question "Enter your ingress domain [${DEFAULT}] : "
 
         BASE_DOMAIN=${ANSWER:-${DEFAULT}}
@@ -1514,15 +1524,33 @@ get_base_domain() {
     fi
 }
 
+replace_chart() {
+    _CHART=${1}
+    _KEY=${2}
+    _DEFAULT=${3}
+
+    if [ "${_DEFAULT}" != "" ]; then
+        question "Enter ${_KEY} [${_DEFAULT}] : "
+    else
+        question "Enter ${_KEY} : "
+    fi
+
+    _result "${_KEY}: ${ANSWER:-${_DEFAULT}}"
+
+    _replace "s/${_KEY}/${ANSWER:-${_DEFAULT}}/g" ${CHART}
+}
+
 replace_password() {
     _CHART=${1}
     _KEY=${2:-PASSWORD}
     _DEFAULT=${3:-password}
 
     password "Enter ${_KEY} [${_DEFAULT}] : "
-    echo
 
-    _replace "s/${_KEY}/${PASSWORD:-${_DEFAULT}}/g" ${_CHART}
+    echo
+    _result "${_KEY}: [hidden]"
+
+    _replace "s/${_KEY}/${ANSWER:-${_DEFAULT}}/g" ${_CHART}
 }
 
 replace_base64() {
@@ -1531,9 +1559,11 @@ replace_base64() {
     _DEFAULT=${3:-password}
 
     password "Enter ${_KEY} [${_DEFAULT}] : "
-    echo
 
-    _replace "s/${_KEY}/$(echo ${PASSWORD:-${_DEFAULT}} | base64)/g" ${_CHART}
+    echo
+    _result "${_KEY}: [encoded]"
+
+    _replace "s/${_KEY}/$(echo ${ANSWER:-${_DEFAULT}} | base64)/g" ${_CHART}
 }
 
 waiting_for() {
