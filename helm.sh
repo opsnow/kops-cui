@@ -847,26 +847,30 @@ isMountTargetDeleted() {
 
 efs_create() {
     # get the security group id
-    K8S_NODE_SG_ID=$(aws ec2 describe-security-groups --filters "Name=group-name,Values=nodes.${CLUSTER_NAME}" | jq -r '.SecurityGroups[0].GroupId')
-    if [ -z ${K8S_NODE_SG_ID} ] || [ "${K8S_NODE_SG_ID}" == "null" ]; then
+    WORKER_SG_ID=$(aws ec2 describe-security-groups --filters "Name=group-name,Values=nodes.${CLUSTER_NAME}" | jq -r '.SecurityGroups[0].GroupId')
+    if [ -z ${WORKER_SG_ID} ] || [ "${WORKER_SG_ID}" == "null" ]; then
         _error "Not found the security group for the nodes."
     fi
 
-    # get vpc id & subent ids
+    _result "WORKER_SG_ID=${WORKER_SG_ID}"
+
+    # get vpc id
     VPC_ID=$(aws ec2 describe-security-groups --filters "Name=group-name,Values=nodes.${CLUSTER_NAME}" | jq -r '.SecurityGroups[0].VpcId')
-    VPC_PRIVATE_SUBNETS_LENGTH=$(aws ec2 describe-subnets --filters "Name=tag:KubernetesCluster,Values=${CLUSTER_NAME}" "Name=tag:SubnetType,Values=Private" | jq '.Subnets | length')
-    if [ ${VPC_PRIVATE_SUBNETS_LENGTH} -gt 0 ]; then
-        VPC_SUBNETS=$(aws ec2 describe-subnets --filters "Name=tag:KubernetesCluster,Values=${CLUSTER_NAME}" "Name=tag:SubnetType,Values=Private" | jq -r '(.Subnets[].SubnetId)')
-    else
-        VPC_SUBNETS=$(aws ec2 describe-subnets --filters "Name=tag:KubernetesCluster,Values=${CLUSTER_NAME}" | jq -r '(.Subnets[].SubnetId)')
-    fi
 
     if [ -z ${VPC_ID} ]; then
         _error "Not found the VPC."
     fi
 
-    _result "K8S_NODE_SG_ID=${K8S_NODE_SG_ID}"
     _result "VPC_ID=${VPC_ID}"
+
+    # get subent ids
+    VPC_PRIVATE_SUBNETS_LENGTH=$(aws ec2 describe-subnets --filters "Name=tag:kubernetes.io/cluster/${CLUSTER_NAME},Values=shared" "Name=tag:SubnetType,Values=Private" | jq '.Subnets | length')
+    if [ ${VPC_PRIVATE_SUBNETS_LENGTH} -gt 0 ]; then
+        VPC_SUBNETS=$(aws ec2 describe-subnets --filters "Name=tag:kubernetes.io/cluster/${CLUSTER_NAME},Values=shared" "Name=tag:SubnetType,Values=Private" | jq -r '(.Subnets[].SubnetId)')
+    else
+        VPC_SUBNETS=$(aws ec2 describe-subnets --filters "Name=tag:kubernetes.io/cluster/${CLUSTER_NAME},Values=shared" | jq -r '(.Subnets[].SubnetId)')
+    fi
+
     _result "VPC_SUBNETS=$(echo ${VPC_SUBNETS} | xargs)"
 
     # create a security group for efs mount targets
@@ -885,7 +889,7 @@ efs_create() {
             --group-id ${EFS_SG_ID} \
             --protocol tcp \
             --port 2049 \
-            --source-group ${K8S_NODE_SG_ID} \
+            --source-group ${WORKER_SG_ID} \
             --region ${REGION}
     else
         EFS_SG_ID=$(aws ec2 describe-security-groups --filters "Name=group-name,Values=efs-sg.${CLUSTER_NAME}" | jq -r '.SecurityGroups[].GroupId')
