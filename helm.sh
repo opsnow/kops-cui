@@ -778,7 +778,7 @@ isBound() {
 }
 
 isEFSAvailable() {
-    FILE_SYSTEMS=$(aws efs describe-file-systems --creation-token ${CLUSTER_NAME} --region ${REGION})
+    FILE_SYSTEMS=$(aws efs describe-file-systems --file-system-id ${EFS_ID} --region ${REGION})
     FILE_SYSTEM_LENGH=$(echo ${FILE_SYSTEMS} | jq -r '.FileSystems | length')
     if [ ${FILE_SYSTEM_LENGH} -gt 0 ]; then
         STATES=$(echo ${FILE_SYSTEMS} | jq -r '.FileSystems[].LifeCycleState')
