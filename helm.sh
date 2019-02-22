@@ -907,6 +907,7 @@ efs_create() {
     # replace EFS_ID
     _replace "s/EFS_ID/${EFS_ID}/g" ${CHART}
 
+    echo
     echo "Waiting for the state of the EFS to be available."
     waiting_for isEFSAvailable
 
