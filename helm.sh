@@ -905,6 +905,9 @@ efs_create() {
     # echo "Security group for mount targets:"
     _result "EFS_SG_ID=${EFS_SG_ID}"
 
+    question "Would you like to mount exist EFS? Input your file system id.(Format: fs-00011122) : "
+    EFS_ID=${ANSWER}
+
     if [ -z ${EFS_ID} ]; then
         # create an efs
         EFS_LENGTH=$(aws efs describe-file-systems --creation-token ${CLUSTER_NAME} | jq '.FileSystems | length')
