@@ -905,8 +905,8 @@ efs_create() {
     # echo "Security group for mount targets:"
     _result "EFS_SG_ID=${EFS_SG_ID}"
 
-    question "Would you like to mount exist EFS? Input your file system id.(Format: fs-00011122) : "
-    EFS_ID=${ANSWER}
+    question "Would you like to mount exist EFS? Input your file system id.[Current: ${EFS_ID}] : "
+    EFS_ID=${ANSWER:-${EFS_ID}}
 
     if [ -z ${EFS_ID} ]; then
         # create an efs
