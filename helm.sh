@@ -306,21 +306,16 @@ helm_install() {
         replace_password ${CHART} "AWS_SECRET_KEY" "****"
 
         EX_DNS=true
-        CONFIG_SAVE=true
     fi
 
     # for nginx-ingress
     if [ "${NAME}" == "nginx-ingress" ]; then
         get_base_domain
-
-        CONFIG_SAVE=true
     fi
 
     # for efs-provisioner
     if [ "${NAME}" == "efs-provisioner" ]; then
         efs_create
-
-        CONFIG_SAVE=true
     fi
 
     # for jenkins
@@ -440,16 +435,14 @@ helm_install() {
         helm upgrade --install ${NAME} ${REPO} --namespace ${NAMESPACE} --values ${CHART} --version ${VERSION}
     fi
 
-    # pdb
+    # config save
+    config_save
+
+    # create pdb
     PDB_MIN=$(cat ${CHART} | grep '# chart-pdb:' | awk '{print $3}')
     PDB_MAX=$(cat ${CHART} | grep '# chart-pdb:' | awk '{print $4}')
     if [ "${PDB_MIN}" != "" ] || [ "${PDB_MAX}" != "" ]; then
         create_pdb ${NAMESPACE} ${NAME} ${PDB_MIN:-N} ${PDB_MAX:-N}
-    fi
-
-    # config save
-    if [ "${CONFIG_SAVE}" != "" ]; then
-        config_save
     fi
 
     _command "helm history ${NAME}"
@@ -525,21 +518,17 @@ helm_delete() {
     # for external-dns
     if [ "${NAME}" == "external-dns" ]; then
         EX_DNS=
-        CONFIG_SAVE=true
     fi
 
     # for nginx-ingress
     if [ "${NAME}" == "nginx-ingress" ]; then
         ROOT_DOMAIN=
         BASE_DOMAIN=
-        CONFIG_SAVE=true
     fi
 
     # for efs-provisioner
     if [ "${NAME}" == "efs-provisioner" ]; then
         efs_delete
-
-        CONFIG_SAVE=true
     fi
 
     # helm delete
@@ -547,9 +536,7 @@ helm_delete() {
     helm delete --purge ${NAME}
 
     # config save
-    if [ "${CONFIG_SAVE}" != "" ]; then
-        config_save
-    fi
+    config_save
 }
 
 helm_check() {
@@ -898,19 +885,21 @@ efs_create() {
     # echo "Security group for mount targets:"
     _result "EFS_SG_ID=${EFS_SG_ID}"
 
-    # create an efs
-    EFS_LENGTH=$(aws efs describe-file-systems --creation-token ${CLUSTER_NAME} | jq '.FileSystems | length')
-    if [ ${EFS_LENGTH} -eq 0 ]; then
-        echo
-        echo "Creating a elastic file system"
+    if [ -z ${EFS_ID} ]; then
+        # create an efs
+        EFS_LENGTH=$(aws efs describe-file-systems --creation-token ${CLUSTER_NAME} | jq '.FileSystems | length')
+        if [ ${EFS_LENGTH} -eq 0 ]; then
+            echo
+            echo "Creating a elastic file system"
 
-        EFS_ID=$(aws efs create-file-system --creation-token ${CLUSTER_NAME} --region ${REGION} | jq -r '.FileSystemId')
-        aws efs create-tags \
-            --file-system-id ${EFS_ID} \
-            --tags Key=Name,Value=efs.${CLUSTER_NAME} \
-            --region ap-northeast-2
-    else
-        EFS_ID=$(aws efs describe-file-systems --creation-token ${CLUSTER_NAME} --region ${REGION} | jq -r '.FileSystems[].FileSystemId')
+            EFS_ID=$(aws efs create-file-system --creation-token ${CLUSTER_NAME} --region ${REGION} | jq -r '.FileSystemId')
+            aws efs create-tags \
+                --file-system-id ${EFS_ID} \
+                --tags Key=Name,Value=efs.${CLUSTER_NAME} \
+                --region ap-northeast-2
+        else
+            EFS_ID=$(aws efs describe-file-systems --creation-token ${CLUSTER_NAME} --region ${REGION} | jq -r '.FileSystems[].FileSystemId')
+        fi
     fi
 
     _result "EFS_ID=${EFS_ID}"
