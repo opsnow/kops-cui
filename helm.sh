@@ -339,7 +339,7 @@ helm_install() {
         replace_password ${CHART}
 
         # auth.google
-        replace_password ${CHART} "G_CLIENT_ID" "****"
+        replace_chart ${CHART} "G_CLIENT_ID"
 
         if [ "${ANSWER}" != "" ]; then
             _replace "s/#:G_AUTH://g" ${CHART}
@@ -907,6 +907,7 @@ efs_create() {
     # replace EFS_ID
     _replace "s/EFS_ID/${EFS_ID}/g" ${CHART}
 
+    echo
     echo "Waiting for the state of the EFS to be available."
     waiting_for isEFSAvailable
 
