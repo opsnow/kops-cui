@@ -339,7 +339,7 @@ helm_install() {
         replace_password ${CHART}
 
         # auth.google
-        replace_password ${CHART} "G_CLIENT_ID" "****"
+        replace_chart ${CHART} "G_CLIENT_ID"
 
         if [ "${ANSWER}" != "" ]; then
             _replace "s/#:G_AUTH://g" ${CHART}
