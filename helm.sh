@@ -158,11 +158,15 @@ istio_menu() {
 
     echo
     _echo "1. install"
+    _echo "2. install istio-remote"
     echo
-    _echo "2. injection show"
-    _echo "3. injection enable"
-    _echo "4. injection disable"
+    _echo "3. injection show"
+    _echo "4. injection enable"
+    _echo "5. injection disable"
     echo
+    _echo "6. import config to secret"
+    _echo "7. export config"
+    _echo "8. show pod IPs"
     _echo "9. remove"
 
     question
@@ -173,15 +177,31 @@ istio_menu() {
             press_enter istio
             ;;
         2)
-            istio_injection
+            istio_remote_install
             press_enter istio
             ;;
         3)
-            istio_injection "enable"
+            istio_injection
             press_enter istio
             ;;
         4)
+            istio_injection "enable"
+            press_enter istio
+            ;;
+        5)
             istio_injection "disable"
+            press_enter istio
+            ;;
+        6)
+            istio_import_config_to_secret
+            press_enter istio
+            ;;
+        7)
+            istio_export_config
+            press_enter istio
+            ;;
+        8)
+            istio_show_pod_ips
             press_enter istio
             ;;
         9)
@@ -888,6 +908,9 @@ efs_create() {
     # echo "Security group for mount targets:"
     _result "EFS_SG_ID=${EFS_SG_ID}"
 
+    question "Would you like to mount exist EFS? Input your file system id.[Current: ${EFS_ID}] : "
+    EFS_ID=${ANSWER:-${EFS_ID}}
+
     if [ -z ${EFS_ID} ]; then
         # create an efs
         EFS_LENGTH=$(aws efs describe-file-systems --creation-token ${CLUSTER_NAME} | jq '.FileSystems | length')
@@ -1018,6 +1041,86 @@ istio_secret() {
     kubectl apply -n ${NAMESPACE} -f ${YAML}
 }
 
+istio_show_pod_ips() {
+    export PILOT_POD_IP=$(kubectl -n istio-system get pod -l istio=pilot -o jsonpath='{.items[0].status.podIP}')
+    export POLICY_POD_IP=$(kubectl -n istio-system get pod -l istio-mixer-type=policy -o jsonpath='{.items[0].status.podIP}')
+    export STATSD_POD_IP=$(kubectl -n istio-system get pod -l istio=statsd-prom-bridge -o jsonpath='{.items[0].status.podIP}')
+    export TELEMETRY_POD_IP=$(kubectl -n istio-system get pod -l istio-mixer-type=telemetry -o jsonpath='{.items[0].status.podIP}')
+    export ZIPKIN_POD_IP=$(kubectl -n istio-system get pod -l app=jaeger -o jsonpath='{range .items[*]}{.status.podIP}{end}')
+
+    echo "export PILOT_POD_IP=$PILOT_POD_IP"
+    echo "export POLICY_POD_IP=$POLICY_POD_IP"
+    echo "export STATSD_POD_IP=$STATSD_POD_IP"
+    echo "export TELEMETRY_POD_IP=$TELEMETRY_POD_IP"
+    echo "export ZIPKIN_POD_IP=$ZIPKIN_POD_IP"
+}
+
+istio_import_config_to_secret() {
+    ls -lrt
+    question "Enter your env files : "
+    source ${ANSWER}
+
+    _command "kubectl create secret generic ${CLUSTER_NAME} --from-file ${KUBECFG_FILE} -n ${NAMESPACE}"
+    kubectl create secret generic ${CLUSTER_NAME} --from-file ${KUBECFG_FILE} -n ${NAMESPACE}
+
+    _command "kubectl label secret ${CLUSTER_NAME} istio/multiCluster=true -n ${NAMESPACE}"
+    kubectl label secret ${CLUSTER_NAME} istio/multiCluster=true -n ${NAMESPACE}
+
+    _command "kubectl get secret ${CLUSTER_NAME} -n ${NAMESPACE} -o json"
+    kubectl get secret ${CLUSTER_NAME} -n ${NAMESPACE} -o json
+}
+
+istio_export_config() {
+    export WORK_DIR=$(pwd)
+    CLUSTER_NAME=$(kubectl config view --minify=true -o "jsonpath={.clusters[].name}")
+    export KUBECFG_FILE=${WORK_DIR}/${CLUSTER_NAME}
+    export KUBECFG_ENV_FILE="${WORK_DIR}/${CLUSTER_NAME}-remote-cluster-env-vars"
+    SERVER=$(kubectl config view --minify=true -o "jsonpath={.clusters[].cluster.server}")
+    NAMESPACE=istio-system
+    SERVICE_ACCOUNT=istio-multi
+    SECRET_NAME=$(kubectl get sa ${SERVICE_ACCOUNT} -n ${NAMESPACE} -o jsonpath='{.secrets[].name}')
+    CA_DATA=$(kubectl get secret ${SECRET_NAME} -n ${NAMESPACE} -o "jsonpath={.data['ca\.crt']}")
+    TOKEN=$(kubectl get secret ${SECRET_NAME} -n ${NAMESPACE} -o "jsonpath={.data['token']}" | base64 --decode)
+    
+    cat <<EOF > ${KUBECFG_FILE}
+apiVersion: v1
+clusters:
+- cluster:
+   certificate-authority-data: ${CA_DATA}
+   server: ${SERVER}
+ name: ${CLUSTER_NAME}
+contexts:
+- context:
+   cluster: ${CLUSTER_NAME}
+   user: ${CLUSTER_NAME}
+ name: ${CLUSTER_NAME}
+current-context: ${CLUSTER_NAME}
+kind: Config
+preferences: {}
+users:
+- name: ${CLUSTER_NAME}
+ user:
+   token: ${TOKEN}
+EOF
+    
+    cat <<EOF > ${KUBECFG_ENV_FILE}
+export CLUSTER_NAME=${CLUSTER_NAME}
+export KUBECFG_FILE=${KUBECFG_FILE}
+export NAMESPACE=${NAMESPACE}
+EOF
+
+    _command "cat ${KUBECFG_FILE}"
+    cat ${KUBECFG_FILE}
+
+    _command "cat ${KUBECFG_ENV_FILE}"
+    cat ${KUBECFG_ENV_FILE}
+
+    _command "ls -aslF ${KUBECFG_FILE} ${KUBECFG_ENV_FILE}"
+    ls -aslF ${KUBECFG_FILE} ${KUBECFG_ENV_FILE}
+#    ls -aslF ${KUBECFG_FILE}
+#    ls -aslF ${KUBECFG_ENV_FILE}
+}
+
 istio_install() {
     istio_init
 
@@ -1063,6 +1166,55 @@ istio_install() {
 
     _command "kubectl get ing -n ${NAMESPACE}"
     kubectl get ing -n ${NAMESPACE}
+}
+
+istio_remote_install() {
+    istio_init
+    RNAME="istio-remote"
+    RISTIO_DIR="${ISTIO_DIR}-remote"
+    create_namespace ${NAMESPACE}
+
+    CHART=${SHELL_DIR}/build/${THIS_NAME}-istio-${NAME}.yaml
+    get_template charts/istio/${NAME}.yaml ${CHART}
+
+    
+    if [ -z ${PILOT_POD_IP} ]; then
+        echo "PILOT_POD_IP=$PILOT_POD_IP"
+    fi
+    if [ -z ${POLICY_POD_IP} ]; then
+        echo "POLICY_POD_IP=$POLICY_POD_IP"
+    fi
+    if [ -z ${STATSD_POD_IP} ]; then
+        echo "STATSD_POD_IP=$STATSD_POD_IP"
+    fi
+    if [ -z ${TELEMETRY_POD_IP} ]; then
+        echo "TELEMETRY_POD_IP=$TELEMETRY_POD_IP"
+    fi
+    if [ -z ${ZIPKIN_POD_IP} ]; then
+        echo "ZIPKIN_POD_IP=$ZIPKIN_POD_IP"
+    fi
+
+    _command "helm upgrade --install ${RNAME} ${RISTIO_DIR} --namespace ${NAMESPACE} --set global.remotePilotAddress=${PILOT_POD_IP} --set global.remotePolicyAddress=${POLICY_POD_IP} --set global.remoteTelemetryAddress=${TELEMETRY_POD_IP} --set global.proxy.envoyStatsd.enabled=true --set global.proxy.envoyStatsd.host=${STATSD_POD_IP} --set global.remoteZipkinAddress=${ZIPKIN_POD_IP}"
+    helm upgrade --install ${RNAME} ${RISTIO_DIR} --namespace ${NAMESPACE} \
+                 --set global.remotePilotAddress=${PILOT_POD_IP} \
+                 --set global.remotePolicyAddress=${POLICY_POD_IP} \
+                 --set global.remoteTelemetryAddress=${TELEMETRY_POD_IP} \
+                 --set global.proxy.envoyStatsd.enabled=true \
+                 --set global.proxy.envoyStatsd.host=${STATSD_POD_IP} \
+                 --set global.remoteZipkinAddress=${ZIPKIN_POD_IP}
+ 
+    # save config (ISTIO)
+    ISTIO=true
+    config_save
+
+    # waiting 2
+    waiting_pod "${NAMESPACE}" "${RNAME}"
+
+    _command "helm history ${RNAME}"
+    helm history ${RNAME}
+
+    _command "kubectl get deploy,pod,svc -n ${NAMESPACE}"
+    kubectl get deploy,pod,svc -n ${NAMESPACE}
 }
 
 istio_injection() {
