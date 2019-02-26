@@ -1462,7 +1462,7 @@ get_ingress_nip_io() {
 
 read_root_domain() {
     # domain list
-    LIST=${SHELL_DIR}/build/${CLUSTER_NAME}/hosted-zones
+    LIST=${SHELL_DIR}/build/${THIS_NAME}/hosted-zones
 
     _command "aws route53 list-hosted-zones | jq -r '.HostedZones[] | .Name' | sed 's/.$//'"
     aws route53 list-hosted-zones | jq -r '.HostedZones[] | .Name' | sed 's/.$//' > ${LIST}
