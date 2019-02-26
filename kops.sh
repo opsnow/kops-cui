@@ -59,7 +59,7 @@ prepare() {
 
     mkdir -p ~/.ssh
     mkdir -p ~/.aws
-    mkdir -p ${SHELL_DIR}/build
+    mkdir -p ${SHELL_DIR}/build/${THIS_NAME}
 
     if [ ! -f ~/.ssh/id_rsa ]; then
         _command "ssh-keygen -q -f ~/.ssh/id_rsa -N ''"
@@ -414,7 +414,7 @@ read_kops_config() {
         COUNT=$(aws s3 ls s3://${KOPS_STATE_STORE} | grep ${KOPS_CLUSTER_NAME}.kops-cui | wc -l | xargs)
 
         if [ "x${COUNT}" != "x0" ]; then
-            CONFIG=${SHELL_DIR}/build/${THIS_NAME}-kops-config.sh
+            CONFIG=${SHELL_DIR}/build/${THIS_NAME}/kops-config.sh
 
             _command "aws s3 cp s3://${KOPS_STATE_STORE}/${KOPS_CLUSTER_NAME}.kops-cui ${CONFIG}"
             aws s3 cp s3://${KOPS_STATE_STORE}/${KOPS_CLUSTER_NAME}.kops-cui ${CONFIG} --quiet
@@ -439,7 +439,7 @@ save_kops_config() {
         S3_SYNC=true
     fi
 
-    CONFIG=${SHELL_DIR}/build/${THIS_NAME}-kops-config.sh
+    CONFIG=${SHELL_DIR}/build/${THIS_NAME}/kops-config.sh
     echo "# kops config" > ${CONFIG}
     echo "KOPS_STATE_STORE=${KOPS_STATE_STORE}" >> ${CONFIG}
     echo "KOPS_CLUSTER_NAME=${KOPS_CLUSTER_NAME}" >> ${CONFIG}
@@ -459,7 +459,7 @@ save_kops_config() {
 
 read_state_store() {
     # state store list
-    LIST=${SHELL_DIR}/build/${THIS_NAME}-kops-state-store-list
+    LIST=${SHELL_DIR}/build/${THIS_NAME}/kops-state-store-list
 
     _command "aws s3 ls | grep kops-state"
     aws s3 ls | grep kops-state | awk '{print $3}' > ${LIST}
@@ -500,7 +500,7 @@ read_state_store() {
 
 read_cluster_list() {
     # cluster list
-    LIST=${SHELL_DIR}/build/${THIS_NAME}-kops-cluster-list
+    LIST=${SHELL_DIR}/build/${THIS_NAME}/kops-cluster-list
 
     _command "kops get cluster --state=s3://${KOPS_STATE_STORE}"
     kops get cluster --state=s3://${KOPS_STATE_STORE} | grep -v "NAME" | awk '{print $1}' > ${LIST}
@@ -548,7 +548,7 @@ kops_get() {
 }
 
 kops_create() {
-    KOPS_CREATE=${SHELL_DIR}/build/${THIS_NAME}-kops-create.sh
+    KOPS_CREATE=${SHELL_DIR}/build/${THIS_NAME}/kops-create.sh
 
     echo "kops create cluster "                  >  ${KOPS_CREATE}
     echo "    --cloud=${cloud} "                 >> ${KOPS_CREATE}
@@ -586,7 +586,7 @@ kops_create() {
 }
 
 kops_edit() {
-    LIST=${SHELL_DIR}/build/${THIS_NAME}-kops-ig-list
+    LIST=${SHELL_DIR}/build/${THIS_NAME}/kops-ig-list
 
     _command "kops get ig --name=${KOPS_CLUSTER_NAME} --state=s3://${KOPS_STATE_STORE}"
     kops get ig --name=${KOPS_CLUSTER_NAME} --state=s3://${KOPS_STATE_STORE} | grep -v "NAME" > ${LIST}
@@ -694,7 +694,7 @@ efs_delete() {
 }
 
 elb_delete() {
-    LIST=${SHELL_DIR}/build/${THIS_NAME}-elb-list
+    LIST=${SHELL_DIR}/build/${THIS_NAME}/elb-list
 
     kubectl get svc --all-namespaces | grep LoadBalancer | awk '{print $5}' | cut -d'-' -f1 > ${LIST}
 

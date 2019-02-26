@@ -23,7 +23,7 @@ prepare() {
 
     mkdir -p ~/.ssh
     mkdir -p ~/.aws
-    mkdir -p ${SHELL_DIR}/build
+    mkdir -p ${SHELL_DIR}/build/${THIS_NAME}
 
     NEED_TOOL=
     command -v jq > /dev/null      || export NEED_TOOL=jq
@@ -197,7 +197,7 @@ istio_menu() {
 sample_menu() {
     title
 
-    LIST=${SHELL_DIR}/build/${THIS_NAME}-sample-list
+    LIST=${SHELL_DIR}/build/${CLUSTER_NAME}/sample-list
 
     # find sample
     ls ${SHELL_DIR}/charts/sample | grep yaml | sort | sed 's/.yaml//' > ${LIST}
@@ -221,7 +221,7 @@ charts_menu() {
 
     NAMESPACE=$1
 
-    LIST=${SHELL_DIR}/build/${THIS_NAME}-charts-list
+    LIST=${SHELL_DIR}/build/${CLUSTER_NAME}/charts-list
 
     # find chart
     ls ${SHELL_DIR}/charts/${NAMESPACE} | sort | sed 's/.yaml//' > ${LIST}
@@ -258,7 +258,7 @@ helm_install() {
     # fi
 
     # helm chart
-    CHART=${SHELL_DIR}/build/${THIS_NAME}-helm-${NAME}.yaml
+    CHART=${SHELL_DIR}/build/${CLUSTER_NAME}/helm-${NAME}.yaml
     get_template charts/${NAMESPACE}/${NAME}.yaml ${CHART}
 
     # chart repository
@@ -414,17 +414,20 @@ helm_install() {
     fi
 
     # check exist persistent volume
-    LIST=${SHELL_DIR}/build/${THIS_NAME}-pvc-${NAME}-yaml
-    cat ${CHART} | grep '# chart-pvc:' | awk '{print $3,$4,$5}' > ${LIST}
-    while IFS='' read -r line || [[ -n "$line" ]]; do
-        ARR=(${line})
-        check_exist_pv ${NAMESPACE} ${ARR[0]} ${ARR[1]} ${ARR[2]}
-        RELEASED=$?
-        if [ "${RELEASED}" -gt "0" ]; then
-            echo "  To use an existing volume, remove the PV's '.claimRef.uid' attribute to make the PV an 'Available' status and try again."
-            return
-        fi
-    done < "${LIST}"
+    COUNT=$(cat ${CHART} | grep '# chart-pvc:' | wc -l | xargs)
+    if [ "x${COUNT}" != "x0" ]; then
+        LIST=${SHELL_DIR}/build/${CLUSTER_NAME}/pvc-${NAME}-yaml
+        cat ${CHART} | grep '# chart-pvc:' | awk '{print $3,$4,$5}' > ${LIST}
+        while IFS='' read -r line || [[ -n "$line" ]]; do
+            ARR=(${line})
+            check_exist_pv ${NAMESPACE} ${ARR[0]} ${ARR[1]} ${ARR[2]}
+            RELEASED=$?
+            if [ "${RELEASED}" -gt "0" ]; then
+                echo "  To use an existing volume, remove the PV's '.claimRef.uid' attribute to make the PV an 'Available' status and try again."
+                return
+            fi
+        done < "${LIST}"
+    fi
 
     # helm install
     if [ "${VERSION}" == "" ] || [ "${VERSION}" == "latest" ]; then
@@ -494,7 +497,7 @@ helm_install() {
 helm_delete() {
     NAME=
 
-    LIST=${SHELL_DIR}/build/${THIS_NAME}-helm-list
+    LIST=${SHELL_DIR}/build/${CLUSTER_NAME}/helm-list
 
     _command "helm ls --all"
 
@@ -660,7 +663,7 @@ create_pdb() {
         APP_NAME="heapster-heapster"
     fi
 
-    YAML=${SHELL_DIR}/build/${THIS_NAME}-pdb-${PDB_NAME}.yaml
+    YAML=${SHELL_DIR}/build/${CLUSTER_NAME}/pdb-${PDB_NAME}.yaml
     get_template templates/pdb-${LABELS}.yaml ${YAML}
 
     _replace "s/PDB_NAME/${PDB_NAME}/g" ${YAML}
@@ -712,7 +715,7 @@ check_exist_pv() {
         # Create a new pvc
         create_pvc ${NAMESPACE} ${PVC_NAME} ${PVC_ACCESS_MODE} ${PVC_SIZE}
     else
-        PV_JSON=${SHELL_DIR}/build/${THIS_NAME}-pv-${PVC_NAME}.json
+        PV_JSON=${SHELL_DIR}/build/${CLUSTER_NAME}/pv-${PVC_NAME}.json
 
         _command "kubectl get pv -o json ${PV_NAME}"
         kubectl get pv -o json ${PV_NAME} > ${PV_JSON}
@@ -740,7 +743,7 @@ create_pvc() {
     PVC_SIZE=${4}
     PV_NAME=${5}
 
-    YAML=${SHELL_DIR}/build/${THIS_NAME}-pvc-${PVC_NAME}.yaml
+    YAML=${SHELL_DIR}/build/${CLUSTER_NAME}/pvc-${PVC_NAME}.yaml
     get_template templates/pvc.yaml ${YAML}
 
     _replace "s/PVC_NAME/${PVC_NAME}/g" ${YAML}
@@ -1005,7 +1008,7 @@ istio_init() {
 }
 
 istio_secret() {
-    YAML=${SHELL_DIR}/build/${THIS_NAME}-istio-secret.yaml
+    YAML=${SHELL_DIR}/build/${CLUSTER_NAME}/istio-secret.yaml
     get_template templates/istio-secret.yaml ${YAML}
 
     replace_base64 ${YAML} "USERNAME" "admin"
@@ -1020,7 +1023,7 @@ istio_install() {
 
     create_namespace ${NAMESPACE}
 
-    CHART=${SHELL_DIR}/build/${THIS_NAME}-${NAME}.yaml
+    CHART=${SHELL_DIR}/build/${CLUSTER_NAME}/${NAME}.yaml
     get_template charts/istio/${NAME}.yaml ${CHART}
 
     # ingress
@@ -1071,7 +1074,7 @@ istio_injection() {
         return
     fi
 
-    LIST=${SHELL_DIR}/build/${THIS_NAME}-istio-ns-list
+    LIST=${SHELL_DIR}/build/${CLUSTER_NAME}/istio-ns-list
 
     # find sample
     kubectl get ns | grep -v "NAME" | awk '{print $1}' > ${LIST}
@@ -1123,7 +1126,7 @@ sample_install() {
     NAME=${1}
     NAMESPACE=${2}
 
-    CHART=${SHELL_DIR}/build/${THIS_NAME}-${NAME}.yaml
+    CHART=${SHELL_DIR}/build/${CLUSTER_NAME}/${NAME}.yaml
     get_template charts/sample/${NAME}.yaml ${CHART}
 
     # profile
@@ -1192,7 +1195,7 @@ sample_install() {
 
 get_cluster() {
     # config list
-    LIST=${SHELL_DIR}/build/${THIS_NAME}-config-list
+    LIST=${SHELL_DIR}/build/config-list
     kubectl config view -o json | jq -r '.contexts[].name' | sort > ${LIST}
 
     # select
@@ -1305,7 +1308,7 @@ get_ingress_nip_io() {
 
 read_root_domain() {
     # domain list
-    LIST=${SHELL_DIR}/build/${THIS_NAME}-hosted-zones
+    LIST=${SHELL_DIR}/build/${CLUSTER_NAME}/hosted-zones
 
     _command "aws route53 list-hosted-zones | jq -r '.HostedZones[] | .Name' | sed 's/.$//'"
     aws route53 list-hosted-zones | jq -r '.HostedZones[] | .Name' | sed 's/.$//' > ${LIST}
@@ -1364,7 +1367,7 @@ req_ssl_cert_arn() {
     fi
 
     # record sets
-    RECORD=${SHELL_DIR}/build/${THIS_NAME}-record-sets-cname.json
+    RECORD=${SHELL_DIR}/build/${CLUSTER_NAME}/record-sets-cname.json
     get_template templates/record-sets-cname.json ${RECORD}
 
     # replace
@@ -1408,7 +1411,7 @@ set_record_alias() {
     fi
 
     # record sets
-    RECORD=${SHELL_DIR}/build/${THIS_NAME}-record-sets-alias.json
+    RECORD=${SHELL_DIR}/build/${CLUSTER_NAME}/record-sets-alias.json
     get_template templates/record-sets-alias.json ${RECORD}
 
     # replace
@@ -1443,7 +1446,7 @@ set_record_delete() {
     fi
 
     # record sets
-    RECORD=${SHELL_DIR}/build/${THIS_NAME}-record-sets-delete.json
+    RECORD=${SHELL_DIR}/build/${CLUSTER_NAME}/record-sets-delete.json
     get_template templates/record-sets-delete.json ${RECORD}
 
     # replace
@@ -1585,7 +1588,7 @@ waiting_deploy() {
     _command "kubectl get deploy -n ${_NS} | grep ${_NM}"
     kubectl get deploy -n ${_NS} | head -1
 
-    DEPLOY=${SHELL_DIR}/build/${THIS_NAME}-waiting-pod
+    DEPLOY=${SHELL_DIR}/build/${THIS_NAME}/waiting-pod
 
     IDX=0
     while true; do
@@ -1614,7 +1617,7 @@ waiting_pod() {
     _command "kubectl get pod -n ${_NS} | grep ${_NM}"
     kubectl get pod -n ${_NS} | head -1
 
-    POD=${SHELL_DIR}/build/${THIS_NAME}-waiting-pod
+    POD=${SHELL_DIR}/build/${THIS_NAME}/waiting-pod
 
     IDX=0
     while true; do
