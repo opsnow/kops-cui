@@ -232,8 +232,8 @@ else
         _result " ${AWS_AUTH} >> ${VERSION}"
 
         URL="https://github.com/kubernetes-sigs/aws-iam-authenticator/releases/download/v${VERSION}/heptio-authenticator-aws_${VERSION}_${OS_NAME}_amd64"
-        curl -L -o ${TMP}/aws-iam-authenticator ${URL}
-        chmod +x ${TMP}/aws-iam-authenticator && sudo mv ${TMP}/aws-iam-authenticator /usr/local/bin/aws-iam-authenticator
+        curl -L -o aws-iam-authenticator ${URL}
+        chmod +x aws-iam-authenticator && sudo mv aws-iam-authenticator /usr/local/bin/aws-iam-authenticator
 
         AWS_AUTH="${VERSION}"
     fi
