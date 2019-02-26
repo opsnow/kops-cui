@@ -684,7 +684,7 @@ create_pdb() {
     fi
 
     YAML=${SHELL_DIR}/build/${CLUSTER_NAME}/pdb-${PDB_NAME}.yaml
-    get_template templates/pdb-${LABELS}.yaml ${YAML}
+    get_template templates/pdb/pdb-${LABELS}.yaml ${YAML}
 
     _replace "s/PDB_NAME/${PDB_NAME}/g" ${YAML}
     _replace "s/APP_NAME/${APP_NAME}/g" ${YAML}
@@ -1358,6 +1358,8 @@ get_cluster() {
     fi
 
     CLUSTER_NAME="${SELECTED}"
+
+    mkdir -p ${SHELL_DIR}/build/${CLUSTER_NAME}
 
     _command "kubectl config use-context ${CLUSTER_NAME}"
     kubectl config use-context ${CLUSTER_NAME}
