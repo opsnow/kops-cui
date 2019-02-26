@@ -176,13 +176,18 @@ get_node_zones() {
 }
 
 get_template() {
-    rm -rf ${2}
-    if [ -f ${SHELL_DIR}/${1} ]; then
-        cat ${SHELL_DIR}/${1} > ${2}
+    __FROM=${SHELL_DIR}/${1}
+    __DIST=${2}
+
+    mkdir -p ${SHELL_DIR}/build/${THIS_NAME}
+    rm -rf ${__DIST}
+
+    if [ -f ${__FROM} ]; then
+        cat ${__FROM} > ${__DIST}
     else
-        curl -sL https://raw.githubusercontent.com/${THIS_REPO}/${THIS_NAME}/master/${1} > ${2}
+        curl -sL https://raw.githubusercontent.com/${THIS_REPO}/${THIS_NAME}/master/${1} > ${__DIST}
     fi
-    if [ ! -f ${2} ]; then
+    if [ ! -f ${__DIST} ]; then
         _error "Template does not exists. [${1}]"
     fi
 }
@@ -216,7 +221,8 @@ logo() {
 }
 
 config_save() {
-    CONFIG=${SHELL_DIR}/build/${THIS_NAME}-config.sh
+    CONFIG=${SHELL_DIR}/build/${CLUSTER_NAME}/config.sh
+
     echo "# ${THIS_NAME} config" > ${CONFIG}
     echo "CLUSTER_NAME=${CLUSTER_NAME}" >> ${CONFIG}
     echo "ROOT_DOMAIN=${ROOT_DOMAIN}" >> ${CONFIG}
@@ -229,7 +235,7 @@ config_save() {
     _command "save ${THIS_NAME}-config"
     cat ${CONFIG}
 
-    ENCODED=${SHELL_DIR}/build/${THIS_NAME}-config.txt
+    ENCODED=${SHELL_DIR}/build/${CLUSTER_NAME}/config.txt
 
     if [ "${OS_NAME}" == "darwin" ]; then
         cat ${CONFIG} | base64 > ${ENCODED}
@@ -237,7 +243,7 @@ config_save() {
         cat ${CONFIG} | base64 -w 0 > ${ENCODED}
     fi
 
-    CONFIG=${SHELL_DIR}/build/${THIS_NAME}-config.yaml
+    CONFIG=${SHELL_DIR}/build/${CLUSTER_NAME}/config.yaml
     get_template templates/config.yaml ${CONFIG}
 
     _replace "s/REPLACE-ME/${THIS_NAME}-config/" ${CONFIG}
@@ -259,7 +265,9 @@ config_load() {
     COUNT=$(kubectl get secret -n default | grep ${THIS_NAME}-config  | wc -l | xargs)
 
     if [ "x${COUNT}" != "x0" ]; then
-        CONFIG=${SHELL_DIR}/build/${THIS_NAME}-config.sh
+        mkdir -p ${SHELL_DIR}/build/${CLUSTER_NAME}
+
+        CONFIG=${SHELL_DIR}/build/${CLUSTER_NAME}/config.sh
 
         kubectl get secret ${THIS_NAME}-config -n default -o json | jq -r '.data.text' | base64 --decode > ${CONFIG}
 
