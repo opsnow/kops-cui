@@ -1081,7 +1081,7 @@ istio_export_config() {
     SECRET_NAME=$(kubectl get sa ${SERVICE_ACCOUNT} -n ${NAMESPACE} -o jsonpath='{.secrets[].name}')
     CA_DATA=$(kubectl get secret ${SECRET_NAME} -n ${NAMESPACE} -o "jsonpath={.data['ca\.crt']}")
     TOKEN=$(kubectl get secret ${SECRET_NAME} -n ${NAMESPACE} -o "jsonpath={.data['token']}" | base64 --decode)
-    
+
     cat <<EOF > ${KUBECFG_FILE}
 apiVersion: v1
 clusters:
@@ -1102,7 +1102,7 @@ users:
  user:
    token: ${TOKEN}
 EOF
-    
+
     cat <<EOF > ${KUBECFG_ENV_FILE}
 export CLUSTER_NAME=${CLUSTER_NAME}
 export KUBECFG_FILE=${KUBECFG_FILE}
@@ -1177,7 +1177,7 @@ istio_remote_install() {
     CHART=${SHELL_DIR}/build/${THIS_NAME}-istio-${NAME}.yaml
     get_template charts/istio/${NAME}.yaml ${CHART}
 
-    
+
     if [ -z ${PILOT_POD_IP} ]; then
         echo "PILOT_POD_IP=$PILOT_POD_IP"
     fi
@@ -1202,7 +1202,7 @@ istio_remote_install() {
                  --set global.proxy.envoyStatsd.enabled=true \
                  --set global.proxy.envoyStatsd.host=${STATSD_POD_IP} \
                  --set global.remoteZipkinAddress=${ZIPKIN_POD_IP}
- 
+
     # save config (ISTIO)
     ISTIO=true
     config_save
@@ -1347,7 +1347,7 @@ sample_install() {
 
 get_cluster() {
     # config list
-    LIST=${SHELL_DIR}/build/config-list
+    LIST=${SHELL_DIR}/build/${THIS_NAME}/config-list
     kubectl config view -o json | jq -r '.contexts[].name' | sort > ${LIST}
 
     # select
