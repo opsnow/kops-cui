@@ -291,6 +291,7 @@ variables_save() {
     CONFIG=${SHELL_DIR}/build/${CLUSTER_NAME}/variables.groovy
 
     echo "#!/usr/bin/groovy" > ${CONFIG}
+    echo "import groovy.transform.Field" >> ${CONFIG}
 
     echo "@Field" >> ${CONFIG}
     echo "def root_domain = \"${ROOT_DOMAIN}\"" >> ${CONFIG}
