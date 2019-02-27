@@ -154,6 +154,28 @@ fi
 
 kubectl version --client --short | xargs | awk '{print $3}'
 
+# terraform
+echo "================================================================================"
+_result "install terraform..."
+
+if [ "${OS_TYPE}" == "brew" ]; then
+    command -v terraform > /dev/null || brew install terraform
+else
+    VERSION=$(curl -s https://storage.googleapis.com/kubernetes-release/release/stable.txt)
+
+    if [ "${TERRAFORM}" != "${VERSION}" ] || [ "$(command -v terraform)" == "" ]; then
+        _result " ${TERRAFORM} >> ${VERSION}"
+
+        curl -LO "https://releases.hashicorp.com/terraform/${VERSION}/terraform_${VERSION}_${OS_NAME}_amd64.zip"
+        unzip terraform_${VERSION}_${OS_NAME}_amd64.zip && rm -rf terraform_${VERSION}_${OS_NAME}_amd64.zip
+        sudo mv terraform /usr/local/bin/terraform
+
+        TERRAFORM="${VERSION}"
+    fi
+fi
+
+terraform version | xargs | awk '{print $2}'
+
 # kops
 echo "================================================================================"
 _result "install kops..."
@@ -279,6 +301,7 @@ cat << EOF > ${CONFIG}
 # version
 DATE="${DATE}"
 KUBECTL="${KUBECTL}"
+TERRAFORM="${TERRAFORM}"
 KOPS="${KOPS}"
 HELM="${HELM}"
 DRAFT="${DRAFT}"
