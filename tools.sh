@@ -154,6 +154,28 @@ fi
 
 kubectl version --client --short | xargs | awk '{print $3}'
 
+# terraform
+echo "================================================================================"
+_result "install terraform..."
+
+if [ "${OS_TYPE}" == "brew" ]; then
+    command -v terraform > /dev/null || brew install terraform
+else
+    VERSION=$(curl -s https://api.github.com/repos/hashicorp/terraform/releases/latest | jq -r '.tag_name' | cut -d'v' -f2)
+
+    if [ "${TERRAFORM}" != "${VERSION}" ] || [ "$(command -v terraform)" == "" ]; then
+        _result " ${TERRAFORM} >> ${VERSION}"
+
+        curl -LO "https://releases.hashicorp.com/terraform/${VERSION}/terraform_${VERSION}_${OS_NAME}_amd64.zip"
+        unzip terraform_${VERSION}_${OS_NAME}_amd64.zip && rm -rf terraform_${VERSION}_${OS_NAME}_amd64.zip
+        sudo mv terraform /usr/local/bin/terraform
+
+        TERRAFORM="${VERSION}"
+    fi
+fi
+
+terraform version | xargs | awk '{print $2}'
+
 # kops
 echo "================================================================================"
 _result "install kops..."
@@ -223,17 +245,18 @@ draft version --short | xargs | cut -d'+' -f1
 echo "================================================================================"
 _result "install aws-iam-authenticator..."
 
-VERSION=0.3.0
-
 if [ "${OS_TYPE}" == "brew" ]; then
     command -v aws-iam-authenticator > /dev/null || brew install aws-iam-authenticator
 else
+    VERSION=$(curl -s https://api.github.com/repos/kubernetes-sigs/aws-iam-authenticator/releases/latest | jq -r '.tag_name' | cut -d'v' -f2)
+    # VERSION=0.3.0
+
     if [ "${AWS_AUTH}" != "${VERSION}" ] || [ "$(command -v draft)" == "" ]; then
         _result " ${AWS_AUTH} >> ${VERSION}"
 
         URL="https://github.com/kubernetes-sigs/aws-iam-authenticator/releases/download/v${VERSION}/heptio-authenticator-aws_${VERSION}_${OS_NAME}_amd64"
-        curl -L -o ${TMP}/aws-iam-authenticator ${URL}
-        chmod +x ${TMP}/aws-iam-authenticator && sudo mv ${TMP}/aws-iam-authenticator /usr/local/bin/aws-iam-authenticator
+        curl -L -o aws-iam-authenticator ${URL}
+        chmod +x aws-iam-authenticator && sudo mv aws-iam-authenticator /usr/local/bin/aws-iam-authenticator
 
         AWS_AUTH="${VERSION}"
     fi
@@ -278,9 +301,11 @@ cat << EOF > ${CONFIG}
 # version
 DATE="${DATE}"
 KUBECTL="${KUBECTL}"
+TERRAFORM="${TERRAFORM}"
 KOPS="${KOPS}"
 HELM="${HELM}"
 DRAFT="${DRAFT}"
+AWS_AUTH="${AWS_AUTH}"
 GUARD="${GUARD}"
 EOF
 

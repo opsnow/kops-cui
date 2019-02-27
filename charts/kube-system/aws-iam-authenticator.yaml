@@ -1,0 +1,5 @@
+# chart-repo: stable/aws-iam-authenticator
+# chart-version: latest
+# chart-pdb: N 1
+
+nameOverride: aws-iam-authenticator

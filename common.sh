@@ -176,13 +176,18 @@ get_node_zones() {
 }
 
 get_template() {
-    rm -rf ${2}
-    if [ -f ${SHELL_DIR}/${1} ]; then
-        cat ${SHELL_DIR}/${1} > ${2}
+    __FROM=${SHELL_DIR}/${1}
+    __DIST=${2}
+
+    mkdir -p ${SHELL_DIR}/build/${THIS_NAME}
+    rm -rf ${__DIST}
+
+    if [ -f ${__FROM} ]; then
+        cat ${__FROM} > ${__DIST}
     else
-        curl -sL https://raw.githubusercontent.com/${THIS_REPO}/${THIS_NAME}/master/${1} > ${2}
+        curl -sL https://raw.githubusercontent.com/${THIS_REPO}/${THIS_NAME}/master/${1} > ${__DIST}
     fi
-    if [ ! -f ${2} ]; then
+    if [ ! -f ${__DIST} ]; then
         _error "Template does not exists. [${1}]"
     fi
 }
@@ -215,8 +220,32 @@ logo() {
     fi
 }
 
+config_load() {
+    COUNT=$(kubectl get pod -n kube-system | wc -l | xargs)
+
+    if [ "x${COUNT}" == "x0" ]; then
+        _error "Unable to connect to the cluster."
+    fi
+
+    COUNT=$(kubectl get secret -n default | grep ${THIS_NAME}-config  | wc -l | xargs)
+
+    if [ "x${COUNT}" != "x0" ]; then
+        mkdir -p ${SHELL_DIR}/build/${CLUSTER_NAME}
+
+        CONFIG=${SHELL_DIR}/build/${CLUSTER_NAME}/config.sh
+
+        kubectl get secret ${THIS_NAME}-config -n default -o json | jq -r '.data.text' | base64 --decode > ${CONFIG}
+
+        _command "load ${THIS_NAME}-config"
+        cat ${CONFIG}
+
+        . ${CONFIG}
+    fi
+}
+
 config_save() {
-    CONFIG=${SHELL_DIR}/build/${THIS_NAME}-config.sh
+    CONFIG=${SHELL_DIR}/build/${CLUSTER_NAME}/config.sh
+
     echo "# ${THIS_NAME} config" > ${CONFIG}
     echo "CLUSTER_NAME=${CLUSTER_NAME}" >> ${CONFIG}
     echo "ROOT_DOMAIN=${ROOT_DOMAIN}" >> ${CONFIG}
@@ -229,7 +258,7 @@ config_save() {
     _command "save ${THIS_NAME}-config"
     cat ${CONFIG}
 
-    ENCODED=${SHELL_DIR}/build/${THIS_NAME}-config.txt
+    ENCODED=${SHELL_DIR}/build/${CLUSTER_NAME}/config.txt
 
     if [ "${OS_NAME}" == "darwin" ]; then
         cat ${CONFIG} | base64 > ${ENCODED}
@@ -237,35 +266,74 @@ config_save() {
         cat ${CONFIG} | base64 -w 0 > ${ENCODED}
     fi
 
-    CONFIG=${SHELL_DIR}/build/${THIS_NAME}-config.yaml
+    CONFIG=${SHELL_DIR}/build/${CLUSTER_NAME}/config.yaml
     get_template templates/config.yaml ${CONFIG}
 
     _replace "s/REPLACE-ME/${THIS_NAME}-config/" ${CONFIG}
 
     sed "s/^/    /" ${ENCODED} >> ${CONFIG}
 
+    _command "kubectl apply -f ${CONFIG} -n default"
     kubectl apply -f ${CONFIG} -n default
 
     CONFIG_SAVE=
 }
 
-config_load() {
-    COUNT=$(kubectl get pod -n kube-system | wc -l | xargs)
+variables_domain() {
+    __KEY=${1}
+    __VAL=$(kubectl get ing --all-namespaces | grep devops | grep ${__KEY} | awk '{print $3}')
 
+    echo "@Field" >> ${CONFIG}
+    echo "def ${__KEY} = \"${__VAL}\"" >> ${CONFIG}
+}
+
+variables_save() {
+    CONFIG=${SHELL_DIR}/build/${CLUSTER_NAME}/variables.groovy
+
+    echo "#!/usr/bin/groovy" > ${CONFIG}
+    echo "import groovy.transform.Field" >> ${CONFIG}
+
+    echo "@Field" >> ${CONFIG}
+    echo "def root_domain = \"${ROOT_DOMAIN}\"" >> ${CONFIG}
+
+    echo "@Field" >> ${CONFIG}
+    echo "def base_domain = \"${BASE_DOMAIN}\"" >> ${CONFIG}
+
+    COUNT=$(kubectl get ing --all-namespaces | grep devops | wc -l | xargs)
     if [ "x${COUNT}" == "x0" ]; then
-        _error "Unable to connect to the cluster."
+        echo "@Field" >> ${CONFIG}
+        echo "def cluster = \"${CLUSTER_NAME}\"" >> ${CONFIG}
+    else
+        echo "@Field" >> ${CONFIG}
+        echo "def cluster = \"devops\"" >> ${CONFIG}
+
+        variables_domain "chartmuseum"
+        variables_domain "registry"
+        variables_domain "jenkins"
+        variables_domain "sonarqube"
+        variables_domain "nexus"
     fi
 
-    COUNT=$(kubectl get secret -n default | grep ${THIS_NAME}-config  | wc -l | xargs)
+    echo "@Field" >> ${CONFIG}
+    echo "def slack_token = \"\"" >> ${CONFIG}
 
-    if [ "x${COUNT}" != "x0" ]; then
-        CONFIG=${SHELL_DIR}/build/${THIS_NAME}-config.sh
+    echo "return this" >> ${CONFIG}
 
-        kubectl get secret ${THIS_NAME}-config -n default -o json | jq -r '.data.text' | base64 --decode > ${CONFIG}
+    ENCODED=${SHELL_DIR}/build/${CLUSTER_NAME}/variables.txt
 
-        _command "load ${THIS_NAME}-config"
-        cat ${CONFIG}
-
-        . ${CONFIG}
+    if [ "${OS_NAME}" == "darwin" ]; then
+        cat ${CONFIG} | base64 > ${ENCODED}
+    else
+        cat ${CONFIG} | base64 -w 0 > ${ENCODED}
     fi
+
+    CONFIG=${SHELL_DIR}/build/${CLUSTER_NAME}/variables.yaml
+    get_template templates/groovy.yaml ${CONFIG}
+
+    _replace "s/REPLACE-ME/groovy-variables/" ${CONFIG}
+
+    sed "s/^/    /" ${ENCODED} >> ${CONFIG}
+
+    _command "kubectl apply -f ${CONFIG} -n default"
+    kubectl apply -f ${CONFIG} -n default
 }

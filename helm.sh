@@ -23,7 +23,7 @@ prepare() {
 
     mkdir -p ~/.ssh
     mkdir -p ~/.aws
-    mkdir -p ${SHELL_DIR}/build
+    mkdir -p ${SHELL_DIR}/build/${THIS_NAME}
 
     NEED_TOOL=
     command -v jq > /dev/null      || export NEED_TOOL=jq
@@ -102,6 +102,7 @@ main_menu() {
     echo
     _echo "d. remove"
     echo
+    # _echo "v. save variables"
     _echo "u. update self"
     _echo "t. update tools"
     echo
@@ -134,6 +135,10 @@ main_menu() {
             ;;
         d|9)
             helm_delete
+            press_enter main
+            ;;
+        v)
+            variables_save
             press_enter main
             ;;
         u)
@@ -217,7 +222,7 @@ istio_menu() {
 sample_menu() {
     title
 
-    LIST=${SHELL_DIR}/build/${THIS_NAME}-sample-list
+    LIST=${SHELL_DIR}/build/${CLUSTER_NAME}/sample-list
 
     # find sample
     ls ${SHELL_DIR}/charts/sample | grep yaml | sort | sed 's/.yaml//' > ${LIST}
@@ -241,7 +246,7 @@ charts_menu() {
 
     NAMESPACE=$1
 
-    LIST=${SHELL_DIR}/build/${THIS_NAME}-charts-list
+    LIST=${SHELL_DIR}/build/${CLUSTER_NAME}/charts-list
 
     # find chart
     ls ${SHELL_DIR}/charts/${NAMESPACE} | sort | sed 's/.yaml//' > ${LIST}
@@ -278,7 +283,7 @@ helm_install() {
     # fi
 
     # helm chart
-    CHART=${SHELL_DIR}/build/${THIS_NAME}-helm-${NAME}.yaml
+    CHART=${SHELL_DIR}/build/${CLUSTER_NAME}/helm-${NAME}.yaml
     get_template charts/${NAMESPACE}/${NAME}.yaml ${CHART}
 
     # chart repository
@@ -434,17 +439,20 @@ helm_install() {
     fi
 
     # check exist persistent volume
-    LIST=${SHELL_DIR}/build/${THIS_NAME}-pvc-${NAME}-yaml
-    cat ${CHART} | grep '# chart-pvc:' | awk '{print $3,$4,$5}' > ${LIST}
-    while IFS='' read -r line || [[ -n "$line" ]]; do
-        ARR=(${line})
-        check_exist_pv ${NAMESPACE} ${ARR[0]} ${ARR[1]} ${ARR[2]}
-        RELEASED=$?
-        if [ "${RELEASED}" -gt "0" ]; then
-            echo "  To use an existing volume, remove the PV's '.claimRef.uid' attribute to make the PV an 'Available' status and try again."
-            return
-        fi
-    done < "${LIST}"
+    COUNT=$(cat ${CHART} | grep '# chart-pvc:' | wc -l | xargs)
+    if [ "x${COUNT}" != "x0" ]; then
+        LIST=${SHELL_DIR}/build/${CLUSTER_NAME}/pvc-${NAME}-yaml
+        cat ${CHART} | grep '# chart-pvc:' | awk '{print $3,$4,$5}' > ${LIST}
+        while IFS='' read -r line || [[ -n "$line" ]]; do
+            ARR=(${line})
+            check_exist_pv ${NAMESPACE} ${ARR[0]} ${ARR[1]} ${ARR[2]}
+            RELEASED=$?
+            if [ "${RELEASED}" -gt "0" ]; then
+                echo "  To use an existing volume, remove the PV's '.claimRef.uid' attribute to make the PV an 'Available' status and try again."
+                return
+            fi
+        done < "${LIST}"
+    fi
 
     # helm install
     if [ "${VERSION}" == "" ] || [ "${VERSION}" == "latest" ]; then
@@ -514,7 +522,7 @@ helm_install() {
 helm_delete() {
     NAME=
 
-    LIST=${SHELL_DIR}/build/${THIS_NAME}-helm-list
+    LIST=${SHELL_DIR}/build/${CLUSTER_NAME}/helm-list
 
     _command "helm ls --all"
 
@@ -680,8 +688,8 @@ create_pdb() {
         APP_NAME="heapster-heapster"
     fi
 
-    YAML=${SHELL_DIR}/build/${THIS_NAME}-pdb-${PDB_NAME}.yaml
-    get_template templates/pdb-${LABELS}.yaml ${YAML}
+    YAML=${SHELL_DIR}/build/${CLUSTER_NAME}/pdb-${PDB_NAME}.yaml
+    get_template templates/pdb/pdb-${LABELS}.yaml ${YAML}
 
     _replace "s/PDB_NAME/${PDB_NAME}/g" ${YAML}
     _replace "s/APP_NAME/${APP_NAME}/g" ${YAML}
@@ -732,7 +740,7 @@ check_exist_pv() {
         # Create a new pvc
         create_pvc ${NAMESPACE} ${PVC_NAME} ${PVC_ACCESS_MODE} ${PVC_SIZE}
     else
-        PV_JSON=${SHELL_DIR}/build/${THIS_NAME}-pv-${PVC_NAME}.json
+        PV_JSON=${SHELL_DIR}/build/${CLUSTER_NAME}/pv-${PVC_NAME}.json
 
         _command "kubectl get pv -o json ${PV_NAME}"
         kubectl get pv -o json ${PV_NAME} > ${PV_JSON}
@@ -760,7 +768,7 @@ create_pvc() {
     PVC_SIZE=${4}
     PV_NAME=${5}
 
-    YAML=${SHELL_DIR}/build/${THIS_NAME}-pvc-${PVC_NAME}.yaml
+    YAML=${SHELL_DIR}/build/${CLUSTER_NAME}/pvc-${PVC_NAME}.yaml
     get_template templates/pvc.yaml ${YAML}
 
     _replace "s/PVC_NAME/${PVC_NAME}/g" ${YAML}
@@ -853,6 +861,39 @@ isMountTargetDeleted() {
 }
 
 efs_create() {
+    if [ "${EFS_ID}" == "" ]; then
+        EFS_ID=$(aws efs describe-file-systems --creation-token ${CLUSTER_NAME} --region ${REGION} | jq -r '.FileSystems[].FileSystemId')
+    fi
+
+    question "Input your file system id. [${EFS_ID}] : "
+    EFS_ID=${ANSWER:-${EFS_ID}}
+
+    if [ "${EFS_ID}" == "" ]; then
+        echo
+        echo "Creating a elastic file system"
+
+        EFS_ID=$(aws efs create-file-system --creation-token ${CLUSTER_NAME} --region ${REGION} | jq -r '.FileSystemId')
+        aws efs create-tags \
+            --file-system-id ${EFS_ID} \
+            --tags Key=Name,Value=efs.${CLUSTER_NAME} \
+            --region ap-northeast-2
+    fi
+
+    if [ "${EFS_ID}" == "" ]; then
+        _error "Not found the EFS."
+    fi
+
+    _result "EFS_ID=${EFS_ID}"
+
+    # replace EFS_ID
+    _replace "s/EFS_ID/${EFS_ID}/g" ${CHART}
+
+    # owned
+    OWNED=$(aws efs describe-file-systems --file-system-id ${EFS_ID} | jq -r '.FileSystems[].Tags[] | values[]' | grep "kubernetes.io/cluster/${CLUSTER_NAME}")
+    if [ "${OWNED}" != "" ]; then
+        return
+    fi
+
     # get the security group id
     WORKER_SG_ID=$(aws ec2 describe-security-groups --filters "Name=group-name,Values=nodes.${CLUSTER_NAME}" | jq -r '.SecurityGroups[0].GroupId')
     if [ -z ${WORKER_SG_ID} ] || [ "${WORKER_SG_ID}" == "null" ]; then
@@ -905,31 +946,6 @@ efs_create() {
     # echo "Security group for mount targets:"
     _result "EFS_SG_ID=${EFS_SG_ID}"
 
-    question "Would you like to mount exist EFS? Input your file system id.[Current: ${EFS_ID}] : "
-    EFS_ID=${ANSWER:-${EFS_ID}}
-
-    if [ -z ${EFS_ID} ]; then
-        # create an efs
-        EFS_LENGTH=$(aws efs describe-file-systems --creation-token ${CLUSTER_NAME} | jq '.FileSystems | length')
-        if [ ${EFS_LENGTH} -eq 0 ]; then
-            echo
-            echo "Creating a elastic file system"
-
-            EFS_ID=$(aws efs create-file-system --creation-token ${CLUSTER_NAME} --region ${REGION} | jq -r '.FileSystemId')
-            aws efs create-tags \
-                --file-system-id ${EFS_ID} \
-                --tags Key=Name,Value=efs.${CLUSTER_NAME} \
-                --region ap-northeast-2
-        else
-            EFS_ID=$(aws efs describe-file-systems --creation-token ${CLUSTER_NAME} --region ${REGION} | jq -r '.FileSystems[].FileSystemId')
-        fi
-    fi
-
-    _result "EFS_ID=${EFS_ID}"
-
-    # replace EFS_ID
-    _replace "s/EFS_ID/${EFS_ID}/g" ${CHART}
-
     echo
     echo "Waiting for the state of the EFS to be available."
     waiting_for isEFSAvailable
@@ -959,31 +975,35 @@ efs_create() {
 }
 
 efs_delete() {
-    if [ -z ${EFS_ID} ]; then
+    if [ "${EFS_ID}" == "" ]; then
         return
     fi
 
-    # delete mount targets
-    EFS_MOUNT_TARGET_IDS=$(aws efs describe-mount-targets --file-system-id ${EFS_ID} --region ${REGION} | jq -r '.MountTargets[].MountTargetId')
-    for MountTargetId in ${EFS_MOUNT_TARGET_IDS}; do
-        echo "Deleting the mount targets"
-        aws efs delete-mount-target --mount-target-id ${MountTargetId}
-    done
+    # owned
+    OWNED=$(aws efs describe-file-systems --file-system-id ${EFS_ID} | jq -r '.FileSystems[].Tags[] | values[]' | grep "kubernetes.io/cluster/${CLUSTER_NAME}")
+    if [ "${OWNED}" == "" ]; then
+        # delete mount targets
+        EFS_MOUNT_TARGET_IDS=$(aws efs describe-mount-targets --file-system-id ${EFS_ID} --region ${REGION} | jq -r '.MountTargets[].MountTargetId')
+        for MountTargetId in ${EFS_MOUNT_TARGET_IDS}; do
+            echo "Deleting the mount targets"
+            aws efs delete-mount-target --mount-target-id ${MountTargetId}
+        done
 
-    echo "Waiting for the EFS mount targets to be deleted."
-    waiting_for isMountTargetDeleted
+        echo "Waiting for the EFS mount targets to be deleted."
+        waiting_for isMountTargetDeleted
 
-    # delete security group for efs mount targets
-    EFS_SG_ID=$(aws ec2 describe-security-groups --filters "Name=group-name,Values=efs-sg.${CLUSTER_NAME}" | jq -r '.SecurityGroups[0].GroupId')
-    if [ -n ${EFS_SG_ID} ]; then
-        echo "Deleting the security group for mount targets"
-        aws ec2 delete-security-group --group-id ${EFS_SG_ID}
-    fi
+        # delete security group for efs mount targets
+        EFS_SG_ID=$(aws ec2 describe-security-groups --filters "Name=group-name,Values=efs-sg.${CLUSTER_NAME}" | jq -r '.SecurityGroups[0].GroupId')
+        if [ -n ${EFS_SG_ID} ]; then
+            echo "Deleting the security group for mount targets"
+            aws ec2 delete-security-group --group-id ${EFS_SG_ID}
+        fi
 
-    # delete efs
-    if [ -n ${EFS_ID} ]; then
-        echo "Deleting the elastic file system"
-        aws efs delete-file-system --file-system-id ${EFS_ID} --region ${REGION}
+        # delete efs
+        if [ -n ${EFS_ID} ]; then
+            echo "Deleting the elastic file system"
+            aws efs delete-file-system --file-system-id ${EFS_ID} --region ${REGION}
+        fi
     fi
 
     EFS_ID=
@@ -1028,7 +1048,7 @@ istio_init() {
 }
 
 istio_secret() {
-    YAML=${SHELL_DIR}/build/${THIS_NAME}-istio-secret.yaml
+    YAML=${SHELL_DIR}/build/${CLUSTER_NAME}/istio-secret.yaml
     get_template templates/istio-secret.yaml ${YAML}
 
     replace_base64 ${YAML} "USERNAME" "admin"
@@ -1078,7 +1098,7 @@ istio_export_config() {
     SECRET_NAME=$(kubectl get sa ${SERVICE_ACCOUNT} -n ${NAMESPACE} -o jsonpath='{.secrets[].name}')
     CA_DATA=$(kubectl get secret ${SECRET_NAME} -n ${NAMESPACE} -o "jsonpath={.data['ca\.crt']}")
     TOKEN=$(kubectl get secret ${SECRET_NAME} -n ${NAMESPACE} -o "jsonpath={.data['token']}" | base64 --decode)
-    
+
     cat <<EOF > ${KUBECFG_FILE}
 apiVersion: v1
 clusters:
@@ -1099,7 +1119,7 @@ users:
  user:
    token: ${TOKEN}
 EOF
-    
+
     cat <<EOF > ${KUBECFG_ENV_FILE}
 export CLUSTER_NAME=${CLUSTER_NAME}
 export KUBECFG_FILE=${KUBECFG_FILE}
@@ -1123,7 +1143,7 @@ istio_install() {
 
     create_namespace ${NAMESPACE}
 
-    CHART=${SHELL_DIR}/build/${THIS_NAME}-${NAME}.yaml
+    CHART=${SHELL_DIR}/build/${CLUSTER_NAME}/${NAME}.yaml
     get_template charts/istio/${NAME}.yaml ${CHART}
 
     # ingress
@@ -1174,7 +1194,7 @@ istio_remote_install() {
     CHART=${SHELL_DIR}/build/${THIS_NAME}-istio-${NAME}.yaml
     get_template charts/istio/${NAME}.yaml ${CHART}
 
-    
+
     if [ -z ${PILOT_POD_IP} ]; then
         echo "PILOT_POD_IP=$PILOT_POD_IP"
     fi
@@ -1199,7 +1219,7 @@ istio_remote_install() {
                  --set global.proxy.envoyStatsd.enabled=true \
                  --set global.proxy.envoyStatsd.host=${STATSD_POD_IP} \
                  --set global.remoteZipkinAddress=${ZIPKIN_POD_IP}
- 
+
     # save config (ISTIO)
     ISTIO=true
     config_save
@@ -1223,7 +1243,7 @@ istio_injection() {
         return
     fi
 
-    LIST=${SHELL_DIR}/build/${THIS_NAME}-istio-ns-list
+    LIST=${SHELL_DIR}/build/${CLUSTER_NAME}/istio-ns-list
 
     # find sample
     kubectl get ns | grep -v "NAME" | awk '{print $1}' > ${LIST}
@@ -1275,7 +1295,7 @@ sample_install() {
     NAME=${1}
     NAMESPACE=${2}
 
-    CHART=${SHELL_DIR}/build/${THIS_NAME}-${NAME}.yaml
+    CHART=${SHELL_DIR}/build/${CLUSTER_NAME}/${NAME}.yaml
     get_template charts/sample/${NAME}.yaml ${CHART}
 
     # profile
@@ -1344,7 +1364,7 @@ sample_install() {
 
 get_cluster() {
     # config list
-    LIST=${SHELL_DIR}/build/${THIS_NAME}-config-list
+    LIST=${SHELL_DIR}/build/${THIS_NAME}/config-list
     kubectl config view -o json | jq -r '.contexts[].name' | sort > ${LIST}
 
     # select
@@ -1355,6 +1375,8 @@ get_cluster() {
     fi
 
     CLUSTER_NAME="${SELECTED}"
+
+    mkdir -p ${SHELL_DIR}/build/${CLUSTER_NAME}
 
     _command "kubectl config use-context ${CLUSTER_NAME}"
     kubectl config use-context ${CLUSTER_NAME}
@@ -1457,7 +1479,7 @@ get_ingress_nip_io() {
 
 read_root_domain() {
     # domain list
-    LIST=${SHELL_DIR}/build/${THIS_NAME}-hosted-zones
+    LIST=${SHELL_DIR}/build/${THIS_NAME}/hosted-zones
 
     _command "aws route53 list-hosted-zones | jq -r '.HostedZones[] | .Name' | sed 's/.$//'"
     aws route53 list-hosted-zones | jq -r '.HostedZones[] | .Name' | sed 's/.$//' > ${LIST}
@@ -1516,7 +1538,7 @@ req_ssl_cert_arn() {
     fi
 
     # record sets
-    RECORD=${SHELL_DIR}/build/${THIS_NAME}-record-sets-cname.json
+    RECORD=${SHELL_DIR}/build/${CLUSTER_NAME}/record-sets-cname.json
     get_template templates/record-sets-cname.json ${RECORD}
 
     # replace
@@ -1560,7 +1582,7 @@ set_record_alias() {
     fi
 
     # record sets
-    RECORD=${SHELL_DIR}/build/${THIS_NAME}-record-sets-alias.json
+    RECORD=${SHELL_DIR}/build/${CLUSTER_NAME}/record-sets-alias.json
     get_template templates/record-sets-alias.json ${RECORD}
 
     # replace
@@ -1595,7 +1617,7 @@ set_record_delete() {
     fi
 
     # record sets
-    RECORD=${SHELL_DIR}/build/${THIS_NAME}-record-sets-delete.json
+    RECORD=${SHELL_DIR}/build/${CLUSTER_NAME}/record-sets-delete.json
     get_template templates/record-sets-delete.json ${RECORD}
 
     # replace
@@ -1737,7 +1759,7 @@ waiting_deploy() {
     _command "kubectl get deploy -n ${_NS} | grep ${_NM}"
     kubectl get deploy -n ${_NS} | head -1
 
-    DEPLOY=${SHELL_DIR}/build/${THIS_NAME}-waiting-pod
+    DEPLOY=${SHELL_DIR}/build/${THIS_NAME}/waiting-pod
 
     IDX=0
     while true; do
@@ -1766,7 +1788,7 @@ waiting_pod() {
     _command "kubectl get pod -n ${_NS} | grep ${_NM}"
     kubectl get pod -n ${_NS} | head -1
 
-    POD=${SHELL_DIR}/build/${THIS_NAME}-waiting-pod
+    POD=${SHELL_DIR}/build/${THIS_NAME}/waiting-pod
 
     IDX=0
     while true; do
