@@ -161,7 +161,7 @@ _result "install terraform..."
 if [ "${OS_TYPE}" == "brew" ]; then
     command -v terraform > /dev/null || brew install terraform
 else
-    VERSION=$(curl -s https://api.github.com/repos/hashicorp/terraform/releases/latest | jq -r '.tag_name')
+    VERSION=$(curl -s https://api.github.com/repos/hashicorp/terraform/releases/latest | jq -r '.tag_name' | cut -d'v' -f2)
 
     if [ "${TERRAFORM}" != "${VERSION}" ] || [ "$(command -v terraform)" == "" ]; then
         _result " ${TERRAFORM} >> ${VERSION}"
