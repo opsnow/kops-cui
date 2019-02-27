@@ -861,6 +861,39 @@ isMountTargetDeleted() {
 }
 
 efs_create() {
+    if [ "${EFS_ID}" == "" ]; then
+        EFS_ID=$(aws efs describe-file-systems --creation-token ${CLUSTER_NAME} --region ${REGION} | jq -r '.FileSystems[].FileSystemId')
+    fi
+
+    question "Input your file system id. [${EFS_ID}] : "
+    EFS_ID=${ANSWER:-${EFS_ID}}
+
+    if [ "${EFS_ID}" == "" ]; then
+        echo
+        echo "Creating a elastic file system"
+
+        EFS_ID=$(aws efs create-file-system --creation-token ${CLUSTER_NAME} --region ${REGION} | jq -r '.FileSystemId')
+        aws efs create-tags \
+            --file-system-id ${EFS_ID} \
+            --tags Key=Name,Value=efs.${CLUSTER_NAME} \
+            --region ap-northeast-2
+    fi
+
+    if [ "${EFS_ID}" == "" ]; then
+        _error "Not found the EFS."
+    fi
+
+    _result "EFS_ID=${EFS_ID}"
+
+    # replace EFS_ID
+    _replace "s/EFS_ID/${EFS_ID}/g" ${CHART}
+
+    # owned
+    OWNED=$(aws efs describe-file-systems --file-system-id ${EFS_ID} | jq -r '.FileSystems[].Tags[] | values[]' | grep "kubernetes.io/cluster/${CLUSTER_NAME}")
+    if [ "${OWNED}" != "" ]; then
+        return
+    fi
+
     # get the security group id
     WORKER_SG_ID=$(aws ec2 describe-security-groups --filters "Name=group-name,Values=nodes.${CLUSTER_NAME}" | jq -r '.SecurityGroups[0].GroupId')
     if [ -z ${WORKER_SG_ID} ] || [ "${WORKER_SG_ID}" == "null" ]; then
@@ -913,31 +946,6 @@ efs_create() {
     # echo "Security group for mount targets:"
     _result "EFS_SG_ID=${EFS_SG_ID}"
 
-    question "Would you like to mount exist EFS? Input your file system id.[Current: ${EFS_ID}] : "
-    EFS_ID=${ANSWER:-${EFS_ID}}
-
-    if [ -z ${EFS_ID} ]; then
-        # create an efs
-        EFS_LENGTH=$(aws efs describe-file-systems --creation-token ${CLUSTER_NAME} | jq '.FileSystems | length')
-        if [ ${EFS_LENGTH} -eq 0 ]; then
-            echo
-            echo "Creating a elastic file system"
-
-            EFS_ID=$(aws efs create-file-system --creation-token ${CLUSTER_NAME} --region ${REGION} | jq -r '.FileSystemId')
-            aws efs create-tags \
-                --file-system-id ${EFS_ID} \
-                --tags Key=Name,Value=efs.${CLUSTER_NAME} \
-                --region ap-northeast-2
-        else
-            EFS_ID=$(aws efs describe-file-systems --creation-token ${CLUSTER_NAME} --region ${REGION} | jq -r '.FileSystems[].FileSystemId')
-        fi
-    fi
-
-    _result "EFS_ID=${EFS_ID}"
-
-    # replace EFS_ID
-    _replace "s/EFS_ID/${EFS_ID}/g" ${CHART}
-
     echo
     echo "Waiting for the state of the EFS to be available."
     waiting_for isEFSAvailable
@@ -967,31 +975,35 @@ efs_create() {
 }
 
 efs_delete() {
-    if [ -z ${EFS_ID} ]; then
+    if [ "${EFS_ID}" == "" ]; then
         return
     fi
 
-    # delete mount targets
-    EFS_MOUNT_TARGET_IDS=$(aws efs describe-mount-targets --file-system-id ${EFS_ID} --region ${REGION} | jq -r '.MountTargets[].MountTargetId')
-    for MountTargetId in ${EFS_MOUNT_TARGET_IDS}; do
-        echo "Deleting the mount targets"
-        aws efs delete-mount-target --mount-target-id ${MountTargetId}
-    done
+    # owned
+    OWNED=$(aws efs describe-file-systems --file-system-id ${EFS_ID} | jq -r '.FileSystems[].Tags[] | values[]' | grep "kubernetes.io/cluster/${CLUSTER_NAME}")
+    if [ "${OWNED}" == "" ]; then
+        # delete mount targets
+        EFS_MOUNT_TARGET_IDS=$(aws efs describe-mount-targets --file-system-id ${EFS_ID} --region ${REGION} | jq -r '.MountTargets[].MountTargetId')
+        for MountTargetId in ${EFS_MOUNT_TARGET_IDS}; do
+            echo "Deleting the mount targets"
+            aws efs delete-mount-target --mount-target-id ${MountTargetId}
+        done
 
-    echo "Waiting for the EFS mount targets to be deleted."
-    waiting_for isMountTargetDeleted
+        echo "Waiting for the EFS mount targets to be deleted."
+        waiting_for isMountTargetDeleted
 
-    # delete security group for efs mount targets
-    EFS_SG_ID=$(aws ec2 describe-security-groups --filters "Name=group-name,Values=efs-sg.${CLUSTER_NAME}" | jq -r '.SecurityGroups[0].GroupId')
-    if [ -n ${EFS_SG_ID} ]; then
-        echo "Deleting the security group for mount targets"
-        aws ec2 delete-security-group --group-id ${EFS_SG_ID}
-    fi
+        # delete security group for efs mount targets
+        EFS_SG_ID=$(aws ec2 describe-security-groups --filters "Name=group-name,Values=efs-sg.${CLUSTER_NAME}" | jq -r '.SecurityGroups[0].GroupId')
+        if [ -n ${EFS_SG_ID} ]; then
+            echo "Deleting the security group for mount targets"
+            aws ec2 delete-security-group --group-id ${EFS_SG_ID}
+        fi
 
-    # delete efs
-    if [ -n ${EFS_ID} ]; then
-        echo "Deleting the elastic file system"
-        aws efs delete-file-system --file-system-id ${EFS_ID} --region ${REGION}
+        # delete efs
+        if [ -n ${EFS_ID} ]; then
+            echo "Deleting the elastic file system"
+            aws efs delete-file-system --file-system-id ${EFS_ID} --region ${REGION}
+        fi
     fi
 
     EFS_ID=
