@@ -102,6 +102,7 @@ main_menu() {
     echo
     _echo "d. remove"
     echo
+    # _echo "v. save variables"
     _echo "u. update self"
     _echo "t. update tools"
     echo
@@ -135,6 +136,10 @@ main_menu() {
         d|9)
             helm_delete
             press_enter main
+            ;;
+        v)
+            variables_save
+            press_enter cluster
             ;;
         u)
             update_self

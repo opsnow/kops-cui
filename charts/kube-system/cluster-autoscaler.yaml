@@ -34,3 +34,4 @@ sslCertPath: /etc/ssl/certs/ca-bundle.crt
 
 rbac:
   create: true
+  pspEnabled: true
