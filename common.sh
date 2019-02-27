@@ -279,6 +279,16 @@ config_save() {
     CONFIG_SAVE=
 }
 
+variables_domain() {
+    __KEY=${1}
+    __VAL=$(kubectl get ing --all-namespaces | grep devops | grep ${__KEY} | awk '{print $3}')
+
+    if [ "${__VAL}" != "" ]; then
+        echo "@Field" >> ${CONFIG}
+        echo "def ${__KEY} = \"${__VAL}\"" >> ${CONFIG}
+    fi
+}
+
 variables_save() {
     CONFIG=${SHELL_DIR}/build/${CLUSTER_NAME}/variables.groovy
 
@@ -297,6 +307,12 @@ variables_save() {
     else
         echo "@Field" >> ${CONFIG}
         echo "def cluster = \"${CLUSTER_NAME}\"" >> ${CONFIG}
+
+        variables_domain "chartmuseum"
+        variables_domain "registry"
+        variables_domain "jenkins"
+        variables_domain "sonarqube"
+        variables_domain "nexus"
     fi
 
     echo "@Field" >> ${CONFIG}
