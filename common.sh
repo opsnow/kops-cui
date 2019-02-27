@@ -283,10 +283,8 @@ variables_domain() {
     __KEY=${1}
     __VAL=$(kubectl get ing --all-namespaces | grep devops | grep ${__KEY} | awk '{print $3}')
 
-    if [ "${__VAL}" != "" ]; then
-        echo "@Field" >> ${CONFIG}
-        echo "def ${__KEY} = \"${__VAL}\"" >> ${CONFIG}
-    fi
+    echo "@Field" >> ${CONFIG}
+    echo "def ${__KEY} = \"${__VAL}\"" >> ${CONFIG}
 }
 
 variables_save() {
@@ -303,10 +301,10 @@ variables_save() {
     COUNT=$(kubectl get ing --all-namespaces | grep devops | wc -l | xargs)
     if [ "x${COUNT}" == "x0" ]; then
         echo "@Field" >> ${CONFIG}
-        echo "def cluster = \"devops\"" >> ${CONFIG}
+        echo "def cluster = \"${CLUSTER_NAME}\"" >> ${CONFIG}
     else
         echo "@Field" >> ${CONFIG}
-        echo "def cluster = \"${CLUSTER_NAME}\"" >> ${CONFIG}
+        echo "def cluster = \"devops\"" >> ${CONFIG}
 
         variables_domain "chartmuseum"
         variables_domain "registry"

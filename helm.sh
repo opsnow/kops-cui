@@ -139,7 +139,7 @@ main_menu() {
             ;;
         v)
             variables_save
-            press_enter cluster
+            press_enter main
             ;;
         u)
             update_self
