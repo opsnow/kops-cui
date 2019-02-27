@@ -327,7 +327,7 @@ variables_save() {
     fi
 
     CONFIG=${SHELL_DIR}/build/${CLUSTER_NAME}/variables.yaml
-    get_template templates/config.yaml ${CONFIG}
+    get_template templates/groovy.yaml ${CONFIG}
 
     _replace "s/REPLACE-ME/groovy-variables/" ${CONFIG}
 
