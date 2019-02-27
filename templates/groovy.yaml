@@ -1,0 +1,7 @@
+apiVersion: v1
+kind: Secret
+metadata:
+  name: REPLACE-ME
+type: Opaque
+data:
+  groovy: |-
