@@ -102,8 +102,9 @@ main_menu() {
     echo
     _echo "d. remove"
     echo
-    # _echo "v. save variables"
-    _echo "v. validate PV"
+    _echo "v. save variables"
+    echo
+    _echo "c. check PV"
     echo
     _echo "u. update self"
     _echo "t. update tools"
@@ -139,14 +140,14 @@ main_menu() {
             helm_delete
             press_enter main
             ;;
-        v)
+        c)
             validate_pv
             press_enter main
             ;;
-#        v)
-#            variables_save
-#            press_enter main
-#            ;;
+        v)
+            variables_save
+            press_enter main
+            ;;
         u)
             update_self
             press_enter cluster
