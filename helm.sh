@@ -102,8 +102,7 @@ main_menu() {
     echo
     _echo "d. remove"
     echo
-    _echo "v. save variables"
-    echo
+    # _echo "v. save variables"
     _echo "c. check PV"
     echo
     _echo "u. update self"
