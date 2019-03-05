@@ -869,19 +869,19 @@ isMountTargetDeleted() {
 delete_pvc() {
     NAMESPACE=$1
     PVC_NAME=$2
-   
+
 #    POD=$(kubectl -n ${NAMESPACE} get pod -l app=${PVC_NAME} -o jsonpath='{.items[0].metadata.name}')
     _command "kubectl -n ${NAMESPACE} get pod | grep ${PVC_NAME} | awk '{print \$1}'"
     POD=$(kubectl -n ${NAMESPACE} get pod | grep ${PVC_NAME} | awk '{print $1}')
     # Should be deleted releated POD
     if [ -z $POD ]; then
         _command "kubectl delete pvc $PVC_NAME -n $NAMESPACE"
-        question "Continue? (YES/[no]) : "
-        if [ "${ANSWER}" == "YES" ]; then
+#        question "Continue? (YES/[no]) : "
+#        if [ "${ANSWER}" == "YES" ]; then
             kubectl delete pvc $PVC_NAME -n $NAMESPACE
-        fi
+            echo "Delete PVC $PVC_NAME -n $NAMESPACE"
+#        fi
 
-        echo "Delete PVC $PVC_NAME -n $NAMESPACE"
     else
         echo "Retry after complete pod($POD) deletion."
     fi
@@ -899,10 +899,10 @@ delete_save_pv() {
     kubectl get pv $PV_NAME -o yaml > ${YAML}
 
     _command "kubectl delete pv $PV_NAME"
-    question "Continue? (YES/[no]) : "
-    if [ "${ANSWER}" == "YES" ]; then
+#    question "Continue? (YES/[no]) : "
+#    if [ "${ANSWER}" == "YES" ]; then
         kubectl delete pv $PV_NAME
-    fi
+#    fi
 
     # delete uid line
 #    _replace "s/uid:.*$//g" ${YAML}
