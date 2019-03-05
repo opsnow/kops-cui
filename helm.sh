@@ -876,7 +876,10 @@ delete_pvc() {
     # Should be deleted releated POD
     if [ -z $POD ]; then
         _command "kubectl delete pvc $PVC_NAME -n $NAMESPACE"
-        kubectl delete pvc $PVC_NAME -n $NAMESPACE
+        question "Continue? (YES/[no]) : "
+        if [ "${ANSWER}" == "YES" ]; then
+            kubectl delete pvc $PVC_NAME -n $NAMESPACE
+        fi
 
         echo "Delete PVC $PVC_NAME -n $NAMESPACE"
     else
@@ -896,7 +899,10 @@ delete_save_pv() {
     kubectl get pv $PV_NAME -o yaml > ${YAML}
 
     _command "kubectl delete pv $PV_NAME"
-    kubectl delete pv $PV_NAME
+    question "Continue? (YES/[no]) : "
+    if [ "${ANSWER}" == "YES" ]; then
+        kubectl delete pv $PV_NAME
+    fi
 
     # delete uid line
 #    _replace "s/uid:.*$//g" ${YAML}
