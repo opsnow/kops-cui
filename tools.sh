@@ -139,6 +139,8 @@ _result "install kubectl..."
 
 if [ "${OS_TYPE}" == "brew" ]; then
     command -v kubectl > /dev/null || brew install kubernetes-cli
+    VERSION=$(kubectl version --client --short | awk '{print $3}')
+    KUBECTL="${VERSION}"
 else
     VERSION=$(curl -s https://storage.googleapis.com/kubernetes-release/release/stable.txt)
 
@@ -160,6 +162,8 @@ _result "install terraform..."
 
 if [ "${OS_TYPE}" == "brew" ]; then
     command -v terraform > /dev/null || brew install terraform
+    VERSION=$(terraform version | awk '{print $2}')
+    TERRAFORM="${VERSION}"
 else
     VERSION=$(curl -s https://api.github.com/repos/hashicorp/terraform/releases/latest | jq -r '.tag_name' | cut -d'v' -f2)
 
@@ -182,6 +186,8 @@ _result "install kops..."
 
 if [ "${OS_TYPE}" == "brew" ]; then
     command -v kops > /dev/null || brew install kops
+    VERSION=$(kops version 2>&1 | grep Version | xargs | awk '{print $2}')
+    KOPS="${VERSION}"
 else
     VERSION=$(curl -s https://api.github.com/repos/kubernetes/kops/releases/latest | jq -r '.tag_name')
 
@@ -203,6 +209,8 @@ _result "install helm..."
 
 if [ "${OS_TYPE}" == "brew" ]; then
     command -v helm > /dev/null || brew install kubernetes-helm
+    VERSION=$(helm version --client --short | xargs | awk '{print $2}' | cut -d'+' -f1)
+    HELM="${VERSION}"
 else
     VERSION=$(curl -s https://api.github.com/repos/helm/helm/releases/latest | jq -r '.tag_name')
 
@@ -225,6 +233,11 @@ _result "install draft..."
 if [ "${OS_TYPE}" == "brew" ]; then
     if [ "$(command -v draft)" == "" ]; then
         brew tap azure/draft && brew install azure/draft/draft
+        VERSION=$(draft version --short | cut -d'+' -f1)
+        DRAFT="${VERSION}"
+    else
+        VERSION=$(draft version --short | cut -d'+' -f1)
+        DRAFT="${VERSION}"
     fi
 else
     VERSION=$(curl -s https://api.github.com/repos/Azure/draft/releases/latest | jq -r '.tag_name')
@@ -247,6 +260,8 @@ _result "install aws-iam-authenticator..."
 
 if [ "${OS_TYPE}" == "brew" ]; then
     command -v aws-iam-authenticator > /dev/null || brew install aws-iam-authenticator
+    VERSION=$(curl -s https://api.github.com/repos/kubernetes-sigs/aws-iam-authenticator/releases/latest | jq -r '.tag_name' | cut -d'v' -f2)
+    AWS_AUTH="${VERSION}"
 else
     VERSION=$(curl -s https://api.github.com/repos/kubernetes-sigs/aws-iam-authenticator/releases/latest | jq -r '.tag_name' | cut -d'v' -f2)
     # VERSION=0.3.0
@@ -269,7 +284,7 @@ echo "==========================================================================
 _result "install guard..."
 
 # VERSION=$(curl -s https://api.github.com/repos/appscode/guard/releases/latest | jq -r '.tag_name')
-VERSION=0.1.2
+#VERSION=0.1.2
 
 if [ "${GUARD}" != "${VERSION}" ]; then
     _result " ${GUARD} >> ${VERSION}"
