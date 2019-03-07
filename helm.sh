@@ -436,6 +436,7 @@ helm_install() {
             _replace "s/INGRESS_ENABLED/true/g" ${CHART}
             _replace "s/INGRESS_DOMAIN/${DOMAIN}/g" ${CHART}
         fi
+        _replace "s/#:ING://g" ${CHART}
     fi
 
     # check exist persistent volume
