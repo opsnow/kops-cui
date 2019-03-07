@@ -236,7 +236,7 @@ sample_menu() {
     fi
 
     # sample install
-    sample_install ${SELECTED} dev
+    sample_install ${SELECTED} sample
 
     press_enter sample
 }
