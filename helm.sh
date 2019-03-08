@@ -615,7 +615,7 @@ helm_repo_add() {
     _NAME=$1
     _REPO=$2
 
-    if [ -z $_REPO ]; then
+    if [ "${_REPO}" == "" ]; then
         if [ "${_NAME}" == "incubator" ]; then
             _REPO="http://storage.googleapis.com/kubernetes-charts-incubator"
         fi
