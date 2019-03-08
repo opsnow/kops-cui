@@ -336,7 +336,7 @@ helm_install() {
 
     # for vault
     if [ "${NAME}" == "vault" ]; then
-        helm_repo "incubator" "http://storage.googleapis.com/kubernetes-charts-incubator"
+        helm_repo_add "incubator" "http://storage.googleapis.com/kubernetes-charts-incubator"
 
         replace_chart ${CHART} "AWS_ACCESS_KEY"
 
@@ -608,10 +608,10 @@ helm_init() {
     _command "kubectl get pod,svc -n ${NAMESPACE}"
     kubectl get pod,svc -n ${NAMESPACE}
 
-    helm_repo
+    helm_repo_update
 }
 
-helm_repo() {
+helm_repo_add() {
     _NAME=$1
     _REPO=$2
 
@@ -621,9 +621,13 @@ helm_repo() {
         if [ "x${COUNT}" == "x0" ]; then
             _command "helm repo add ${_NAME} ${_REPO}"
             helm repo add ${_NAME} ${_REPO}
+
+            helm_repo_update
         fi
     fi
+}
 
+helm_repo_update() {
     _command "helm repo list"
     helm repo list
 
