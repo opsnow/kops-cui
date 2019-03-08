@@ -336,7 +336,7 @@ helm_install() {
 
     # for vault
     if [ "${NAME}" == "vault" ]; then
-        helm_repo_add "incubator" "http://storage.googleapis.com/kubernetes-charts-incubator"
+        helm_repo_add "incubator"
 
         replace_chart ${CHART} "AWS_ACCESS_KEY"
 
@@ -614,6 +614,12 @@ helm_init() {
 helm_repo_add() {
     _NAME=$1
     _REPO=$2
+
+    if [ -z $_REPO ]; then
+        if [ "${_NAME}" == "incubator" ]; then
+            _REPO="http://storage.googleapis.com/kubernetes-charts-incubator"
+        fi
+    fi
 
     if [ "${_REPO}" != "" ]; then
         COUNT=$(helm repo list | grep -v NAME | awk '{print $1}' | grep "${_NAME}" | wc -l | xargs)
