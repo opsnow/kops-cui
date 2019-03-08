@@ -327,10 +327,22 @@ helm_install() {
 
     # for external-dns
     if [ "${NAME}" == "external-dns" ]; then
-        replace_password ${CHART} "AWS_ACCESS_KEY" "****"
+        replace_chart ${CHART} "AWS_ACCESS_KEY"
+
         replace_password ${CHART} "AWS_SECRET_KEY" "****"
 
         EX_DNS=true
+    fi
+
+    # for vault
+    if [ "${NAME}" == "vault" ]; then
+        helm_repo "incubator" "http://storage.googleapis.com/kubernetes-charts-incubator"
+
+        replace_chart ${CHART} "AWS_ACCESS_KEY"
+
+        replace_password ${CHART} "AWS_SECRET_KEY" "****"
+
+        replace_chart ${CHART} "AWS_BUCKET"
     fi
 
     # for nginx-ingress
@@ -370,6 +382,7 @@ helm_install() {
             _replace "s/#:G_AUTH://g" ${CHART}
 
             replace_password ${CHART} "G_CLIENT_SECRET" "****"
+
             replace_chart ${CHART} "G_ALLOWED_DOMAINS"
         else
             # auth.ldap
@@ -595,11 +608,27 @@ helm_init() {
     _command "kubectl get pod,svc -n ${NAMESPACE}"
     kubectl get pod,svc -n ${NAMESPACE}
 
+    helm_repo
+}
+
+helm_repo() {
+    _NAME=$1
+    _REPO=$2
+
+    if [ "${_REPO}" != "" ]; then
+        COUNT=$(helm repo list | grep -v NAME | awk '{print $1}' | grep "${_NAME}" | wc -l | xargs)
+
+        if [ "x${COUNT}" == "x0" ]; then
+            _command "helm repo add ${_NAME} ${_REPO}"
+            helm repo add ${_NAME} ${_REPO}
+        fi
+    fi
+
+    _command "helm repo list"
+    helm repo list
+
     _command "helm repo update"
     helm repo update
-
-    _command "helm ls"
-    helm ls
 }
 
 create_namespace() {
@@ -1718,6 +1747,8 @@ replace_password() {
 
     echo
     _result "${_KEY}: [hidden]"
+
+    # _STRING=$(echo "${ANSWER:-${_DEFAULT}}" | sed 's/"/\"/g' | sed "s/'/\'/g" | sed "s/%/%25/g")
 
     _replace "s/${_KEY}/${ANSWER:-${_DEFAULT}}/g" ${_CHART}
 }

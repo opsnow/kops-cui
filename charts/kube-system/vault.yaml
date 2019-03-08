@@ -1,0 +1,25 @@
+# chart-repo: incubator/vault
+# chart-version: latest
+# chart-ingress: true
+
+nameOverride: vault
+
+vault:
+  config:
+    storage:
+      s3:
+        access_key: "AWS_ACCESS_KEY"
+        secret_key: "AWS_SECRET_KEY"
+        bucket: "AWS_BUCKET"
+        region: "AWS_REGION"
+
+service:
+  type: SERVICE_TYPE
+
+ingress:
+  enabled: INGRESS_ENABLED
+  annotations:
+    kubernetes.io/ingress.class: nginx
+    nginx.ingress.kubernetes.io/force-ssl-redirect: "true"
+  hosts:
+    - INGRESS_DOMAIN
