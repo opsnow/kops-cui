@@ -1872,7 +1872,7 @@ replace_chart() {
 
     _result "${_KEY}: ${ANSWER:-${_DEFAULT}}"
 
-    _replace "s/${_KEY}/${ANSWER:-${_DEFAULT}}/g" ${CHART}
+    _replace "s|${_KEY}|${ANSWER:-${_DEFAULT}}|g" ${CHART}
 }
 
 replace_password() {
@@ -1885,9 +1885,7 @@ replace_password() {
     echo
     _result "${_KEY}: [hidden]"
 
-    # _STRING=$(echo "${ANSWER:-${_DEFAULT}}" | sed 's/"/\"/g' | sed "s/'/\'/g" | sed "s/%/%25/g")
-
-    _replace "s/${_KEY}/${ANSWER:-${_DEFAULT}}/g" ${_CHART}
+    _replace "s|${_KEY}|${ANSWER:-${_DEFAULT}}|g" ${_CHART}
 }
 
 replace_base64() {
@@ -1900,7 +1898,7 @@ replace_base64() {
     echo
     _result "${_KEY}: [encoded]"
 
-    _replace "s/${_KEY}/$(echo ${ANSWER:-${_DEFAULT}} | base64)/g" ${_CHART}
+    _replace "s|${_KEY}|$(echo ${ANSWER:-${_DEFAULT}} | base64)|g" ${_CHART}
 }
 
 waiting_for() {
