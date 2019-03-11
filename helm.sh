@@ -334,6 +334,21 @@ helm_install() {
         EX_DNS=true
     fi
 
+    # for nginx-ingress
+    if [ "${NAME}" == "nginx-ingress" ]; then
+        get_base_domain
+    fi
+
+    # for efs-provisioner
+    if [ "${NAME}" == "efs-provisioner" ]; then
+        efs_create
+    fi
+
+    # for k8s-spot-termination-handler
+    if [ "${NAME}" == "k8s-spot-termination-handler" ]; then
+        replace_chart ${CHART} "SLACK_URL"
+    fi
+
     # for vault
     if [ "${NAME}" == "vault" ]; then
         helm_repo_add "incubator"
@@ -343,16 +358,6 @@ helm_install() {
         replace_password ${CHART} "AWS_SECRET_KEY" "****"
 
         replace_chart ${CHART} "AWS_BUCKET"
-    fi
-
-    # for nginx-ingress
-    if [ "${NAME}" == "nginx-ingress" ]; then
-        get_base_domain
-    fi
-
-    # for efs-provisioner
-    if [ "${NAME}" == "efs-provisioner" ]; then
-        efs_create
     fi
 
     # for jenkins
