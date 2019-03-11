@@ -877,11 +877,11 @@ delete_pvc() {
     # Should be deleted releated POD
     if [ -z $POD ]; then
         _command "kubectl delete pvc $PVC_NAME -n $NAMESPACE"
-#        question "Continue? (YES/[no]) : "
-#        if [ "${ANSWER}" == "YES" ]; then
+        question "Continue? (YES/[no]) : "
+        if [ "${ANSWER}" == "YES" ]; then
             kubectl delete pvc $PVC_NAME -n $NAMESPACE
             echo "Delete PVC $PVC_NAME -n $NAMESPACE"
-#        fi
+        fi
 
     else
         echo "Retry after complete pod($POD) deletion."
@@ -900,21 +900,10 @@ delete_save_pv() {
     kubectl get pv $PV_NAME -o yaml > ${YAML}
 
     _command "kubectl delete pv $PV_NAME"
-#    question "Continue? (YES/[no]) : "
-#    if [ "${ANSWER}" == "YES" ]; then
+    question "Continue? (YES/[no]) : "
+    if [ "${ANSWER}" == "YES" ]; then
         kubectl delete pv $PV_NAME
-#    fi
-
-    # delete uid line
-#    _replace "s/uid:.*$//g" ${YAML}
-    # nfs.path
-#    _replace "s/path:.*$/path: \/shared\/${PVC_NAME}-${PV_NAME}/g" ${YAML}
-    # nfs.server
-#    SERVER=${MNT_SERVER%:/shared}
-#    _replace "s/server:.*$/server: ${SERVER}/g" ${YAML}
-
-    # apply
-#    kubectl apply -f ${YAML}
+    fi
 
 }
 
@@ -964,7 +953,7 @@ validate_pv() {
             mkdir -p ${PV_DIR}
 
             # iter for delete and save
-            while IFS='' read -r line || [[ -n "$line" ]]; do
+            while IFS='' read -r -u9 line || [[ -n "$line" ]]; do
                 ARR=(${line})
                 while IFS='/' read -ra NS_NM; do
                     NAMESPACE=${NS_NM[0]}
@@ -973,7 +962,7 @@ validate_pv() {
 
                 delete_pvc ${NAMESPACE} ${PVC_NAME}
                 delete_save_pv ${PV_DIR} ${ARR[0]}
-            done < "${WRONG_PV_LIST}"
+            done 9< "${WRONG_PV_LIST}"
 
             echo "Saved PV list."
             ls -aslF ${PV_DIR}
