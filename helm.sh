@@ -103,6 +103,8 @@ main_menu() {
     _echo "d. remove"
     echo
     # _echo "v. save variables"
+    _echo "c. check PV"
+    echo
     _echo "u. update self"
     _echo "t. update tools"
     echo
@@ -135,6 +137,10 @@ main_menu() {
             ;;
         d|9)
             helm_delete
+            press_enter main
+            ;;
+        c)
+            validate_pv
             press_enter main
             ;;
         v)
@@ -903,6 +909,122 @@ isMountTargetDeleted() {
     else
         return 1
     fi
+}
+
+delete_pvc() {
+    NAMESPACE=$1
+    PVC_NAME=$2
+
+#    POD=$(kubectl -n ${NAMESPACE} get pod -l app=${PVC_NAME} -o jsonpath='{.items[0].metadata.name}')
+    _command "kubectl -n ${NAMESPACE} get pod | grep ${PVC_NAME} | awk '{print \$1}'"
+    POD=$(kubectl -n ${NAMESPACE} get pod | grep ${PVC_NAME} | awk '{print $1}')
+    # Should be deleted releated POD
+    if [ -z $POD ]; then
+        _command "kubectl delete pvc $PVC_NAME -n $NAMESPACE"
+#        question "Continue? (YES/[no]) : "
+#        if [ "${ANSWER}" == "YES" ]; then
+            kubectl delete pvc $PVC_NAME -n $NAMESPACE
+            echo "Delete PVC $PVC_NAME -n $NAMESPACE"
+#        fi
+
+    else
+        echo "Retry after complete pod($POD) deletion."
+    fi
+
+
+}
+
+delete_save_pv() {
+    PV_DIR=$1
+    PV_NAME=$2
+
+    # get currnent pv yaml
+    YAML=${PV_DIR}/pv-${PV_NAME}.yaml
+    _command "kubectl get pv $PV_NAME -o yaml > ${YAML}"
+    kubectl get pv $PV_NAME -o yaml > ${YAML}
+
+    _command "kubectl delete pv $PV_NAME"
+#    question "Continue? (YES/[no]) : "
+#    if [ "${ANSWER}" == "YES" ]; then
+        kubectl delete pv $PV_NAME
+#    fi
+
+    # delete uid line
+#    _replace "s/uid:.*$//g" ${YAML}
+    # nfs.path
+#    _replace "s/path:.*$/path: \/shared\/${PVC_NAME}-${PV_NAME}/g" ${YAML}
+    # nfs.server
+#    SERVER=${MNT_SERVER%:/shared}
+#    _replace "s/server:.*$/server: ${SERVER}/g" ${YAML}
+
+    # apply
+#    kubectl apply -f ${YAML}
+
+}
+
+validate_pv() {
+
+    # Get efs provisioner mounted EFS fs-id
+    _command "kubectl -n kube-system get pod -l app=efs-provisioner -o jsonpath='{.items[0].metadata.name}'"
+    EFS_POD=$(kubectl -n kube-system get pod -l app=efs-provisioner -o jsonpath='{.items[0].metadata.name}')
+
+    _command "kubectl exec ${EFS_POD} -n kube-system -- df | grep amazonaws.com | awk '{print \$1}'"
+    MNT_SERVER=$(kubectl exec ${EFS_POD} -n kube-system -- df | grep amazonaws.com | awk '{print $1}')
+
+    # list up pv's nfs server fs-id
+    PV_LIST=${SHELL_DIR}/build/pv-list
+    kubectl get pv | grep -v "NAME" | awk '{print $1, $6}' > ${PV_LIST}
+
+    # variable for current wrong pv list
+    WRONG_PV_LIST=${SHELL_DIR}/build/wrong-pv-list
+    rm -f $WRONG_PV_LIST
+
+    # Compare pv server and EFS fs-id
+    # Save wrong pv list
+    while IFS='' read -r line || [[ -n "$line" ]]; do
+        ARR=(${line})
+        _command "kubectl get pv ${ARR[0]} -o jsonpath='{.spec.nfs.server}'"
+        MNT_PV=$(kubectl get pv ${ARR[0]} -o jsonpath='{.spec.nfs.server}')
+        echo "check efs-id "
+        echo "    EFS-PROVISIONER :${MNT_SERVER}"
+        echo "    PersistentVolume:${MNT_PV}"
+
+        if [[ "$MNT_SERVER" == "$MNT_PV"* ]]; then
+            echo "PASS - ${line} have CORRECT EFS-ID"
+        else
+            echo "WARNNING - ${line} have WRONG EFS-ID"
+            echo "${line}" >> ${WRONG_PV_LIST}
+        fi
+    done < "${PV_LIST}"
+
+    # delete_pvc, if you want.
+    if [ -f ${WRONG_PV_LIST} ]; then
+        # check pv list for delete
+        cat ${WRONG_PV_LIST}
+        question "Would you like to delete PV, PVC? (YES/[no]) : "
+        if [ "${ANSWER}" == "YES" ]; then
+            # save pv yaml files.
+            PV_DIR=${SHELL_DIR}/build/${CLUSTER_NAME}/old-pv
+            mkdir -p ${PV_DIR}
+
+            # iter for delete and save
+            while IFS='' read -r line || [[ -n "$line" ]]; do
+                ARR=(${line})
+                while IFS='/' read -ra NS_NM; do
+                    NAMESPACE=${NS_NM[0]}
+                    PVC_NAME=${NS_NM[1]}
+                done <<< "${ARR[1]}"
+
+                delete_pvc ${NAMESPACE} ${PVC_NAME}
+                delete_save_pv ${PV_DIR} ${ARR[0]}
+            done < "${WRONG_PV_LIST}"
+
+            echo "Saved PV list."
+            ls -aslF ${PV_DIR}
+            echo "Edit for new EFS and command kubectl apply -f ..."
+        fi
+    fi
+
 }
 
 efs_create() {
