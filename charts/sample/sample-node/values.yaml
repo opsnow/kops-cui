@@ -37,13 +37,13 @@ readinessProbe:
   httpGet:
     path: /
     port: 3000
-  initialDelaySeconds: 15
+  initialDelaySeconds: 5
   periodSeconds: 15
   failureThreshold: 6
 livenessProbe:
   httpGet:
     path: /
     port: 3000
-  initialDelaySeconds: 15
+  initialDelaySeconds: 5
   periodSeconds: 15
   failureThreshold: 6

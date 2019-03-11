@@ -308,5 +308,3 @@ DRAFT="${DRAFT}"
 AWS_AUTH="${AWS_AUTH}"
 GUARD="${GUARD}"
 EOF
-
-_success "done."

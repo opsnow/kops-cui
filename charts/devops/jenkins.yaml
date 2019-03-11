@@ -43,6 +43,10 @@ Master:
     - active-directory:latest
     # https://plugins.jenkins.io/role-strategy
     - role-strategy:latest
+    # https://plugins.jenkins.io/ldap
+    - ldap:latest
+    # https://plugins.jenkins.io/google-login
+    - google-login:latest
   # -- jenkins-jobs -- start -- see: jenkins/jobs.sh #
   # -- jenkins-jobs -- end -- #
 
