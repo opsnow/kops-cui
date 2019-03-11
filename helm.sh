@@ -300,6 +300,8 @@ helm_install() {
         PREFIX="$(echo ${REPO} | cut -d'/' -f1)"
         if [ "${PREFIX}" == "custom" ]; then
             REPO="${SHELL_DIR}/${REPO}"
+        elif [ "${PREFIX}" == "incubator" ]; then
+            helm_repo "incubator"
         fi
     fi
 
@@ -357,8 +359,6 @@ helm_install() {
 
     # for vault
     if [ "${NAME}" == "vault" ]; then
-        helm_repo_add "incubator"
-
         replace_chart ${CHART} "AWS_ACCESS_KEY"
 
         replace_password ${CHART} "AWS_SECRET_KEY" "****"
@@ -622,7 +622,7 @@ helm_init() {
     helm_repo_update
 }
 
-helm_repo_add() {
+helm_repo() {
     _NAME=$1
     _REPO=$2
 
