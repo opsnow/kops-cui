@@ -300,8 +300,8 @@ helm_install() {
         PREFIX="$(echo ${REPO} | cut -d'/' -f1)"
         if [ "${PREFIX}" == "custom" ]; then
             REPO="${SHELL_DIR}/${REPO}"
-        elif [ "${PREFIX}" == "incubator" ]; then
-            helm_repo "incubator"
+        elif [ "${PREFIX}" != "stable" ]; then
+            helm_repo "${PREFIX}"
         fi
     fi
 
@@ -628,7 +628,9 @@ helm_repo() {
 
     if [ "${_REPO}" == "" ]; then
         if [ "${_NAME}" == "incubator" ]; then
-            _REPO="http://storage.googleapis.com/kubernetes-charts-incubator"
+            _REPO="https://storage.googleapis.com/kubernetes-charts-incubator"
+        elif [ "${_NAME}" == "incubator" ]; then
+            _REPO="https://argoproj.github.io/argo-helm"
         fi
     fi
 
