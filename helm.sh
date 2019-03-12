@@ -265,7 +265,7 @@ charts_menu() {
         return
     fi
 
-    # create_cluster_role_binding cluster-admin ${NAMESPACE}
+    # create_cluster_role_binding admin ${NAMESPACE}
 
     # helm install
     helm_install ${SELECTED} ${NAMESPACE}
@@ -512,9 +512,14 @@ helm_install() {
     _command "kubectl get deploy,pod,svc,ing,pvc,pv -n ${NAMESPACE}"
     kubectl get deploy,pod,svc,ing,pvc,pv -n ${NAMESPACE}
 
+    # for argo
+    if [ "${NAME}" == "argo" ]; then
+        create_cluster_role_binding admin default default
+    fi
+
     # for jenkins
     if [ "${NAME}" == "jenkins" ]; then
-        create_cluster_role_binding cluster-admin ${NAMESPACE} default
+        create_cluster_role_binding admin ${NAMESPACE} default
     fi
 
     # for nginx-ingress
@@ -695,7 +700,7 @@ create_service_account() {
 }
 
 create_cluster_role_binding() {
-    ROLL=$1
+    ROLE=$1
     NAMESPACE=$2
     ACCOUNT=${3:-default}
     TOKEN=${4:-false}
@@ -704,14 +709,14 @@ create_cluster_role_binding() {
 
     CHECK=
 
-    _command "kubectl get clusterrolebinding ${ROLL}:${NAMESPACE}:${ACCOUNT}"
-    kubectl get clusterrolebinding ${ROLL}:${NAMESPACE}:${ACCOUNT} > /dev/null 2>&1 || export CHECK=CREATE
+    _command "kubectl get clusterrolebinding ${ROLE}:${NAMESPACE}:${ACCOUNT}"
+    kubectl get clusterrolebinding ${ROLE}:${NAMESPACE}:${ACCOUNT} > /dev/null 2>&1 || export CHECK=CREATE
 
     if [ "${CHECK}" == "CREATE" ]; then
-        _result "${ROLL}:${NAMESPACE}:${ACCOUNT}"
+        _result "${ROLE}:${NAMESPACE}:${ACCOUNT}"
 
-        _command "kubectl create clusterrolebinding ${ROLL}:${NAMESPACE}:${ACCOUNT} --clusterrole=${ROLL} --serviceaccount=${NAMESPACE}:${ACCOUNT}"
-        kubectl create clusterrolebinding ${ROLL}:${NAMESPACE}:${ACCOUNT} --clusterrole=${ROLL} --serviceaccount=${NAMESPACE}:${ACCOUNT}
+        _command "kubectl create clusterrolebinding ${ROLE}:${NAMESPACE}:${ACCOUNT} --clusterrole=${ROLE} --serviceaccount=${NAMESPACE}:${ACCOUNT}"
+        kubectl create clusterrolebinding ${ROLE}:${NAMESPACE}:${ACCOUNT} --clusterrole=${ROLE} --serviceaccount=${NAMESPACE}:${ACCOUNT}
     fi
 
     if [ "${TOKEN}" == "true" ]; then
