@@ -366,6 +366,11 @@ helm_install() {
         replace_chart ${CHART} "AWS_BUCKET"
     fi
 
+    # for argo
+    if [ "${NAME}" == "argo" ]; then
+        replace_chart ${CHART} "ARTIFACT_REPOSITORY" "${CLUSTER_NAME}-artifact"
+    fi
+
     # for jenkins
     if [ "${NAME}" == "jenkins" ]; then
         # admin password

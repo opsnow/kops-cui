@@ -13,5 +13,5 @@ ui:
 
 artifactRepository:
   s3:
-    bucket: CLUSTER_NAME-artifact
+    bucket: ARTIFACT_REPOSITORY
     endpoint: s3.amazonaws.com
