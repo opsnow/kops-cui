@@ -629,7 +629,7 @@ helm_repo() {
     if [ "${_REPO}" == "" ]; then
         if [ "${_NAME}" == "incubator" ]; then
             _REPO="https://storage.googleapis.com/kubernetes-charts-incubator"
-        elif [ "${_NAME}" == "incubator" ]; then
+        elif [ "${_NAME}" == "argo" ]; then
             _REPO="https://argoproj.github.io/argo-helm"
         fi
     fi
