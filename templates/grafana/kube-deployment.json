@@ -43,11 +43,11 @@
       "type": "dashboard"
     }]
   },
-  "description": "Monitors Kubernetes deployment using Prometheus. Shows overall cluster CPU / Memory / Filesystem usage as well as individual pod, containers, systemd services statistics. Uses cAdvisor metrics only.",
+  "description": "Monitors Kubernetes deployment using Prometheus.",
   "editable": true,
   "gnetId": 9679,
   "graphTooltip": 0,
-  "iteration": 1547719581341,
+  "iteration": 1552366560145,
   "links": [],
   "panels": [{
       "collapsed": false,
@@ -1194,7 +1194,7 @@
       "dashLength": 10,
       "dashes": false,
       "datasource": "${DS_PROMETHEUS}",
-      "decimals": 2,
+      "decimals": 0,
       "editable": true,
       "error": false,
       "fill": 1,
@@ -1234,7 +1234,7 @@
       "stack": true,
       "steppedLine": false,
       "targets": [{
-        "expr": "sum (rate (nginx_ingress_controller_bytes_sent_count{namespace=~\"^$Namespace$\",service=~\"^$Deployment$\"}[2m]) ) by (status)",
+        "expr": "sum (rate (nginx_ingress_controller_requests{namespace=~\"^$Namespace$\",service=~\"^$Deployment$\"}[2m]) ) by (status)",
         "format": "time_series",
         "interval": "",
         "intervalFactor": 1,
@@ -1247,7 +1247,7 @@
       "timeFrom": null,
       "timeRegions": [],
       "timeShift": null,
-      "title": "Sent Count (2m avg)",
+      "title": "Requests (2m avg)",
       "tooltip": {
         "msResolution": false,
         "shared": true,
@@ -1431,9 +1431,8 @@
     "list": [{
         "allValue": ".*",
         "current": {
-          "tags": [],
-          "text": "dev",
-          "value": "dev"
+          "text": "default",
+          "value": "default"
         },
         "datasource": "${DS_PROMETHEUS}",
         "definition": "",

@@ -43,11 +43,11 @@
       "type": "dashboard"
     }]
   },
-  "description": "Monitors Kubernetes cluster using Prometheus. Shows overall cluster CPU / Memory / Filesystem usage as well as individual pod, containers, systemd services statistics. Uses cAdvisor metrics only.",
+  "description": "Monitors Kubernetes cluster using Prometheus.",
   "editable": true,
   "gnetId": 9797,
   "graphTooltip": 0,
-  "iteration": 1550221974993,
+  "iteration": 1552367833411,
   "links": [],
   "panels": [{
       "collapsed": false,
@@ -1283,7 +1283,7 @@
       "dashLength": 10,
       "dashes": false,
       "datasource": "${DS_PROMETHEUS}",
-      "decimals": 2,
+      "decimals": 0,
       "editable": true,
       "error": false,
       "fill": 1,
@@ -1324,7 +1324,7 @@
       "stack": true,
       "steppedLine": false,
       "targets": [{
-        "expr": "sum (rate (nginx_ingress_controller_bytes_sent_count{kubernetes_node=~\"^$Node$\"}[2m]) ) by (status)",
+        "expr": "sum (rate (nginx_ingress_controller_requests{kubernetes_node=~\"^$Node$\"}[2m]) ) by (status)",
         "format": "time_series",
         "instant": false,
         "interval": "10s",
@@ -1338,7 +1338,7 @@
       "timeFrom": null,
       "timeRegions": [],
       "timeShift": null,
-      "title": "Sent count (2m avg)",
+      "title": "Requests (2m avg)",
       "tooltip": {
         "msResolution": false,
         "shared": true,
@@ -3217,5 +3217,5 @@
   "timezone": "browser",
   "title": "Kubernetes Cluster Monitor (via Prometheus)",
   "uid": "kube-cluster",
-  "version": 2
+  "version": 1
 }
