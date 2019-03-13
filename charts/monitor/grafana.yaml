@@ -9,8 +9,8 @@ nameOverride: grafana
 adminUser: admin
 adminPassword: PASSWORD
 
-podAnnotations:
-  cluster-autoscaler.kubernetes.io/safe-to-evict: "true"
+# podAnnotations:
+#   cluster-autoscaler.kubernetes.io/safe-to-evict: "true"
 
 service:
   type: SERVICE_TYPE

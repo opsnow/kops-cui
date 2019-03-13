@@ -5,8 +5,8 @@
 
 nameOverride: kubernetes-dashboard
 
-podAnnotations:
-  cluster-autoscaler.kubernetes.io/safe-to-evict: "true"
+# podAnnotations:
+#   cluster-autoscaler.kubernetes.io/safe-to-evict: "true"
 
 enableInsecureLogin: true
 
@@ -21,7 +21,6 @@ ingress:
     nginx.ingress.kubernetes.io/force-ssl-redirect: "true"
   hosts:
     - INGRESS_DOMAIN
-
 # rbac:
 #   create: true
 #   clusterAdminRole: false
