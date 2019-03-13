@@ -1,5 +1,5 @@
 # chart-repo: stable/prometheus
-# chart-version: 8.8.0
+# chart-version: 8.8.1
 # chart-ingress: false
 # chart-pvc: prometheus-server ReadWriteOnce 8Gi
 # chart-pvc: prometheus-alertmanager ReadWriteOnce 2Gi
