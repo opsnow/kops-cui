@@ -1,5 +1,5 @@
 # chart-repo: stable/chartmuseum
-# chart-version: 1.9.1
+# chart-version: 1.9.0
 # chart-ingress: true
 # chart-pvc: chartmuseum ReadWriteOnce 8Gi
 
