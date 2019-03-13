@@ -361,9 +361,13 @@ helm_install() {
     if [ "${NAME}" == "vault" ]; then
         replace_chart ${CHART} "AWS_ACCESS_KEY"
 
-        replace_password ${CHART} "AWS_SECRET_KEY" "****"
+        if [ "${ANSWER}" != "" ]; then
+            _replace "s/#:STORAGE://g" ${CHART}
 
-        replace_chart ${CHART} "AWS_BUCKET"
+            replace_password ${CHART} "AWS_SECRET_KEY" "****"
+
+            replace_chart ${CHART} "AWS_BUCKET" "${CLUSTER_NAME}-vault"
+        fi
     fi
 
     # for argo

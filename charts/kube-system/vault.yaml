@@ -4,14 +4,14 @@
 
 nameOverride: vault
 
-vault:
-  config:
-    storage:
-      s3:
-        access_key: "AWS_ACCESS_KEY"
-        secret_key: "AWS_SECRET_KEY"
-        bucket: "AWS_BUCKET"
-        region: "AWS_REGION"
+#:STORAGE:vault:
+#:STORAGE:  config:
+#:STORAGE:    storage:
+#:STORAGE:      s3:
+#:STORAGE:        access_key: "AWS_ACCESS_KEY"
+#:STORAGE:        secret_key: "AWS_SECRET_KEY"
+#:STORAGE:        bucket: "AWS_BUCKET"
+#:STORAGE:        region: "AWS_REGION"
 
 service:
   type: SERVICE_TYPE
