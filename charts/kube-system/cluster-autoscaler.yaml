@@ -1,5 +1,5 @@
 # chart-repo: stable/cluster-autoscaler
-# chart-version: 0.11.2
+# chart-version: 0.11.3
 # chart-node: master
 
 nameOverride: cluster-autoscaler
