@@ -337,9 +337,9 @@ helm_install() {
     if [ "${NAME}" == "external-dns" ]; then
         replace_chart ${CHART} "AWS_ACCESS_KEY"
 
-        replace_password ${CHART} "AWS_SECRET_KEY" "****"
-
-        EX_DNS=true
+        if [ "${ANSWER}" != "" ]; then
+            replace_password ${CHART} "AWS_SECRET_KEY" "****"
+        fi
     fi
 
     # for nginx-ingress
@@ -580,11 +580,6 @@ helm_delete() {
 
     if [ "${NAME}" == "" ]; then
         return
-    fi
-
-    # for external-dns
-    if [ "${NAME}" == "external-dns" ]; then
-        EX_DNS=
     fi
 
     # for nginx-ingress
