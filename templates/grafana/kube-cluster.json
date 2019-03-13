@@ -31,9 +31,13 @@
       "type": "dashboard"
     }]
   },
+  "timezone": "browser",
+  "uid": "kube-cluster",
+  "title": "Kubernetes Cluster (via Prometheus)",
   "description": "Monitors Kubernetes cluster using Prometheus.",
   "editable": true,
   "gnetId": 9797,
+  "version": 1,
   "graphTooltip": 0,
   "iteration": 1552367833411,
   "links": [],
@@ -3201,9 +3205,5 @@
       "7d",
       "30d"
     ]
-  },
-  "timezone": "browser",
-  "title": "Kubernetes Cluster Monitor (via Prometheus)",
-  "uid": "kube-cluster",
-  "version": 1
+  }
 }

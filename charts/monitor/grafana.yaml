@@ -79,11 +79,18 @@ dashboardProviders:
 dashboards:
   default:
     kube-cluster:
-      url: https://raw.githubusercontent.com/opsnow/kops-cui/master/templates/grafana/kube-cluster.json
+      # https://grafana.com/dashboards/9797
+      gnetId: 9797
+      revision: 5
       datasource: Prometheus
     kube-deployment:
-      url: https://raw.githubusercontent.com/opsnow/kops-cui/master/templates/grafana/kube-deployment.json
+      # https://grafana.com/dashboards/9679
+      gnetId: 9679
+      revision: 5
       datasource: Prometheus
     nginx-ingress:
-      url: https://raw.githubusercontent.com/kubernetes/ingress-nginx/master/deploy/grafana/dashboards/nginx.json
+      # url: https://raw.githubusercontent.com/kubernetes/ingress-nginx/master/deploy/grafana/dashboards/nginx.json
+      # https://grafana.com/dashboards/9679
+      gnetId: 9909
+      revision: 2
       datasource: Prometheus

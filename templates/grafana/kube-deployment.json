@@ -31,9 +31,13 @@
       "type": "dashboard"
     }]
   },
+  "timezone": "browser",
+  "uid": "kube-deployment",
+  "title": "Kubernetes Deployment (via Prometheus)",
   "description": "Monitors Kubernetes deployment using Prometheus.",
   "editable": true,
   "gnetId": 9679,
+  "version": 1,
   "graphTooltip": 0,
   "iteration": 1552366560145,
   "links": [],
@@ -1496,9 +1500,5 @@
       "7d",
       "30d"
     ]
-  },
-  "timezone": "browser",
-  "title": "Kubernetes Deployment Monitor (via Prometheus)",
-  "uid": "kube-deployment",
-  "version": 1
+  }
 }

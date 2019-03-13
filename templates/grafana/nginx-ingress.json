@@ -31,8 +31,13 @@
             "type": "dashboard"
         }]
     },
+    "timezone": "browser",
+    "uid": "nginx-ingress",
+    "title": "NGINX Ingress controller",
+    "description": "Monitors NGINX Ingress controller using Prometheus.",
     "editable": true,
-    "gnetId": null,
+    "gnetId": 9909,
+    "version": 1,
     "graphTooltip": 0,
     "iteration": 1534359654832,
     "links": [],
@@ -1359,9 +1364,5 @@
             "7d",
             "30d"
         ]
-    },
-    "timezone": "browser",
-    "title": "NGINX Ingress controller",
-    "uid": "nginx-ingress",
-    "version": 1
+    }
 }
