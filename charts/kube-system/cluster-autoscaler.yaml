@@ -1,11 +1,11 @@
 # chart-repo: stable/cluster-autoscaler
-# chart-version: 0.11.2
+# chart-version: 0.11.3
 # chart-node: master
 
 nameOverride: cluster-autoscaler
 
-podAnnotations:
-  cluster-autoscaler.kubernetes.io/safe-to-evict: "true"
+# podAnnotations:
+#   cluster-autoscaler.kubernetes.io/safe-to-evict: "true"
 
 autoDiscovery:
   enabled: true
@@ -17,11 +17,11 @@ extraArgs:
   v: 4
   stderrthreshold: info
   logtostderr: true
-  expander: least-waste
+  expander: random
   scale-down-enabled: true
   scale-down-utilization-threshold: 0.75
-  # skip-nodes-with-local-storage: false
-  # skip-nodes-with-system-pods: false
+  skip-nodes-with-local-storage: false
+  skip-nodes-with-system-pods: false
 
 #:MASTER:nodeSelector:
 #:MASTER:  kubernetes.io/role: master

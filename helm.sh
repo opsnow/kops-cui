@@ -265,7 +265,7 @@ charts_menu() {
         return
     fi
 
-    # create_cluster_role_binding cluster-admin ${NAMESPACE}
+    # create_cluster_role_binding admin ${NAMESPACE}
 
     # helm install
     helm_install ${SELECTED} ${NAMESPACE}
@@ -300,6 +300,8 @@ helm_install() {
         PREFIX="$(echo ${REPO} | cut -d'/' -f1)"
         if [ "${PREFIX}" == "custom" ]; then
             REPO="${SHELL_DIR}/${REPO}"
+        elif [ "${PREFIX}" != "stable" ]; then
+            helm_repo "${PREFIX}"
         fi
     fi
 
@@ -333,10 +335,11 @@ helm_install() {
 
     # for external-dns
     if [ "${NAME}" == "external-dns" ]; then
-        replace_password ${CHART} "AWS_ACCESS_KEY" "****"
-        replace_password ${CHART} "AWS_SECRET_KEY" "****"
+        replace_chart ${CHART} "AWS_ACCESS_KEY"
 
-        EX_DNS=true
+        if [ "${ANSWER}" != "" ]; then
+            replace_password ${CHART} "AWS_SECRET_KEY" "****"
+        fi
     fi
 
     # for nginx-ingress
@@ -347,6 +350,29 @@ helm_install() {
     # for efs-provisioner
     if [ "${NAME}" == "efs-provisioner" ]; then
         efs_create
+    fi
+
+    # for k8s-spot-termination-handler
+    if [ "${NAME}" == "k8s-spot-termination-handler" ]; then
+        replace_chart ${CHART} "SLACK_URL"
+    fi
+
+    # for vault
+    if [ "${NAME}" == "vault" ]; then
+        replace_chart ${CHART} "AWS_ACCESS_KEY"
+
+        if [ "${ANSWER}" != "" ]; then
+            _replace "s/#:STORAGE://g" ${CHART}
+
+            replace_password ${CHART} "AWS_SECRET_KEY" "****"
+
+            replace_chart ${CHART} "AWS_BUCKET" "${CLUSTER_NAME}-vault"
+        fi
+    fi
+
+    # for argo
+    if [ "${NAME}" == "argo" ]; then
+        replace_chart ${CHART} "ARTIFACT_REPOSITORY" "${CLUSTER_NAME}-artifact"
     fi
 
     # for jenkins
@@ -376,6 +402,7 @@ helm_install() {
             _replace "s/#:G_AUTH://g" ${CHART}
 
             replace_password ${CHART} "G_CLIENT_SECRET" "****"
+
             replace_chart ${CHART} "G_ALLOWED_DOMAINS"
         else
             # auth.ldap
@@ -489,9 +516,14 @@ helm_install() {
     _command "kubectl get deploy,pod,svc,ing,pvc,pv -n ${NAMESPACE}"
     kubectl get deploy,pod,svc,ing,pvc,pv -n ${NAMESPACE}
 
+    # for argo
+    if [ "${NAME}" == "argo" ]; then
+        create_cluster_role_binding admin default default
+    fi
+
     # for jenkins
     if [ "${NAME}" == "jenkins" ]; then
-        create_cluster_role_binding cluster-admin ${NAMESPACE} default
+        create_cluster_role_binding admin ${NAMESPACE} default
     fi
 
     # for nginx-ingress
@@ -550,11 +582,6 @@ helm_delete() {
         return
     fi
 
-    # for external-dns
-    if [ "${NAME}" == "external-dns" ]; then
-        EX_DNS=
-    fi
-
     # for nginx-ingress
     if [ "${NAME}" == "nginx-ingress" ]; then
         ROOT_DOMAIN=
@@ -601,11 +628,39 @@ helm_init() {
     _command "kubectl get pod,svc -n ${NAMESPACE}"
     kubectl get pod,svc -n ${NAMESPACE}
 
+    helm_repo_update
+}
+
+helm_repo() {
+    _NAME=$1
+    _REPO=$2
+
+    if [ "${_REPO}" == "" ]; then
+        if [ "${_NAME}" == "incubator" ]; then
+            _REPO="https://storage.googleapis.com/kubernetes-charts-incubator"
+        elif [ "${_NAME}" == "argo" ]; then
+            _REPO="https://argoproj.github.io/argo-helm"
+        fi
+    fi
+
+    if [ "${_REPO}" != "" ]; then
+        COUNT=$(helm repo list | grep -v NAME | awk '{print $1}' | grep "${_NAME}" | wc -l | xargs)
+
+        if [ "x${COUNT}" == "x0" ]; then
+            _command "helm repo add ${_NAME} ${_REPO}"
+            helm repo add ${_NAME} ${_REPO}
+
+            helm_repo_update
+        fi
+    fi
+}
+
+helm_repo_update() {
+    _command "helm repo list"
+    helm repo list
+
     _command "helm repo update"
     helm repo update
-
-    _command "helm ls"
-    helm ls
 }
 
 create_namespace() {
@@ -644,7 +699,7 @@ create_service_account() {
 }
 
 create_cluster_role_binding() {
-    ROLL=$1
+    ROLE=$1
     NAMESPACE=$2
     ACCOUNT=${3:-default}
     TOKEN=${4:-false}
@@ -653,14 +708,14 @@ create_cluster_role_binding() {
 
     CHECK=
 
-    _command "kubectl get clusterrolebinding ${ROLL}:${NAMESPACE}:${ACCOUNT}"
-    kubectl get clusterrolebinding ${ROLL}:${NAMESPACE}:${ACCOUNT} > /dev/null 2>&1 || export CHECK=CREATE
+    _command "kubectl get clusterrolebinding ${ROLE}:${NAMESPACE}:${ACCOUNT}"
+    kubectl get clusterrolebinding ${ROLE}:${NAMESPACE}:${ACCOUNT} > /dev/null 2>&1 || export CHECK=CREATE
 
     if [ "${CHECK}" == "CREATE" ]; then
-        _result "${ROLL}:${NAMESPACE}:${ACCOUNT}"
+        _result "${ROLE}:${NAMESPACE}:${ACCOUNT}"
 
-        _command "kubectl create clusterrolebinding ${ROLL}:${NAMESPACE}:${ACCOUNT} --clusterrole=${ROLL} --serviceaccount=${NAMESPACE}:${ACCOUNT}"
-        kubectl create clusterrolebinding ${ROLL}:${NAMESPACE}:${ACCOUNT} --clusterrole=${ROLL} --serviceaccount=${NAMESPACE}:${ACCOUNT}
+        _command "kubectl create clusterrolebinding ${ROLE}:${NAMESPACE}:${ACCOUNT} --clusterrole=${ROLE} --serviceaccount=${NAMESPACE}:${ACCOUNT}"
+        kubectl create clusterrolebinding ${ROLE}:${NAMESPACE}:${ACCOUNT} --clusterrole=${ROLE} --serviceaccount=${NAMESPACE}:${ACCOUNT}
     fi
 
     if [ "${TOKEN}" == "true" ]; then
@@ -1828,7 +1883,7 @@ replace_chart() {
 
     _result "${_KEY}: ${ANSWER:-${_DEFAULT}}"
 
-    _replace "s/${_KEY}/${ANSWER:-${_DEFAULT}}/g" ${CHART}
+    _replace "s|${_KEY}|${ANSWER:-${_DEFAULT}}|g" ${CHART}
 }
 
 replace_password() {
@@ -1841,7 +1896,7 @@ replace_password() {
     echo
     _result "${_KEY}: [hidden]"
 
-    _replace "s/${_KEY}/${ANSWER:-${_DEFAULT}}/g" ${_CHART}
+    _replace "s|${_KEY}|${ANSWER:-${_DEFAULT}}|g" ${_CHART}
 }
 
 replace_base64() {
@@ -1854,7 +1909,7 @@ replace_base64() {
     echo
     _result "${_KEY}: [encoded]"
 
-    _replace "s/${_KEY}/$(echo ${ANSWER:-${_DEFAULT}} | base64)/g" ${_CHART}
+    _replace "s|${_KEY}|$(echo ${ANSWER:-${_DEFAULT}} | base64)|g" ${_CHART}
 }
 
 waiting_for() {

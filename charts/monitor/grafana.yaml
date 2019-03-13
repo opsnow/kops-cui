@@ -1,5 +1,5 @@
 # chart-repo: stable/grafana
-# chart-version: 2.0.2
+# chart-version: 2.2.4
 # chart-ingress: true
 # chart-pvc: grafana ReadWriteOnce 5Gi
 # chart-pdb: N 1
@@ -9,8 +9,8 @@ nameOverride: grafana
 adminUser: admin
 adminPassword: PASSWORD
 
-podAnnotations:
-  cluster-autoscaler.kubernetes.io/safe-to-evict: "true"
+# podAnnotations:
+#   cluster-autoscaler.kubernetes.io/safe-to-evict: "true"
 
 service:
   type: SERVICE_TYPE
@@ -57,38 +57,40 @@ datasources:
   datasources.yaml:
     apiVersion: 1
     datasources:
-    - name: Prometheus
-      type: prometheus
-      url: http://prometheus-server
-      access: proxy
-      isDefault: true
+      - name: Prometheus
+        type: prometheus
+        url: http://prometheus-server
+        access: proxy
+        isDefault: true
 
 dashboardProviders:
   dashboardproviders.yaml:
     apiVersion: 1
     providers:
-    - name: 'default'
-      orgId: 1
-      folder: ''
-      type: file
-      disableDeletion: false
-      editable: true
-      options:
-        path: /var/lib/grafana/dashboards/default
+      - name: "default"
+        orgId: 1
+        folder: ""
+        type: file
+        disableDeletion: false
+        editable: true
+        options:
+          path: /var/lib/grafana/dashboards/default
 
 dashboards:
   default:
     kube-cluster:
       # https://grafana.com/dashboards/9797
       gnetId: 9797
-      revision: 2
+      revision: 5
       datasource: Prometheus
     kube-deployment:
       # https://grafana.com/dashboards/9679
       gnetId: 9679
+      revision: 5
+      datasource: Prometheus
+    nginx-ingress:
+      # url: https://raw.githubusercontent.com/kubernetes/ingress-nginx/master/deploy/grafana/dashboards/nginx.json
+      # https://grafana.com/dashboards/9679
+      gnetId: 9909
       revision: 2
       datasource: Prometheus
-    # custom-dashboard:
-    #   file: dashboards/custom-dashboard.json
-    # local-dashboard:
-    #   url: https://raw.githubusercontent.com/user/repository/master/dashboards/dashboard.json
