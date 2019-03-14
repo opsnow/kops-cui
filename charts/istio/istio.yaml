@@ -16,10 +16,10 @@ kiali:
   ingress:
     enabled: INGRESS_ENABLED
     annotations:
-    - kubernetes.io/ingress.class: nginx
-    - nginx.ingress.kubernetes.io/force-ssl-redirect: true
+      - kubernetes.io/ingress.class: nginx
+    # - nginx.ingress.kubernetes.io/force-ssl-redirect: true
     hosts:
-    - kiali-istio.BASE_DOMAIN
+      - kiali-istio.BASE_DOMAIN
   dashboard:
     secretName: istio-secret
     # grafanaURL: http://grafana:3000
