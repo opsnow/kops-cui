@@ -18,9 +18,6 @@ ingress:
   enabled: INGRESS_ENABLED
   annotations:
     kubernetes.io/ingress.class: nginx
-    nginx.ingress.kubernetes.io/force-ssl-redirect: "true"
+    # nginx.ingress.kubernetes.io/force-ssl-redirect: "true"
   hosts:
     - INGRESS_DOMAIN
-# rbac:
-#   create: true
-#   clusterAdminRole: false

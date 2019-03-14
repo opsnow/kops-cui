@@ -9,7 +9,7 @@ ui:
       - INGRESS_DOMAIN
     annotations:
       kubernetes.io/ingress.class: nginx
-      nginx.ingress.kubernetes.io/force-ssl-redirect: "true"
+      # nginx.ingress.kubernetes.io/force-ssl-redirect: "true"
 
 useDefaultArtifactRepo: true
 useStaticCredentials: false
