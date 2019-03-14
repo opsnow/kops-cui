@@ -14,21 +14,9 @@
       "version": "5.3.2"
     },
     {
-      "type": "panel",
-      "id": "graph",
-      "name": "Graph",
-      "version": "5.0.0"
-    },
-    {
       "type": "datasource",
       "id": "prometheus",
       "name": "Prometheus",
-      "version": "5.0.0"
-    },
-    {
-      "type": "panel",
-      "id": "singlestat",
-      "name": "Singlestat",
       "version": "5.0.0"
     }
   ],
@@ -43,11 +31,15 @@
       "type": "dashboard"
     }]
   },
-  "description": "Monitors Kubernetes cluster using Prometheus. Shows overall cluster CPU / Memory / Filesystem usage as well as individual pod, containers, systemd services statistics. Uses cAdvisor metrics only.",
+  "timezone": "browser",
+  "uid": "kube-cluster",
+  "title": "Kubernetes Cluster (via Prometheus)",
+  "description": "Monitors Kubernetes cluster using Prometheus.",
   "editable": true,
   "gnetId": 9797,
+  "version": 1,
   "graphTooltip": 0,
-  "iteration": 1550221974993,
+  "iteration": 1552367833411,
   "links": [],
   "panels": [{
       "collapsed": false,
@@ -1283,7 +1275,7 @@
       "dashLength": 10,
       "dashes": false,
       "datasource": "${DS_PROMETHEUS}",
-      "decimals": 2,
+      "decimals": 0,
       "editable": true,
       "error": false,
       "fill": 1,
@@ -1324,7 +1316,7 @@
       "stack": true,
       "steppedLine": false,
       "targets": [{
-        "expr": "sum (rate (nginx_ingress_controller_bytes_sent_count{kubernetes_node=~\"^$Node$\"}[2m]) ) by (status)",
+        "expr": "sum (rate (nginx_ingress_controller_requests{kubernetes_node=~\"^$Node$\"}[2m]) ) by (status)",
         "format": "time_series",
         "instant": false,
         "interval": "10s",
@@ -1338,7 +1330,7 @@
       "timeFrom": null,
       "timeRegions": [],
       "timeShift": null,
-      "title": "Sent count (2m avg)",
+      "title": "Requests (2m avg)",
       "tooltip": {
         "msResolution": false,
         "shared": true,
@@ -3186,7 +3178,7 @@
     }]
   },
   "time": {
-    "from": "now-30m",
+    "from": "now-1h",
     "to": "now"
   },
   "timepicker": {
@@ -3194,7 +3186,7 @@
       "5s",
       "10s",
       "30s",
-      "1m",
+      "2m",
       "5m",
       "15m",
       "30m",
@@ -3213,9 +3205,5 @@
       "7d",
       "30d"
     ]
-  },
-  "timezone": "browser",
-  "title": "Kubernetes Cluster Monitor (via Prometheus)",
-  "uid": "kube-cluster",
-  "version": 2
+  }
 }

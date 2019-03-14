@@ -3,8 +3,8 @@
 
 nameOverride: external-dns
 
-podAnnotations:
-  cluster-autoscaler.kubernetes.io/safe-to-evict: "true"
+# podAnnotations:
+#   cluster-autoscaler.kubernetes.io/safe-to-evict: "true"
 
 sources:
   - service

@@ -265,7 +265,7 @@ charts_menu() {
         return
     fi
 
-    # create_cluster_role_binding cluster-admin ${NAMESPACE}
+    # create_cluster_role_binding admin ${NAMESPACE}
 
     # helm install
     helm_install ${SELECTED} ${NAMESPACE}
@@ -300,6 +300,8 @@ helm_install() {
         PREFIX="$(echo ${REPO} | cut -d'/' -f1)"
         if [ "${PREFIX}" == "custom" ]; then
             REPO="${SHELL_DIR}/${REPO}"
+        elif [ "${PREFIX}" != "stable" ]; then
+            helm_repo "${PREFIX}"
         fi
     fi
 
@@ -333,10 +335,11 @@ helm_install() {
 
     # for external-dns
     if [ "${NAME}" == "external-dns" ]; then
-        replace_password ${CHART} "AWS_ACCESS_KEY" "****"
-        replace_password ${CHART} "AWS_SECRET_KEY" "****"
+        replace_chart ${CHART} "AWS_ACCESS_KEY"
 
-        EX_DNS=true
+        if [ "${ANSWER}" != "" ]; then
+            replace_password ${CHART} "AWS_SECRET_KEY" "****"
+        fi
     fi
 
     # for nginx-ingress
@@ -347,6 +350,29 @@ helm_install() {
     # for efs-provisioner
     if [ "${NAME}" == "efs-provisioner" ]; then
         efs_create
+    fi
+
+    # for k8s-spot-termination-handler
+    if [ "${NAME}" == "k8s-spot-termination-handler" ]; then
+        replace_chart ${CHART} "SLACK_URL"
+    fi
+
+    # for vault
+    if [ "${NAME}" == "vault" ]; then
+        replace_chart ${CHART} "AWS_ACCESS_KEY"
+
+        if [ "${ANSWER}" != "" ]; then
+            _replace "s/#:STORAGE://g" ${CHART}
+
+            replace_password ${CHART} "AWS_SECRET_KEY" "****"
+
+            replace_chart ${CHART} "AWS_BUCKET" "${CLUSTER_NAME}-vault"
+        fi
+    fi
+
+    # for argo
+    if [ "${NAME}" == "argo" ]; then
+        replace_chart ${CHART} "ARTIFACT_REPOSITORY" "${CLUSTER_NAME}-artifact"
     fi
 
     # for jenkins
@@ -376,6 +402,7 @@ helm_install() {
             _replace "s/#:G_AUTH://g" ${CHART}
 
             replace_password ${CHART} "G_CLIENT_SECRET" "****"
+
             replace_chart ${CHART} "G_ALLOWED_DOMAINS"
         else
             # auth.ldap
@@ -489,9 +516,14 @@ helm_install() {
     _command "kubectl get deploy,pod,svc,ing,pvc,pv -n ${NAMESPACE}"
     kubectl get deploy,pod,svc,ing,pvc,pv -n ${NAMESPACE}
 
+    # for argo
+    if [ "${NAME}" == "argo" ]; then
+        create_cluster_role_binding admin default default
+    fi
+
     # for jenkins
     if [ "${NAME}" == "jenkins" ]; then
-        create_cluster_role_binding cluster-admin ${NAMESPACE} default
+        create_cluster_role_binding admin ${NAMESPACE} default
     fi
 
     # for nginx-ingress
@@ -550,11 +582,6 @@ helm_delete() {
         return
     fi
 
-    # for external-dns
-    if [ "${NAME}" == "external-dns" ]; then
-        EX_DNS=
-    fi
-
     # for nginx-ingress
     if [ "${NAME}" == "nginx-ingress" ]; then
         ROOT_DOMAIN=
@@ -593,7 +620,7 @@ helm_init() {
     helm init --upgrade --service-account=${ACCOUNT}
 
     # default pdb
-    default_pdb
+    default_pdb "${NAMESPACE}"
 
     # waiting 5
     waiting_pod "${NAMESPACE}" "tiller"
@@ -601,130 +628,160 @@ helm_init() {
     _command "kubectl get pod,svc -n ${NAMESPACE}"
     kubectl get pod,svc -n ${NAMESPACE}
 
+    helm_repo_update
+}
+
+helm_repo() {
+    _NAME=$1
+    _REPO=$2
+
+    if [ "${_REPO}" == "" ]; then
+        if [ "${_NAME}" == "incubator" ]; then
+            _REPO="https://storage.googleapis.com/kubernetes-charts-incubator"
+        elif [ "${_NAME}" == "argo" ]; then
+            _REPO="https://argoproj.github.io/argo-helm"
+        fi
+    fi
+
+    if [ "${_REPO}" != "" ]; then
+        COUNT=$(helm repo list | grep -v NAME | awk '{print $1}' | grep "${_NAME}" | wc -l | xargs)
+
+        if [ "x${COUNT}" == "x0" ]; then
+            _command "helm repo add ${_NAME} ${_REPO}"
+            helm repo add ${_NAME} ${_REPO}
+
+            helm_repo_update
+        fi
+    fi
+}
+
+helm_repo_update() {
+    _command "helm repo list"
+    helm repo list
+
     _command "helm repo update"
     helm repo update
-
-    _command "helm ls"
-    helm ls
 }
 
 create_namespace() {
-    NAMESPACE=$1
+    _NAMESPACE=$1
 
     CHECK=
 
-    _command "kubectl get ns ${NAMESPACE}"
-    kubectl get ns ${NAMESPACE} > /dev/null 2>&1 || export CHECK=CREATE
+    _command "kubectl get ns ${_NAMESPACE}"
+    kubectl get ns ${_NAMESPACE} > /dev/null 2>&1 || export CHECK=CREATE
 
     if [ "${CHECK}" == "CREATE" ]; then
-        _result "${NAMESPACE}"
+        _result "${_NAMESPACE}"
 
-        _command "kubectl create ns ${NAMESPACE}"
-        kubectl create ns ${NAMESPACE}
+        _command "kubectl create ns ${_NAMESPACE}"
+        kubectl create ns ${_NAMESPACE}
     fi
 }
 
 create_service_account() {
-    NAMESPACE=$1
-    ACCOUNT=$2
+    _NAMESPACE=$1
+    _ACCOUNT=$2
 
-    create_namespace ${NAMESPACE}
+    create_namespace ${_NAMESPACE}
 
     CHECK=
 
-    _command "kubectl get sa ${ACCOUNT} -n ${NAMESPACE}"
-    kubectl get sa ${ACCOUNT} -n ${NAMESPACE} > /dev/null 2>&1 || export CHECK=CREATE
+    _command "kubectl get sa ${_ACCOUNT} -n ${_NAMESPACE}"
+    kubectl get sa ${_ACCOUNT} -n ${_NAMESPACE} > /dev/null 2>&1 || export CHECK=CREATE
 
     if [ "${CHECK}" == "CREATE" ]; then
-        _result "${NAMESPACE}:${ACCOUNT}"
+        _result "${_NAMESPACE}:${_ACCOUNT}"
 
-        _command "kubectl create sa ${ACCOUNT} -n ${NAMESPACE}"
-        kubectl create sa ${ACCOUNT} -n ${NAMESPACE}
+        _command "kubectl create sa ${_ACCOUNT} -n ${_NAMESPACE}"
+        kubectl create sa ${_ACCOUNT} -n ${_NAMESPACE}
     fi
 }
 
 create_cluster_role_binding() {
-    ROLL=$1
-    NAMESPACE=$2
-    ACCOUNT=${3:-default}
-    TOKEN=${4:-false}
+    _ROLE=$1
+    _NAMESPACE=$2
+    _ACCOUNT=${3:-default}
+    _TOKEN=${4:-false}
 
-    create_service_account ${NAMESPACE} ${ACCOUNT}
+    create_service_account ${_NAMESPACE} ${_ACCOUNT}
 
     CHECK=
 
-    _command "kubectl get clusterrolebinding ${ROLL}:${NAMESPACE}:${ACCOUNT}"
-    kubectl get clusterrolebinding ${ROLL}:${NAMESPACE}:${ACCOUNT} > /dev/null 2>&1 || export CHECK=CREATE
+    _command "kubectl get clusterrolebinding ${_ROLE}:${_NAMESPACE}:${_ACCOUNT}"
+    kubectl get clusterrolebinding ${_ROLE}:${_NAMESPACE}:${_ACCOUNT} > /dev/null 2>&1 || export CHECK=CREATE
 
     if [ "${CHECK}" == "CREATE" ]; then
-        _result "${ROLL}:${NAMESPACE}:${ACCOUNT}"
+        _result "${_ROLE}:${_NAMESPACE}:${_ACCOUNT}"
 
-        _command "kubectl create clusterrolebinding ${ROLL}:${NAMESPACE}:${ACCOUNT} --clusterrole=${ROLL} --serviceaccount=${NAMESPACE}:${ACCOUNT}"
-        kubectl create clusterrolebinding ${ROLL}:${NAMESPACE}:${ACCOUNT} --clusterrole=${ROLL} --serviceaccount=${NAMESPACE}:${ACCOUNT}
+        _command "kubectl create clusterrolebinding ${_ROLE}:${_NAMESPACE}:${_ACCOUNT} --clusterrole=${_ROLE} --serviceaccount=${_NAMESPACE}:${_ACCOUNT}"
+        kubectl create clusterrolebinding ${_ROLE}:${_NAMESPACE}:${_ACCOUNT} --clusterrole=${_ROLE} --serviceaccount=${_NAMESPACE}:${_ACCOUNT}
     fi
 
-    if [ "${TOKEN}" == "true" ]; then
-        SECRET=$(kubectl get secret -n ${NAMESPACE} | grep ${ACCOUNT}-token | awk '{print $1}')
-        kubectl describe secret ${SECRET} -n ${NAMESPACE} | grep 'token:'
+    if [ "${_TOKEN}" == "true" ]; then
+        SECRET=$(kubectl get secret -n ${_NAMESPACE} | grep ${_ACCOUNT}-token | awk '{print $1}')
+        kubectl describe secret ${SECRET} -n ${_NAMESPACE} | grep 'token:'
     fi
 }
 
 default_pdb() {
-    create_pdb ${NAMESPACE} coredns 1 N k8s-app kube-dns
+    _NAMESPACE=${1}
 
-    create_pdb ${NAMESPACE} kube-dns 1 N k8s-app
-    create_pdb ${NAMESPACE} kube-dns-autoscaler N 1 k8s-app
+    create_pdb ${_NAMESPACE} coredns 1 N k8s-app kube-dns
 
-    create_pdb ${NAMESPACE} tiller-deploy N 1 tiller
+    create_pdb ${_NAMESPACE} kube-dns 1 N k8s-app
+    create_pdb ${_NAMESPACE} kube-dns-autoscaler N 1 k8s-app
+
+    create_pdb ${_NAMESPACE} tiller-deploy N 1 tiller
 }
 
 create_pdb() {
-    NAMESPACE=${1}
-    PDB_NAME=${2}
-    PDB_MIN=${3:-N}
-    PDB_MAX=${4:-N}
-    LABELS=${5:-app}
-    APP_NAME=${6:-${PDB_NAME}}
+    _NAMESPACE=${1}
+    _PDB_NAME=${2}
+    _PDB_MIN=${3:-N}
+    _PDB_MAX=${4:-N}
+    _LABELS=${5:-app}
+    _APP_NAME=${6:-${_PDB_NAME}}
 
-    COUNT=$(kubectl get deploy -n kube-system | grep ${PDB_NAME} | grep -v NAME | wc -l | xargs)
+    COUNT=$(kubectl get deploy -n kube-system | grep ${_PDB_NAME} | grep -v NAME | wc -l | xargs)
     if [ "x${COUNT}" == "x0" ]; then
         return
     fi
 
-    if [ "${PDB_NAME}" == "heapster" ]; then
-        APP_NAME="heapster-heapster"
+    if [ "${_PDB_NAME}" == "heapster" ]; then
+        _APP_NAME="heapster-heapster"
     fi
 
-    YAML=${SHELL_DIR}/build/${CLUSTER_NAME}/pdb-${PDB_NAME}.yaml
-    get_template templates/pdb/pdb-${LABELS}.yaml ${YAML}
+    YAML=${SHELL_DIR}/build/${CLUSTER_NAME}/pdb-${_PDB_NAME}.yaml
+    get_template templates/pdb/pdb-${_LABELS}.yaml ${YAML}
 
-    _replace "s/PDB_NAME/${PDB_NAME}/g" ${YAML}
-    _replace "s/APP_NAME/${APP_NAME}/g" ${YAML}
+    _replace "s/PDB_NAME/${_PDB_NAME}/g" ${YAML}
+    _replace "s/APP_NAME/${_APP_NAME}/g" ${YAML}
 
-    if [ "${PDB_MIN}" != "N" ]; then
-        _replace "s/PDB_MIN/${PDB_MIN}/g" ${YAML}
+    if [ "${_PDB_MIN}" != "N" ]; then
+        _replace "s/PDB_MIN/${_PDB_MIN}/g" ${YAML}
         _replace "s/#:MIN://g" ${YAML}
     fi
 
-    if [ "${PDB_MAX}" != "N" ]; then
-        _replace "s/PDB_MAX/${PDB_MAX}/g" ${YAML}
+    if [ "${_PDB_MAX}" != "N" ]; then
+        _replace "s/PDB_MAX/${_PDB_MAX}/g" ${YAML}
         _replace "s/#:MAX://g" ${YAML}
     fi
 
-    delete_pdb ${NAMESPACE} ${PDB_NAME}
+    delete_pdb ${_NAMESPACE} ${_PDB_NAME}
 
-    _command "kubectl apply -n ${NAMESPACE} -f ${YAML}"
-    kubectl apply -n ${NAMESPACE} -f ${YAML}
+    _command "kubectl apply -n ${_NAMESPACE} -f ${YAML}"
+    kubectl apply -n ${_NAMESPACE} -f ${YAML}
 }
 
 delete_pdb() {
-    NAMESPACE=${1}
-    PDB_NAME=${2}
+    _NAMESPACE=${1}
+    _PDB_NAME=${2}
 
-    COUNT=$(kubectl get pdb -n kube-system | grep ${PDB_NAME} | grep -v NAME | wc -l | xargs)
+    COUNT=$(kubectl get pdb -n kube-system | grep ${_PDB_NAME} | grep -v NAME | wc -l | xargs)
     if [ "x${COUNT}" != "x0" ]; then
-        _command "kubectl delete pdb ${PDB_NAME} -n ${NAMESPACE}"
-        kubectl delete pdb ${PDB_NAME} -n ${NAMESPACE}
+        _command "kubectl delete pdb ${_PDB_NAME} -n ${_NAMESPACE}"
+        kubectl delete pdb ${_PDB_NAME} -n ${_NAMESPACE}
     fi
 }
 
@@ -1817,7 +1874,7 @@ replace_chart() {
 
     _result "${_KEY}: ${ANSWER:-${_DEFAULT}}"
 
-    _replace "s/${_KEY}/${ANSWER:-${_DEFAULT}}/g" ${CHART}
+    _replace "s|${_KEY}|${ANSWER:-${_DEFAULT}}|g" ${CHART}
 }
 
 replace_password() {
@@ -1830,7 +1887,7 @@ replace_password() {
     echo
     _result "${_KEY}: [hidden]"
 
-    _replace "s/${_KEY}/${ANSWER:-${_DEFAULT}}/g" ${_CHART}
+    _replace "s|${_KEY}|${ANSWER:-${_DEFAULT}}|g" ${_CHART}
 }
 
 replace_base64() {
@@ -1843,7 +1900,7 @@ replace_base64() {
     echo
     _result "${_KEY}: [encoded]"
 
-    _replace "s/${_KEY}/$(echo ${ANSWER:-${_DEFAULT}} | base64)/g" ${_CHART}
+    _replace "s|${_KEY}|$(echo ${ANSWER:-${_DEFAULT}} | base64)|g" ${_CHART}
 }
 
 waiting_for() {

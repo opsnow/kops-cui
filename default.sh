@@ -26,7 +26,6 @@ BASE_DOMAIN=
 
 CERT_MAN=
 EFS_ID=
-EX_DNS=
 ISTIO=
 
 cloud=aws

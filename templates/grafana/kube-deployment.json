@@ -14,21 +14,9 @@
       "version": "5.3.2"
     },
     {
-      "type": "panel",
-      "id": "graph",
-      "name": "Graph",
-      "version": "5.0.0"
-    },
-    {
       "type": "datasource",
       "id": "prometheus",
       "name": "Prometheus",
-      "version": "5.0.0"
-    },
-    {
-      "type": "panel",
-      "id": "singlestat",
-      "name": "Singlestat",
       "version": "5.0.0"
     }
   ],
@@ -43,11 +31,15 @@
       "type": "dashboard"
     }]
   },
-  "description": "Monitors Kubernetes deployment using Prometheus. Shows overall cluster CPU / Memory / Filesystem usage as well as individual pod, containers, systemd services statistics. Uses cAdvisor metrics only.",
+  "timezone": "browser",
+  "uid": "kube-deployment",
+  "title": "Kubernetes Deployment (via Prometheus)",
+  "description": "Monitors Kubernetes deployment using Prometheus.",
   "editable": true,
   "gnetId": 9679,
+  "version": 1,
   "graphTooltip": 0,
-  "iteration": 1547719581341,
+  "iteration": 1552366560145,
   "links": [],
   "panels": [{
       "collapsed": false,
@@ -1194,7 +1186,7 @@
       "dashLength": 10,
       "dashes": false,
       "datasource": "${DS_PROMETHEUS}",
-      "decimals": 2,
+      "decimals": 0,
       "editable": true,
       "error": false,
       "fill": 1,
@@ -1234,7 +1226,7 @@
       "stack": true,
       "steppedLine": false,
       "targets": [{
-        "expr": "sum (rate (nginx_ingress_controller_bytes_sent_count{namespace=~\"^$Namespace$\",service=~\"^$Deployment$\"}[2m]) ) by (status)",
+        "expr": "sum (rate (nginx_ingress_controller_requests{namespace=~\"^$Namespace$\",service=~\"^$Deployment$\"}[2m]) ) by (status)",
         "format": "time_series",
         "interval": "",
         "intervalFactor": 1,
@@ -1247,7 +1239,7 @@
       "timeFrom": null,
       "timeRegions": [],
       "timeShift": null,
-      "title": "Sent Count (2m avg)",
+      "title": "Requests (2m avg)",
       "tooltip": {
         "msResolution": false,
         "shared": true,
@@ -1431,9 +1423,8 @@
     "list": [{
         "allValue": ".*",
         "current": {
-          "tags": [],
-          "text": "dev",
-          "value": "dev"
+          "text": "default",
+          "value": "default"
         },
         "datasource": "${DS_PROMETHEUS}",
         "definition": "",
@@ -1482,7 +1473,7 @@
     ]
   },
   "time": {
-    "from": "now-30m",
+    "from": "now-1h",
     "to": "now"
   },
   "timepicker": {
@@ -1490,7 +1481,7 @@
       "5s",
       "10s",
       "30s",
-      "1m",
+      "2m",
       "5m",
       "15m",
       "30m",
@@ -1509,9 +1500,5 @@
       "7d",
       "30d"
     ]
-  },
-  "timezone": "browser",
-  "title": "Kubernetes Deployment Monitor (via Prometheus)",
-  "uid": "kube-deployment",
-  "version": 1
+  }
 }
