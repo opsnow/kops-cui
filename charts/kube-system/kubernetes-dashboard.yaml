@@ -21,6 +21,3 @@ ingress:
     nginx.ingress.kubernetes.io/force-ssl-redirect: "true"
   hosts:
     - INGRESS_DOMAIN
-# rbac:
-#   create: true
-#   clusterAdminRole: false

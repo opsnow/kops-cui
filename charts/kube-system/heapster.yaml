@@ -3,5 +3,3 @@
 # chart-pdb: N 1
 
 nameOverride: heapster
-# podAnnotations:
-#   cluster-autoscaler.kubernetes.io/safe-to-evict: "true"
