@@ -1,6 +1,0 @@
-image:
-  repository: quay.io/opspresso/docker-clean
-  tag: latest
-
-env:
-  clean_period: 3600
