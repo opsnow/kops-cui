@@ -443,16 +443,17 @@ helm_install() {
     fi
 
     # for istio
-    # if [ "${ISTIO}" == "true" ]; then
-    #     COUNT=$(kubectl get ns ${NAMESPACE} --show-labels | grep 'istio-injection=enabled' | wc -l | xargs)
-    #     if [ "x${COUNT}" != "x0" ]; then
-    #         ISTIO_ENABLED=true
-    #     else
-    #         ISTIO_ENABLED=false
-    #     fi
-    # else
-    #     ISTIO_ENABLED=false
-    # fi
+    if [ "${ISTIO}" == "true" ]; then
+        COUNT=$(kubectl get ns ${NAMESPACE} --show-labels | grep 'istio-injection=enabled' | wc -l | xargs)
+        if [ "x${COUNT}" != "x0" ]; then
+            ISTIO_ENABLED=true
+        else
+            ISTIO_ENABLED=false
+        fi
+    else
+        ISTIO_ENABLED=false
+    fi
+    _replace "s/ISTIO_ENABLED/${ISTIO_ENABLED}/g" ${CHART}
 
     # for ingress
     if [ "${INGRESS}" == "true" ]; then
@@ -943,8 +944,6 @@ delete_pvc() {
     else
         echo "Retry after complete pod($POD) deletion."
     fi
-
-
 }
 
 delete_save_pv() {
@@ -961,11 +960,9 @@ delete_save_pv() {
     if [ "${ANSWER}" == "YES" ]; then
         kubectl delete pv $PV_NAME
     fi
-
 }
 
 validate_pv() {
-
     # Get efs provisioner mounted EFS fs-id
     _command "kubectl -n kube-system get pod -l app=efs-provisioner -o jsonpath='{.items[0].metadata.name}'"
     EFS_POD=$(kubectl -n kube-system get pod -l app=efs-provisioner -o jsonpath='{.items[0].metadata.name}')
@@ -1026,7 +1023,6 @@ validate_pv() {
             echo "Edit for new EFS and command kubectl apply -f ..."
         fi
     fi
-
 }
 
 efs_create() {
@@ -1051,6 +1047,8 @@ efs_create() {
     if [ "${EFS_ID}" == "" ]; then
         _error "Not found the EFS."
     fi
+
+    CONFIG_SAVE=true
 
     _result "EFS_ID=${EFS_ID}"
 
@@ -1176,6 +1174,7 @@ efs_delete() {
     fi
 
     EFS_ID=
+    CONFIG_SAVE=true
 
     _result "EFS_ID=${EFS_ID}"
 }
@@ -1335,8 +1334,10 @@ istio_install() {
     # kiali sa
     create_cluster_role_binding view ${NAMESPACE} kiali-service-account
 
-    # save config (ISTIO)
     ISTIO=true
+    CONFIG_SAVE=true
+
+    # save config (ISTIO)
     config_save
 
     # waiting 2
@@ -1389,8 +1390,10 @@ istio_remote_install() {
                  --set global.proxy.envoyStatsd.host=${STATSD_POD_IP} \
                  --set global.remoteZipkinAddress=${ZIPKIN_POD_IP}
 
-    # save config (ISTIO)
     ISTIO=true
+    CONFIG_SAVE=true
+
+    # save config (ISTIO)
     config_save
 
     # waiting 2
@@ -1453,8 +1456,10 @@ istio_delete() {
     _command "kubectl delete namespace ${NAMESPACE}"
     kubectl delete namespace ${NAMESPACE}
 
-    # save config (ISTIO)
     ISTIO=
+    CONFIG_SAVE=true
+
+    # save config (ISTIO)
     config_save
 }
 
@@ -1786,6 +1791,8 @@ get_base_domain() {
         TEXT="external-dns.alpha.kubernetes.io/hostname"
         _replace "s@${TEXT}:.*@${TEXT}: \"${SUB_DOMAIN}.${BASE_DOMAIN}.\"@" ${CHART}
     fi
+
+    CONFIG_SAVE=true
 }
 
 replace_chart() {
