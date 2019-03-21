@@ -77,11 +77,11 @@ press_enter() {
         devops)
             charts_menu "devops"
             ;;
+        sample)
+            charts_menu "sample"
+            ;;
         batch)
             charts_menu "batch"
-            ;;
-        sample)
-            sample_menu
             ;;
         istio)
             istio_menu
@@ -99,15 +99,15 @@ main_menu() {
     _echo "3. kube-system.."
     _echo "4. monitor.."
     _echo "5. devops.."
-    _echo "6. batch.."
+    _echo "6. sample.."
+    _echo "7. batch.."
     echo
-    _echo "s. sample.."
     _echo "i. istio.."
     echo
     _echo "d. remove"
     echo
-    # _echo "v. save variables"
     _echo "c. check PV"
+    _echo "v. save variables"
     echo
     _echo "u. update self"
     _echo "t. update tools"
@@ -134,15 +134,15 @@ main_menu() {
             charts_menu "devops"
             ;;
         6)
+            charts_menu "sample"
+            ;;
+        7)
             charts_menu "batch"
             ;;
-        s|7)
-            sample_menu
-            ;;
-        i|8)
+        i)
             istio_menu
             ;;
-        d|9)
+        d)
             helm_delete
             press_enter main
             ;;
@@ -230,28 +230,6 @@ istio_menu() {
             main_menu
             ;;
     esac
-}
-
-sample_menu() {
-    title
-
-    LIST=${SHELL_DIR}/build/${CLUSTER_NAME}/sample-list
-
-    # find sample
-    ls ${SHELL_DIR}/charts/sample | grep yaml | sort | sed 's/.yaml//' > ${LIST}
-
-    # select
-    select_one
-
-    if [ -z ${SELECTED} ]; then
-        main_menu
-        return
-    fi
-
-    # sample install
-    sample_install ${SELECTED} sample
-
-    press_enter sample
 }
 
 charts_menu() {
@@ -587,7 +565,7 @@ helm_delete() {
 
     _command "helm ls --all"
 
-    # find sample
+    # find
     helm ls --all | grep -v "NAME" | sort \
         | awk '{printf "%-55s %-20s %-5s %-12s %s\n", $1, $11, $2, $8, $9}' > ${LIST}
 
@@ -1436,7 +1414,7 @@ istio_injection() {
 
     LIST=${SHELL_DIR}/build/${CLUSTER_NAME}/istio-ns-list
 
-    # find sample
+    # find
     kubectl get ns | grep -v "NAME" | awk '{print $1}' > ${LIST}
 
     # select
@@ -1478,81 +1456,6 @@ istio_delete() {
     # save config (ISTIO)
     ISTIO=
     config_save
-}
-
-sample_install() {
-    helm_check
-
-    NAME=${1}
-    NAMESPACE=${2}
-
-    CHART=${SHELL_DIR}/build/${CLUSTER_NAME}/${NAME}.yaml
-    get_template charts/sample/${NAME}.yaml ${CHART}
-
-    # profile
-    _replace "s/profile:.*/profile: ${NAMESPACE}/g" ${CHART}
-
-    # ingress
-    INGRESS=$(cat ${CHART} | grep '# chart-ingress:' | awk '{print $3}')
-
-    if [ "${INGRESS}" == "true" ]; then
-        if [ -z ${BASE_DOMAIN} ]; then
-            get_ingress_nip_io
-
-            _replace "s/SERVICE_TYPE/LoadBalancer/g" ${CHART}
-            _replace "s/INGRESS_ENABLED/false/g" ${CHART}
-        else
-            _replace "s/SERVICE_TYPE/ClusterIP/g" ${CHART}
-            _replace "s/INGRESS_ENABLED/true/g" ${CHART}
-            _replace "s/BASE_DOMAIN/${BASE_DOMAIN}/g" ${CHART}
-        fi
-    fi
-
-    # for istio
-    if [ "${ISTIO}" == "true" ]; then
-        COUNT=$(kubectl get ns ${NAMESPACE} --show-labels | grep 'istio-injection=enabled' | wc -l | xargs)
-        if [ "x${COUNT}" != "x0" ]; then
-            ISTIO_ENABLED=true
-        else
-            ISTIO_ENABLED=false
-        fi
-    else
-        ISTIO_ENABLED=false
-    fi
-    _replace "s/ISTIO_ENABLED/${ISTIO_ENABLED}/g" ${CHART}
-
-    SAMPLE_DIR=${SHELL_DIR}/charts/sample/${NAME}
-
-    # helm install
-    _command "helm upgrade --install ${NAME}-${NAMESPACE} ${SAMPLE_DIR} --namespace ${NAMESPACE} --values ${CHART}"
-    helm upgrade --install ${NAME}-${NAMESPACE} ${SAMPLE_DIR} --namespace ${NAMESPACE} --values ${CHART}
-
-    if [ "${NAME}" != "elasticsearch-snapshot" ]; then
-        # waiting 2
-        waiting_pod "${NAMESPACE}" "${NAME}-${NAMESPACE}"
-    fi
-
-    _command "helm history ${NAME}-${NAMESPACE}"
-    helm history ${NAME}-${NAMESPACE}
-
-    _command "kubectl get all -n ${NAMESPACE}"
-    kubectl get all -n ${NAMESPACE}
-
-    if [ "${INGRESS}" == "true" ]; then
-        if [ -z ${BASE_DOMAIN} ]; then
-            get_elb_domain ${NAME}-${NAMESPACE} ${NAMESPACE}
-
-            _result "${NAME}: http://${ELB_DOMAIN}"
-        else
-            DOMAIN="${NAME}-${NAMESPACE}.${BASE_DOMAIN}"
-
-            if [ -z ${ROOT_DOMAIN} ]; then
-                _result "${NAME}: http://${DOMAIN}"
-            else
-                _result "${NAME}: https://${DOMAIN}"
-            fi
-        fi
-    fi
 }
 
 get_cluster() {

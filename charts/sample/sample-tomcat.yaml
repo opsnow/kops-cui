@@ -1,4 +1,4 @@
-# chart-repo: sample-tomcat
+# chart-repo: custom/sample-tomcat
 # chart-version: latest
 # chart-ingress: true
 
