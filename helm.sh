@@ -443,16 +443,16 @@ helm_install() {
     fi
 
     # for istio
-    if [ "${ISTIO}" == "true" ]; then
-        COUNT=$(kubectl get ns ${NAMESPACE} --show-labels | grep 'istio-injection=enabled' | wc -l | xargs)
-        if [ "x${COUNT}" != "x0" ]; then
-            ISTIO_ENABLED=true
-        else
-            ISTIO_ENABLED=false
-        fi
-    else
-        ISTIO_ENABLED=false
-    fi
+    # if [ "${ISTIO}" == "true" ]; then
+    #     COUNT=$(kubectl get ns ${NAMESPACE} --show-labels | grep 'istio-injection=enabled' | wc -l | xargs)
+    #     if [ "x${COUNT}" != "x0" ]; then
+    #         ISTIO_ENABLED=true
+    #     else
+    #         ISTIO_ENABLED=false
+    #     fi
+    # else
+    #     ISTIO_ENABLED=false
+    # fi
 
     # for ingress
     if [ "${INGRESS}" == "true" ]; then
