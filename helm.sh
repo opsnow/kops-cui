@@ -1521,14 +1521,16 @@ sample_install() {
     _command "helm upgrade --install ${NAME}-${NAMESPACE} ${SAMPLE_DIR} --namespace ${NAMESPACE} --values ${CHART}"
     helm upgrade --install ${NAME}-${NAMESPACE} ${SAMPLE_DIR} --namespace ${NAMESPACE} --values ${CHART}
 
-    # waiting 2
-    # waiting_pod "${NAMESPACE}" "${NAME}-${NAMESPACE}"
+    if [ "${NAME}" != "elasticsearch-snapshot" ]; then
+        # waiting 2
+        waiting_pod "${NAMESPACE}" "${NAME}-${NAMESPACE}"
+    fi
 
     _command "helm history ${NAME}-${NAMESPACE}"
     helm history ${NAME}-${NAMESPACE}
 
-    _command "kubectl get deploy,pod,svc,ing -n ${NAMESPACE}"
-    kubectl get deploy,pod,svc,ing -n ${NAMESPACE}
+    _command "kubectl get all -n ${NAMESPACE}"
+    kubectl get all -n ${NAMESPACE}
 
     if [ "${INGRESS}" == "true" ]; then
         if [ -z ${BASE_DOMAIN} ]; then
