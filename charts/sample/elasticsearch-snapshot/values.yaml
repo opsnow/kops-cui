@@ -2,8 +2,11 @@ image:
   repository: quay.io/opsnow-tools/elasticsearch-snapshot
   tag: latest
 
+schedule: "*/1 * * * *"
+
+restart: Never
+
 env:
-  schedule: "*/1 * * * *"
   aws_bucket: elasticsearch-snapshot
   aws_region: ap-northeast-2
   es_host: http://elasticsearch.domain.com/

@@ -1497,6 +1497,8 @@ sample_install() {
 
         replace_chart ${CHART} "SCHEDULE" "0 0 * * *"
 
+        replace_chart ${CHART} "RESTART" "Never" # "Always", "OnFailure", "Never"
+
         replace_chart ${CHART} "AWS_BUCKET" "${CLUSTER_NAME}-snapshot"
 
         replace_chart ${CHART} "ES_HOST" "http://elasticsearch.domain.com"
