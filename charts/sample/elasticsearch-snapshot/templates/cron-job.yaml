@@ -22,4 +22,6 @@ spec:
                 value: "{{ .Values.env.aws_region }}"
               - name: ES_HOST
                 value: "{{ .Values.env.es_host }}"
+              - name: SLACK_TOKEN
+                value: "{{ .Values.env.slack_token }}"
           restartPolicy: OnFailure

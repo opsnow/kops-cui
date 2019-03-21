@@ -7,3 +7,4 @@ env:
   aws_bucket: elasticsearch-snapshot
   aws_region: ap-northeast-2
   es_host: http://elasticsearch.domain.com/
+  slack_token: ""

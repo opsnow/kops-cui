@@ -1500,6 +1500,8 @@ sample_install() {
         replace_chart ${CHART} "AWS_BUCKET" "${CLUSTER_NAME}-snapshot"
 
         replace_chart ${CHART} "ES_HOST" "http://elasticsearch.domain.com"
+
+        replace_chart ${CHART} "SLACK_TOKEN"
     fi
 
     # for istio
