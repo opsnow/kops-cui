@@ -2,4 +2,4 @@
 # chart-version: latest
 
 env:
-  CLEAN_PERIOD: 3600
+  clean_period: CLEAN_PERIOD

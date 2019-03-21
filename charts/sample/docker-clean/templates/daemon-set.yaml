@@ -12,14 +12,13 @@ spec:
       labels:
         draft: {{ default "draft-app" .Values.draft }}
         app: {{ template "fullname" . }}
-        version: master
     spec:
       containers:
         - name: {{ .Chart.Name }}
           image: "{{ .Values.image.repository }}:{{ .Values.image.tag }}"
           env:
             - name: CLEAN_PERIOD
-              value: "{{ .Values.env.CLEAN_PERIOD }}"
+              value: "{{ .Values.env.clean_period }}"
           volumeMounts:
             - name: docker-sock
               mountPath: /var/run/docker.sock
