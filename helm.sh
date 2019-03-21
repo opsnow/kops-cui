@@ -1486,6 +1486,22 @@ sample_install() {
         fi
     fi
 
+    # for docker-clean
+    if [ "${NAME}" == "docker-clean" ]; then
+        replace_chart ${CHART} "CLEAN_PERIOD" "3600"
+    fi
+
+    # for elasticsearch-snapshot
+    if [ "${NAME}" == "elasticsearch-snapshot" ]; then
+        _replace "s/AWS_REGION/${REGION}/g" ${CHART}
+
+        replace_chart ${CHART} "SCHEDULE" "0 0 * * *"
+
+        replace_chart ${CHART} "AWS_BUCKET" "${CLUSTER_NAME}-snapshot"
+
+        replace_chart ${CHART} "ES_HOST" "http://elasticsearch.domain.com"
+    fi
+
     # for istio
     if [ "${ISTIO}" == "true" ]; then
         COUNT=$(kubectl get ns ${NAMESPACE} --show-labels | grep 'istio-injection=enabled' | wc -l | xargs)
@@ -1505,14 +1521,16 @@ sample_install() {
     _command "helm upgrade --install ${NAME}-${NAMESPACE} ${SAMPLE_DIR} --namespace ${NAMESPACE} --values ${CHART}"
     helm upgrade --install ${NAME}-${NAMESPACE} ${SAMPLE_DIR} --namespace ${NAMESPACE} --values ${CHART}
 
-    # waiting 2
-    waiting_pod "${NAMESPACE}" "${NAME}-${NAMESPACE}"
+    if [ "${NAME}" != "elasticsearch-snapshot" ]; then
+        # waiting 2
+        waiting_pod "${NAMESPACE}" "${NAME}-${NAMESPACE}"
+    fi
 
     _command "helm history ${NAME}-${NAMESPACE}"
     helm history ${NAME}-${NAMESPACE}
 
-    _command "kubectl get deploy,pod,svc,ing -n ${NAMESPACE}"
-    kubectl get deploy,pod,svc,ing -n ${NAMESPACE}
+    _command "kubectl get all -n ${NAMESPACE}"
+    kubectl get all -n ${NAMESPACE}
 
     if [ "${INGRESS}" == "true" ]; then
         if [ -z ${BASE_DOMAIN} ]; then
