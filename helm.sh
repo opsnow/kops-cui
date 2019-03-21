@@ -453,7 +453,6 @@ helm_install() {
     else
         ISTIO_ENABLED=false
     fi
-    _replace "s/ISTIO_ENABLED/${ISTIO_ENABLED}/g" ${CHART}
 
     # for ingress
     if [ "${INGRESS}" == "true" ]; then
@@ -468,6 +467,7 @@ helm_install() {
             _replace "s/SERVICE_TYPE/ClusterIP/g" ${CHART}
             _replace "s/INGRESS_ENABLED/true/g" ${CHART}
             _replace "s/INGRESS_DOMAIN/${DOMAIN}/g" ${CHART}
+            _replace "s/BASE_DOMAIN/${BASE_DOMAIN}/g" ${CHART}
         fi
         _replace "s/#:ING://g" ${CHART}
     fi
