@@ -77,6 +77,9 @@ press_enter() {
         devops)
             charts_menu "devops"
             ;;
+        batch)
+            charts_menu "batch"
+            ;;
         sample)
             sample_menu
             ;;
@@ -96,6 +99,7 @@ main_menu() {
     _echo "3. kube-system.."
     _echo "4. monitor.."
     _echo "5. devops.."
+    _echo "6. batch.."
     echo
     _echo "s. sample.."
     _echo "i. istio.."
@@ -128,6 +132,9 @@ main_menu() {
             ;;
         5)
             charts_menu "devops"
+            ;;
+        6)
+            charts_menu "batch"
             ;;
         s|7)
             sample_menu
@@ -426,6 +433,21 @@ helm_install() {
         replace_chart ${CHART} "CUSTOM_HOST" "elasticsearch-client"
         # port
         replace_chart ${CHART} "CUSTOM_PORT" "9200"
+    fi
+
+    # for elasticsearch-snapshot
+    if [ "${NAME}" == "elasticsearch-snapshot" ]; then
+        _replace "s/AWS_REGION/${REGION}/g" ${CHART}
+
+        replace_chart ${CHART} "SCHEDULE" "0 0 * * *"
+
+        replace_chart ${CHART} "RESTART" "OnFailure" # "Always", "OnFailure", "Never"
+
+        replace_chart ${CHART} "AWS_BUCKET" "${CLUSTER_NAME}-snapshot"
+
+        replace_chart ${CHART} "ES_HOST" "http://elasticsearch.domain.com/"
+
+        replace_chart ${CHART} "SLACK_TOKEN"
     fi
 
     # for efs-mount
@@ -1484,26 +1506,6 @@ sample_install() {
             _replace "s/INGRESS_ENABLED/true/g" ${CHART}
             _replace "s/BASE_DOMAIN/${BASE_DOMAIN}/g" ${CHART}
         fi
-    fi
-
-    # for docker-clean
-    if [ "${NAME}" == "docker-clean" ]; then
-        replace_chart ${CHART} "CLEAN_PERIOD" "3600"
-    fi
-
-    # for elasticsearch-snapshot
-    if [ "${NAME}" == "elasticsearch-snapshot" ]; then
-        _replace "s/AWS_REGION/${REGION}/g" ${CHART}
-
-        replace_chart ${CHART} "SCHEDULE" "0 0 * * *"
-
-        replace_chart ${CHART} "RESTART" "Never" # "Always", "OnFailure", "Never"
-
-        replace_chart ${CHART} "AWS_BUCKET" "${CLUSTER_NAME}-snapshot"
-
-        replace_chart ${CHART} "ES_HOST" "http://elasticsearch.domain.com"
-
-        replace_chart ${CHART} "SLACK_TOKEN"
     fi
 
     # for istio

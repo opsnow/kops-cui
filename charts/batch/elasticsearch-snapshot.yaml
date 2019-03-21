@@ -1,4 +1,4 @@
-# chart-repo: elasticsearch-snapshot
+# chart-repo: custom/elasticsearch-snapshot
 # chart-version: latest
 
 schedule: "SCHEDULE"

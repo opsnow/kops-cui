@@ -2,7 +2,7 @@ image:
   repository: quay.io/opsnow-tools/elasticsearch-snapshot
   tag: latest
 
-schedule: "*/1 * * * *"
+schedule: "0 0 * * *"
 
 restart: Never
 
