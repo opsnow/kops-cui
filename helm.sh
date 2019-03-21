@@ -408,9 +408,9 @@ helm_install() {
     # for fluentd-elasticsearch
     if [ "${NAME}" == "fluentd-elasticsearch" ]; then
         # host
-        replace_chart ${CHART} "CUSTOM_HOST" "elasticsearch-client"
+        replace_chart ${CHART} "CUSTOM_HOST" "elasticsearch.domain.com"
         # port
-        replace_chart ${CHART} "CUSTOM_PORT" "9200"
+        replace_chart ${CHART} "CUSTOM_PORT" "80"
     fi
 
     # for elasticsearch-snapshot
