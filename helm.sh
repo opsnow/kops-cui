@@ -1026,6 +1026,8 @@ validate_pv() {
 }
 
 efs_create() {
+    CONFIG_SAVE=true
+
     if [ "${EFS_ID}" == "" ]; then
         EFS_ID=$(aws efs describe-file-systems --creation-token ${CLUSTER_NAME} --region ${REGION} | jq -r '.FileSystems[].FileSystemId')
     fi
@@ -1047,8 +1049,6 @@ efs_create() {
     if [ "${EFS_ID}" == "" ]; then
         _error "Not found the EFS."
     fi
-
-    CONFIG_SAVE=true
 
     _result "EFS_ID=${EFS_ID}"
 
@@ -1142,6 +1142,8 @@ efs_create() {
 }
 
 efs_delete() {
+    CONFIG_SAVE=true
+
     if [ "${EFS_ID}" == "" ]; then
         return
     fi
@@ -1174,7 +1176,6 @@ efs_delete() {
     fi
 
     EFS_ID=
-    CONFIG_SAVE=true
 
     _result "EFS_ID=${EFS_ID}"
 }
