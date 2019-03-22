@@ -1,5 +1,0 @@
-# chart-repo: docker-clean
-# chart-version: latest
-
-env:
-  clean_period: CLEAN_PERIOD

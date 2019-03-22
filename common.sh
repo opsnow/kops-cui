@@ -244,6 +244,10 @@ config_load() {
 }
 
 config_save() {
+    if [ "${CONFIG_SAVE}" == "" ]; then
+        return
+    fi
+
     CONFIG=${SHELL_DIR}/build/${CLUSTER_NAME}/config.sh
 
     echo "# ${THIS_NAME} config" > ${CONFIG}
