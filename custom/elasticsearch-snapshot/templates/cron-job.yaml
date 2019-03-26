@@ -1,0 +1,27 @@
+apiVersion: batch/v1beta1
+kind: CronJob
+metadata:
+  name: {{ template "fullname" . }}
+  labels:
+    draft: {{ default "draft-app" .Values.draft }}
+    chart: "{{ .Chart.Name }}-{{ .Chart.Version | replace "+" "_" }}"
+    app: {{ template "fullname" . }}
+spec:
+  schedule: "{{ .Values.schedule }}"
+  jobTemplate:
+    spec:
+      template:
+        spec:
+          containers:
+          - name: {{ .Chart.Name }}
+            image: "{{ .Values.image.repository }}:{{ .Values.image.tag }}"
+            env:
+              - name: AWS_BUCKET
+                value: "{{ .Values.env.aws_bucket }}"
+              - name: AWS_REGION
+                value: "{{ .Values.env.aws_region }}"
+              - name: ES_HOST
+                value: "{{ .Values.env.es_host }}"
+              - name: SLACK_TOKEN
+                value: "{{ .Values.env.slack_token }}"
+          restartPolicy: {{ .Values.restart }}

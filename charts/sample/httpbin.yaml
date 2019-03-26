@@ -1,4 +1,4 @@
-# chart-repo: httpbin
+# chart-repo: custom/httpbin
 # chart-version: latest
 # chart-ingress: true
 

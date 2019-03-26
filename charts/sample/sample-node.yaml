@@ -1,4 +1,4 @@
-# chart-repo: sample-node
+# chart-repo: custom/sample-node
 # chart-version: latest
 # chart-ingress: true
 

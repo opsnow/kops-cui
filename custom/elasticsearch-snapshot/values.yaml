@@ -1,0 +1,13 @@
+image:
+  repository: quay.io/opsnow-tools/elasticsearch-snapshot
+  tag: latest
+
+schedule: "0 0 * * *"
+
+restart: Never
+
+env:
+  aws_bucket: elasticsearch-snapshot
+  aws_region: ap-northeast-2
+  es_host: http://elasticsearch.domain.com/
+  slack_token: ""
