@@ -9,7 +9,7 @@ ingress:
   enabled: true
 
 grafana:
-  enabled: false
+  enabled: true
 
 kiali:
   enabled: true
