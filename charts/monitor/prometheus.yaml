@@ -41,3 +41,73 @@ alertmanager:
     size: 2Gi
     #:EFS:storageClass: "efs"
     existingClaim: prometheus-alertmanager
+
+
+serverFiles:
+  ## Alerts configuration
+  ## Ref: https://prometheus.io/docs/prometheus/latest/configuration/alerting_rules/
+  alerts: 
+    groups:
+      - name: InstanceDown
+        rules:
+          - alert: InstanceDown
+            expr: up{job="kubernetes-nodes"} == 0
+            labels:
+              severity: Warning
+            annotations:
+              summary: 'Instance Down'
+              description: 'The instance({{ $labels.instance }}) is down.'
+      - name: HighCpuUsage
+        rules:
+          - alert: HighCpuUsage
+            expr: 100 - (avg by (instance) (irate(node_cpu_seconds_total{job="kubernetes-service-endpoints",mode="idle"}[5m])) * 100) > 10
+            for: 5m
+            labels:
+              severity: Warning
+            annotations:
+              summary: 'High CPU Usage(> 70%)'
+              description: 'The CPU usage of the instance({{ $labels.instance }}) has exceeded 70 percent for more than 5 minutes.'
+      - name: HighMemoryUsage
+        rules:
+          - alert: HighMemoryUsage
+            expr: (node_memory_MemTotal_bytes - node_memory_MemFree_bytes - node_memory_Buffers_bytes - node_memory_Cached_bytes) / node_memory_MemTotal_bytes * 100 > 10
+            for: 5m
+            labels:
+              severity: Warning
+            annotations:
+              summary: 'High Memory Usage(> 90%)'
+              description: 'The memory usage of the instance({{ $labels.instance }}) has exceeds 90 percent for more than 5 minutes.'
+              
+
+alertmanagerFiles:
+  alertmanager.yml:
+    global:
+      slack_api_url: 'https://hooks.slack.com/services/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'
+
+    receivers:
+      - name: default-receiver
+        slack_configs:
+          - channel: '@changyu.seon'
+            send_resolved: true
+            username: '{{ template "slack.default.username" . }}'
+            color: '{{ if eq .Status "firing" }}danger{{ else }}good{{ end }}'
+            title: '{{ template "slack.default.title" . }}'
+            title_link: '{{ template "slack.default.titlelink" . }}'
+            pretext: '{{ .CommonAnnotations.summary }}'
+            text: |-
+              {{ range .Alerts }}
+                *Alert:* {{ .Annotations.summary }} - `{{ .Labels.severity }}`
+                *Description:* {{ .Annotations.description }}
+                *Details:*
+                {{ range .Labels.SortedPairs }} • *{{ .Name }}:* `{{ .Value }}`
+                {{ end }}
+              {{ end }}
+            fallback: '{{ template "slack.default.fallback" . }}'
+            icon_emoji: '{{ template "slack.default.iconemoji" . }}'
+            icon_url: '{{ template "slack.default.iconurl" }}'
+
+    route:
+      group_wait: 10s
+      group_interval: 1m
+      receiver: default-receiver
+      repeat_interval: 3h
