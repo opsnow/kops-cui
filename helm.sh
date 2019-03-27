@@ -1214,6 +1214,7 @@ istio_init() {
     fi
 
     ISTIO_DIR=${ISTIO_TMP}/${NAME}-${VERSION}/install/kubernetes/helm/istio
+
 }
 
 istio_secret() {
@@ -1307,10 +1308,40 @@ EOF
 #    ls -aslF ${KUBECFG_ENV_FILE}
 }
 
+waiting_istio_init() {
+    SEC=10
+    RET=0
+    IDX=0
+    while true; do
+        RET=$(echo -e `kubectl get crds | grep 'istio.io\|certmanager.k8s.io' | wc -l`)
+        echo ${RET}
+
+        if [ ${RET} -gt 52 ]; then
+            echo "init ok"
+            break
+        elif [ "x${IDX}" == "x${SEC}" ]; then
+            _result "Timeout"
+            break
+        fi
+
+        IDX=$(( ${IDX} + 1 ))
+        sleep 2
+    done
+}
+
 istio_install() {
     istio_init
 
     create_namespace ${NAMESPACE}
+
+    # istio 1.1.x init
+    if [[ "${VERSION}" == "1.1"* ]]; then
+        _command "helm upgrade --install ${ISTIO_DIR}-init --name istio-init --namespace ${NAMESPACE}"
+        helm upgrade --install istio-init ${ISTIO_DIR}-init --namespace ${NAMESPACE}
+    fi
+
+    # result will be more than 53
+    waiting_istio_init
 
     CHART=${SHELL_DIR}/build/${CLUSTER_NAME}/${NAME}.yaml
     get_template charts/istio/${NAME}.yaml ${CHART}
@@ -1445,6 +1476,9 @@ istio_delete() {
     # helm delete
     _command "helm delete --purge ${NAME}"
     helm delete --purge ${NAME}
+
+    _command "helm del --purge istio-init"
+    helm del --purge istio-init
 
     # delete crds
     LIST="$(kubectl get crds | grep istio.io | awk '{print $1}')"

@@ -1,5 +1,5 @@
 # chart-repo: istio
-# chart-version: 1.0.6
+# chart-version: 1.1.1
 # chart-ingress: true
 
 # global:
@@ -9,7 +9,7 @@ ingress:
   enabled: true
 
 grafana:
-  enabled: true
+  enabled: false
 
 kiali:
   enabled: true
