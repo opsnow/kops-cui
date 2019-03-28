@@ -1335,7 +1335,7 @@ istio_install() {
     create_namespace ${NAMESPACE}
 
     # istio 1.1.x init
-    if [[ "${VERSION}" == "1.1"* ]]; then
+    if [[ "${VERSION}" == "1.1."* ]]; then
         _command "helm upgrade --install ${ISTIO_DIR}-init --name istio-init --namespace ${NAMESPACE}"
         helm upgrade --install istio-init ${ISTIO_DIR}-init --namespace ${NAMESPACE}
     fi
