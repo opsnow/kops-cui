@@ -342,6 +342,11 @@ helm_install() {
         replace_chart ${CHART} "SLACK_URL"
     fi
 
+    # for prometheus
+    if [ "${NAME}" == "prometheus" ]; then
+        replace_chart ${CHART} "SLACK_TOKEN"
+    fi
+
     # for vault
     if [ "${NAME}" == "vault" ]; then
         replace_chart ${CHART} "AWS_ACCESS_KEY"

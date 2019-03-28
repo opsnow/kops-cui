@@ -48,6 +48,15 @@ serverFiles:
   ## Ref: https://prometheus.io/docs/prometheus/latest/configuration/alerting_rules/
   alerts: 
     groups:
+      - name: InstanceCountChanged
+        rules:
+          - alert: InstanceCountChanged
+            expr: count (kube_node_labels{node=~"^.*$"}) - count (kube_node_labels{node=~"^.*$"} offset 2m) != 0
+            labels:
+              severity: Warning
+            annotations:
+              summary: 'Instance Count Changed'
+              description: 'The number of instances changed. (delta: {{ $value }})'
       - name: InstanceDown
         rules:
           - alert: InstanceDown
@@ -79,3 +88,35 @@ serverFiles:
               description: 'The memory usage of the instance({{ $labels.instance }}) has exceeds 90 percent for more than 5 minutes.'
               
 
+alertmanagerFiles:
+  alertmanager.yml:
+    global:
+      slack_api_url: 'https://hooks.slack.com/services/SLACK_TOKEN'
+
+    receivers:
+      - name: default-receiver
+        slack_configs:
+          - channel: '#alerts'
+            send_resolved: true
+            username: '{{ template "slack.default.username" . }}'
+            color: '{{ if eq .Status "firing" }}danger{{ else }}good{{ end }}'
+            title: '{{ template "slack.default.title" . }}'
+            title_link: '{{ template "slack.default.titlelink" . }}'
+            pretext: '{{ .CommonAnnotations.summary }}'
+            text: |-
+              {{ range .Alerts }}
+                *Alert:* {{ .Annotations.summary }} - `{{ .Labels.severity }}`
+                *Description:* {{ .Annotations.description }}
+                *Details:*
+                {{ range .Labels.SortedPairs }} • *{{ .Name }}:* `{{ .Value }}`
+                {{ end }}
+              {{ end }}
+            fallback: '{{ template "slack.default.fallback" . }}'
+            icon_emoji: '{{ template "slack.default.iconemoji" . }}'
+            icon_url: '{{ template "slack.default.iconurl" }}'
+
+    route:
+      group_wait: 10s
+      group_interval: 1m
+      receiver: default-receiver
+      repeat_interval: 3h 
