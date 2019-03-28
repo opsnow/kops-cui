@@ -1338,10 +1338,10 @@ istio_install() {
     if [[ "${VERSION}" == "1.1."* ]]; then
         _command "helm upgrade --install ${ISTIO_DIR}-init --name istio-init --namespace ${NAMESPACE}"
         helm upgrade --install istio-init ${ISTIO_DIR}-init --namespace ${NAMESPACE}
-    fi
 
-    # result will be more than 53
-    waiting_istio_init
+        # result will be more than 53
+        waiting_istio_init
+    fi
 
     CHART=${SHELL_DIR}/build/${CLUSTER_NAME}/${NAME}.yaml
     get_template charts/istio/${NAME}.yaml ${CHART}
