@@ -266,6 +266,8 @@ helm_install() {
 
     create_namespace ${NAMESPACE}
 
+    EXTRA_VALUES=
+
     # helm check FAILED
     # COUNT=$(helm ls -a | grep ${NAME} | grep ${NAMESPACE} | grep "FAILED" | wc -l | xargs)
     # if [ "x${COUNT}" != "x0" ]; then
@@ -330,6 +332,28 @@ helm_install() {
     # for nginx-ingress
     if [ "${NAME}" == "nginx-ingress" ]; then
         get_base_domain
+
+        controller=$(kubectl get svc -n kube-ingress | grep nginx-ingress-controller | grep LoadBalancer | awk '{print $3}')
+
+        if [ "${controller}" != "" ]; then
+            metrics=$(kubectl get svc -n kube-ingress | grep nginx-ingress-controller-metrics | awk '{print $3}')
+            stats=$(kubectl get svc -n kube-ingress | grep nginx-ingress-controller-stats | awk '{print $3}')
+            backend=$(kubectl get svc -n kube-ingress | grep nginx-ingress-default-backend | awk '{print $3}')
+
+            EXTRA_VALUES="${EXTRA_VALUES} --set controller.service.clusterIP=${controller}"
+
+            if [ "${metrics}" != "" ]; then
+                EXTRA_VALUES="${EXTRA_VALUES} --set controller.metrics.service.clusterIP=${metrics}"
+            fi
+
+            if [ "${stats}" != "" ]; then
+                EXTRA_VALUES="${EXTRA_VALUES} --set controller.stats.service.clusterIP=${stats}"
+            fi
+
+            if [ "${backend}" != "" ]; then
+                EXTRA_VALUES="${EXTRA_VALUES} --set defaultBackend.service.clusterIP=${backend}"
+            fi
+        fi
     fi
 
     # for efs-provisioner
@@ -497,10 +521,10 @@ helm_install() {
     # helm install
     if [ "${VERSION}" == "" ] || [ "${VERSION}" == "latest" ]; then
         _command "helm upgrade --install ${NAME} ${REPO} --namespace ${NAMESPACE} --values ${CHART}"
-        helm upgrade --install ${NAME} ${REPO} --namespace ${NAMESPACE} --values ${CHART}
+        helm upgrade --install ${NAME} ${REPO} --namespace ${NAMESPACE} --values ${CHART} ${EXTRA_VALUES}
     else
         _command "helm upgrade --install ${NAME} ${REPO} --namespace ${NAMESPACE} --values ${CHART} --version ${VERSION}"
-        helm upgrade --install ${NAME} ${REPO} --namespace ${NAMESPACE} --values ${CHART} --version ${VERSION}
+        helm upgrade --install ${NAME} ${REPO} --namespace ${NAMESPACE} --values ${CHART} --version ${VERSION} ${EXTRA_VALUES}
     fi
 
     # config save
