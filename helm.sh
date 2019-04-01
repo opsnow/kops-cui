@@ -341,9 +341,18 @@ helm_install() {
             backend=$(kubectl get svc -n kube-ingress | grep nginx-ingress-default-backend | awk '{print $3}')
 
             EXTRA_VALUES="${EXTRA_VALUES} --set controller.service.clusterIP=${controller}"
-            EXTRA_VALUES="${EXTRA_VALUES} --set controller.metrics.service.clusterIP=${metrics}"
-            EXTRA_VALUES="${EXTRA_VALUES} --set controller.stats.service.clusterIP=${stats}"
-            EXTRA_VALUES="${EXTRA_VALUES} --set defaultBackend.service.clusterIP=${backend}"
+
+            if [ "${metrics}" != "" ]; then
+                EXTRA_VALUES="${EXTRA_VALUES} --set controller.metrics.service.clusterIP=${metrics}"
+            fi
+
+            if [ "${stats}" != "" ]; then
+                EXTRA_VALUES="${EXTRA_VALUES} --set controller.stats.service.clusterIP=${stats}"
+            fi
+
+            if [ "${backend}" != "" ]; then
+                EXTRA_VALUES="${EXTRA_VALUES} --set defaultBackend.service.clusterIP=${backend}"
+            fi
         fi
     fi
 
