@@ -1,5 +1,5 @@
 # chart-repo: stable/nginx-ingress
-# chart-version: 1.2.1
+# chart-version: 1.4.0
 
 nameOverride: nginx-ingress
 
