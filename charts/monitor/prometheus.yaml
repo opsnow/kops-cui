@@ -1,5 +1,5 @@
 # chart-repo: stable/prometheus
-# chart-version: 8.8.1
+# chart-version: 8.9.1
 # chart-ingress: false
 # chart-pvc: prometheus-server ReadWriteOnce 8Gi
 # chart-pvc: prometheus-alertmanager ReadWriteOnce 2Gi
@@ -46,7 +46,7 @@ alertmanager:
 serverFiles:
   ## Alerts configuration
   ## Ref: https://prometheus.io/docs/prometheus/latest/configuration/alerting_rules/
-  alerts: 
+  alerts:
     groups:
       - name: InstanceCountChanged
         rules:
@@ -86,7 +86,7 @@ serverFiles:
             annotations:
               summary: 'High Memory Usage(> 90%)'
               description: 'The memory usage of the instance({{ $labels.instance }}) has exceeds 90 percent for more than 5 minutes.'
-              
+
 
 alertmanagerFiles:
   alertmanager.yml:
@@ -119,4 +119,4 @@ alertmanagerFiles:
       group_wait: 10s
       group_interval: 1m
       receiver: default-receiver
-      repeat_interval: 3h 
+      repeat_interval: 3h
