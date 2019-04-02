@@ -69,7 +69,7 @@ serverFiles:
       - name: HighCpuUsage
         rules:
           - alert: HighCpuUsage
-            expr: 100 - (avg by (instance) (irate(node_cpu_seconds_total{job="kubernetes-service-endpoints",mode="idle"}[5m])) * 100) > 10
+            expr: 100 - (avg by (instance) (irate(node_cpu_seconds_total{job="kubernetes-service-endpoints",mode="idle"}[5m])) * 100) > 70
             for: 5m
             labels:
               severity: Warning
@@ -79,7 +79,7 @@ serverFiles:
       - name: HighMemoryUsage
         rules:
           - alert: HighMemoryUsage
-            expr: (node_memory_MemTotal_bytes - node_memory_MemFree_bytes - node_memory_Buffers_bytes - node_memory_Cached_bytes) / node_memory_MemTotal_bytes * 100 > 10
+            expr: (node_memory_MemTotal_bytes - node_memory_MemFree_bytes - node_memory_Buffers_bytes - node_memory_Cached_bytes) / node_memory_MemTotal_bytes * 100 > 90
             for: 5m
             labels:
               severity: Warning
