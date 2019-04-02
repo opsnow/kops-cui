@@ -329,29 +329,35 @@ helm_install() {
         fi
     fi
 
+    # for cluster-autoscaler
+    if [ "${NAME}" == "cluster-autoscaler" ]; then
+        get_cluster_ip ${NAMESPACE} ${NAME}
+        if [ "${CLUSTER_IP}" != "" ]; then
+            EXTRA_VALUES="${EXTRA_VALUES} --set service.clusterIP=${CLUSTER_IP}"
+        fi
+    fi
+
     # for nginx-ingress
     if [ "${NAME}" == "nginx-ingress" ]; then
         get_base_domain
 
-        controller=$(kubectl get svc -n kube-ingress | grep nginx-ingress-controller | grep LoadBalancer | awk '{print $3}')
+        get_cluster_ip ${NAMESPACE} nginx-ingress-controller
+        if [ "${CLUSTER_IP}" != "" ]; then
+            EXTRA_VALUES="${EXTRA_VALUES} --set controller.service.clusterIP=${CLUSTER_IP}"
 
-        if [ "${controller}" != "" ]; then
-            metrics=$(kubectl get svc -n kube-ingress | grep nginx-ingress-controller-metrics | awk '{print $3}')
-            stats=$(kubectl get svc -n kube-ingress | grep nginx-ingress-controller-stats | awk '{print $3}')
-            backend=$(kubectl get svc -n kube-ingress | grep nginx-ingress-default-backend | awk '{print $3}')
-
-            EXTRA_VALUES="${EXTRA_VALUES} --set controller.service.clusterIP=${controller}"
-
-            if [ "${metrics}" != "" ]; then
-                EXTRA_VALUES="${EXTRA_VALUES} --set controller.metrics.service.clusterIP=${metrics}"
+            get_cluster_ip ${NAMESPACE} nginx-ingress-controller-metrics
+            if [ "${CLUSTER_IP}" != "" ]; then
+                EXTRA_VALUES="${EXTRA_VALUES} --set controller.metrics.service.clusterIP=${CLUSTER_IP}"
             fi
 
-            if [ "${stats}" != "" ]; then
-                EXTRA_VALUES="${EXTRA_VALUES} --set controller.stats.service.clusterIP=${stats}"
+            get_cluster_ip ${NAMESPACE} nginx-ingress-controller-stats
+            if [ "${CLUSTER_IP}" != "" ]; then
+                EXTRA_VALUES="${EXTRA_VALUES} --set controller.stats.service.clusterIP=${CLUSTER_IP}"
             fi
 
-            if [ "${backend}" != "" ]; then
-                EXTRA_VALUES="${EXTRA_VALUES} --set defaultBackend.service.clusterIP=${backend}"
+            get_cluster_ip ${NAMESPACE} nginx-ingress-default-backend
+            if [ "${CLUSTER_IP}" != "" ]; then
+                EXTRA_VALUES="${EXTRA_VALUES} --set defaultBackend.service.clusterIP=${CLUSTER_IP}"
             fi
         fi
     fi
@@ -752,6 +758,10 @@ create_cluster_role_binding() {
         SECRET=$(kubectl get secret -n ${_NAMESPACE} | grep ${_ACCOUNT}-token | awk '{print $1}')
         kubectl describe secret ${SECRET} -n ${_NAMESPACE} | grep 'token:'
     fi
+}
+
+get_cluster_ip() {
+    CLUSTER_IP=$(kubectl get svc -n ${1} -o json | jq -r ".items[] | select(.metadata.name == \"${2}\") | .spec.clusterIP")
 }
 
 default_pdb() {
