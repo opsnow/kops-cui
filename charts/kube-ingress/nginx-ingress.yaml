@@ -33,3 +33,10 @@ controller:
       annotations:
         prometheus.io/scrape: "true"
         prometheus.io/port: "10254"
+  resources: {}
+  # limits:
+  #   cpu: 10m
+  #   memory: 512Mi
+  # requests:
+  #   cpu: 10m
+  #   memory: 512Mi

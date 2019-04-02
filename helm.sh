@@ -341,6 +341,11 @@ helm_install() {
     if [ "${NAME}" == "nginx-ingress" ]; then
         get_base_domain
 
+        get_replicas ${NAMESPACE} nginx-ingress-controller
+        if [ "${REPLICAS}" != "" ]; then
+            EXTRA_VALUES="${EXTRA_VALUES} --set controller.replicaCount=${REPLICAS}"
+        fi
+
         get_cluster_ip ${NAMESPACE} nginx-ingress-controller
         if [ "${CLUSTER_IP}" != "" ]; then
             EXTRA_VALUES="${EXTRA_VALUES} --set controller.service.clusterIP=${CLUSTER_IP}"
@@ -758,6 +763,10 @@ create_cluster_role_binding() {
         SECRET=$(kubectl get secret -n ${_NAMESPACE} | grep ${_ACCOUNT}-token | awk '{print $1}')
         kubectl describe secret ${SECRET} -n ${_NAMESPACE} | grep 'token:'
     fi
+}
+
+get_replicas() {
+    REPLICAS=$(kubectl get deployment -n ${1} -o json | jq -r ".items[] | select(.metadata.name == \"${2}\") | .spec.replicas")
 }
 
 get_cluster_ip() {
