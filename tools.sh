@@ -268,8 +268,7 @@ echo "${VERSION}"
 echo "================================================================================"
 _result "install guard..."
 
-# VERSION=$(curl -s https://api.github.com/repos/appscode/guard/releases/latest | jq -r '.tag_name')
-VERSION=0.1.2
+VERSION=$(curl -s https://api.github.com/repos/appscode/guard/releases/latest | jq -r '.tag_name')
 
 if [ "${GUARD}" != "${VERSION}" ]; then
     _result " ${GUARD} >> ${VERSION}"
