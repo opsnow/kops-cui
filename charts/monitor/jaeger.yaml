@@ -1,0 +1,44 @@
+# chart-repo: incubator/jaeger
+# chart-version: latest
+# chart-ingress: true
+
+nameOverride: jaeger
+
+provisionDataStore:
+  cassandra: false
+  elasticsearch: false
+
+storage:
+  # allowed values (cassandra, elasticsearch)
+  type: elasticsearch
+  elasticsearch:
+    host: CUSTOM_HOST
+    port: CUSTOM_PORT
+    #    host: seoul-sre-k8s-elasticsearch.opsnow.io
+    #    port: 80
+
+#elasticsearch:
+#  image:
+#    tag: "6.6.2"
+
+query:
+  enabled: true
+  #:ING:service:
+  #:ING:  type: SERVICE_TYPE
+  #:ING:ingress:
+  #:ING:  enabled: INGRESS_ENABLED
+  #:ING:  annotations:
+  #:ING:    kubernetes.io/ingress.class: nginx
+  #:ING:    nginx.ingress.kubernetes.io/force-ssl-redirect: "true"
+  #:ING:  hosts:
+  #:ING:    - INGRESS_DOMAIN
+
+#  service:
+#    type: LoadBalancer
+#  ingress:
+#    enabled: true
+#    annotations:
+#      kubernetes.io/ingress.class: nginx
+#      nginx.ingress.kubernetes.io/force-ssl-redirect: "true"
+#    hosts:
+#      - 
