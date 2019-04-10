@@ -440,6 +440,14 @@ helm_install() {
         replace_password ${CHART} "API_KEY" "****"
     fi
 
+    # for jaeger
+    if [ "${NAME}" == "jaeger" ]; then
+        # host
+        replace_chart ${CHART} "CUSTOM_HOST" "elasticsearch.domain.com"
+        # port
+        replace_chart ${CHART} "CUSTOM_PORT" "80"
+    fi
+
     # for fluentd-elasticsearch
     if [ "${NAME}" == "fluentd-elasticsearch" ]; then
         # host
