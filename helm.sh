@@ -406,8 +406,11 @@ helm_install() {
     if [ "${NAME}" == "argo" ]; then
         replace_chart ${CHART} "ARTIFACT_REPOSITORY" "${CLUSTER_NAME}-artifact"
 
-        # delete crds
-        delete_crds "argoproj.io"
+        # crds reset
+        COUNT=$(helm ls | grep argo | wc -l | xargs)
+        if [ "x${COUNT}" == "x0" ]; then
+            delete_crds "argoproj.io"
+        fi
     fi
 
     # for jenkins
