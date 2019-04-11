@@ -327,23 +327,6 @@ helm_install() {
             -f https://raw.githubusercontent.com/jetstack/cert-manager/release-0.6/deploy/manifests/00-crds.yaml
     fi
 
-    # for external-dns
-    if [ "${NAME}" == "external-dns" ]; then
-        replace_chart ${CHART} "AWS_ACCESS_KEY"
-
-        if [ "${ANSWER}" != "" ]; then
-            replace_password ${CHART} "AWS_SECRET_KEY" "****"
-        fi
-    fi
-
-    # for cluster-autoscaler
-    if [ "${NAME}" == "cluster-autoscaler" ]; then
-        get_cluster_ip ${NAMESPACE} ${NAME}
-        if [ "${CLUSTER_IP}" != "" ]; then
-            EXTRA_VALUES="${EXTRA_VALUES} --set service.clusterIP=${CLUSTER_IP}"
-        fi
-    fi
-
     # for nginx-ingress
     if [ "${NAME}" == "nginx-ingress" ]; then
         get_base_domain
@@ -374,6 +357,23 @@ helm_install() {
         fi
     fi
 
+    # for external-dns
+    if [ "${NAME}" == "external-dns" ]; then
+        replace_chart ${CHART} "AWS_ACCESS_KEY"
+
+        if [ "${ANSWER}" != "" ]; then
+            replace_password ${CHART} "AWS_SECRET_KEY" "****"
+        fi
+    fi
+
+    # for cluster-autoscaler
+    if [ "${NAME}" == "cluster-autoscaler" ]; then
+        get_cluster_ip ${NAMESPACE} ${NAME}
+        if [ "${CLUSTER_IP}" != "" ]; then
+            EXTRA_VALUES="${EXTRA_VALUES} --set service.clusterIP=${CLUSTER_IP}"
+        fi
+    fi
+
     # for efs-provisioner
     if [ "${NAME}" == "efs-provisioner" ]; then
         efs_create
@@ -382,11 +382,6 @@ helm_install() {
     # for k8s-spot-termination-handler
     if [ "${NAME}" == "k8s-spot-termination-handler" ]; then
         replace_chart ${CHART} "SLACK_URL"
-    fi
-
-    # for prometheus
-    if [ "${NAME}" == "prometheus" ]; then
-        replace_chart ${CHART} "SLACK_TOKEN"
     fi
 
     # for vault
@@ -420,6 +415,11 @@ helm_install() {
     if [ "${NAME}" == "sonatype-nexus" ]; then
         # admin password
         replace_password ${CHART}
+    fi
+
+    # for prometheus
+    if [ "${NAME}" == "prometheus" ]; then
+        replace_chart ${CHART} "SLACK_TOKEN"
     fi
 
     # for grafana
@@ -659,7 +659,6 @@ helm_delete() {
 
     # for argo
     if [ "${NAME}" == "argo" ]; then
-        # delete crds
         delete_crds "argoproj.io"
     fi
 
