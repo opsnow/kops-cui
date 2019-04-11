@@ -1,0 +1,8 @@
+# chart-repo: stable/newrelic-infrastructure
+# chart-version: latest
+
+nameOverride: newrelic
+
+cluster: CLUSTER_NAME
+
+licenseKey: LICENSE_KEY
