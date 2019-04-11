@@ -405,12 +405,6 @@ helm_install() {
     # for argo
     if [ "${NAME}" == "argo" ]; then
         replace_chart ${CHART} "ARTIFACT_REPOSITORY" "${CLUSTER_NAME}-artifact"
-
-        # crds reset
-        COUNT=$(helm ls | grep argo | wc -l | xargs)
-        if [ "x${COUNT}" == "x0" ]; then
-            delete_crds "argoproj.io"
-        fi
     fi
 
     # for jenkins
@@ -661,6 +655,12 @@ helm_delete() {
     # for efs-provisioner
     if [ "${NAME}" == "efs-provisioner" ]; then
         efs_delete
+    fi
+
+    # for argo
+    if [ "${NAME}" == "argo" ]; then
+        # delete crds
+        delete_crds "argoproj.io"
     fi
 
     # helm delete
