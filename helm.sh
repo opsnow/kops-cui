@@ -405,6 +405,9 @@ helm_install() {
     # for argo
     if [ "${NAME}" == "argo" ]; then
         replace_chart ${CHART} "ARTIFACT_REPOSITORY" "${CLUSTER_NAME}-artifact"
+
+        # delete crds
+        delete_crds "argoproj.io"
     fi
 
     # for jenkins
@@ -1285,7 +1288,6 @@ istio_init() {
     fi
 
     ISTIO_DIR=${ISTIO_TMP}/${NAME}-${VERSION}/install/kubernetes/helm/istio
-
 }
 
 istio_secret() {
@@ -1460,13 +1462,15 @@ istio_install() {
 
 istio_remote_install() {
     istio_init
+
     RNAME="istio-remote"
+
     RISTIO_DIR="${ISTIO_DIR}-remote"
+
     create_namespace ${NAMESPACE}
 
     CHART=${SHELL_DIR}/build/${THIS_NAME}-istio-${NAME}.yaml
     get_template charts/istio/${NAME}.yaml ${CHART}
-
 
     if [ -z ${PILOT_POD_IP} ]; then
         echo "PILOT_POD_IP=$PILOT_POD_IP"
@@ -1552,11 +1556,7 @@ istio_delete() {
     helm del --purge istio-init
 
     # delete crds
-    LIST="$(kubectl get crds | grep istio.io | awk '{print $1}')"
-    if [ "${LIST}" != "" ]; then
-        _command "kubectl delete crds *.istio.io"
-        kubectl delete crds ${LIST}
-    fi
+    delete_crds "istio.io"
 
     # delete ns
     _command "kubectl delete namespace ${NAMESPACE}"
@@ -1567,6 +1567,15 @@ istio_delete() {
 
     # save config (ISTIO)
     config_save
+}
+
+delete_crds() {
+    # delete crds
+    LIST="$(kubectl get crds | grep ${1} | awk '{print $1}')"
+    if [ "${LIST}" != "" ]; then
+        _command "kubectl delete crds *.${1}"
+        kubectl delete crds ${LIST}
+    fi
 }
 
 get_cluster() {
