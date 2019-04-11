@@ -5,3 +5,9 @@ nameOverride: datadog
 
 datadog:
   apiKey: API_KEY
+  appKey: APP_KEY
+
+clusterAgent:
+  enabled: true
+  metricsProvider:
+    enabled: true

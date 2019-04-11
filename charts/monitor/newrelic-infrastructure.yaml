@@ -5,4 +5,4 @@ nameOverride: newrelic
 
 cluster: CLUSTER_NAME
 
-licenseKey: API_KEY
+licenseKey: LICENSE_KEY

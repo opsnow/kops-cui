@@ -450,6 +450,14 @@ helm_install() {
     if [ "${NAME}" == "datadog" ]; then
         # api key
         replace_password ${CHART} "API_KEY" "****"
+        # app key
+        replace_password ${CHART} "APP_KEY" "****"
+    fi
+
+    # for newrelic-infrastructure
+    if [ "${NAME}" == "newrelic-infrastructure" ]; then
+        # license key
+        replace_password ${CHART} "LICENSE_KEY" "****"
     fi
 
     # for jaeger
