@@ -320,6 +320,13 @@ helm_install() {
     _replace "s/AWS_REGION/${REGION}/g" ${CHART}
     _replace "s/CLUSTER_NAME/${CLUSTER_NAME}/g" ${CHART}
 
+    # for cert-manager
+    if [ "${NAME}" == "cert-manager" ]; then
+        # https://github.com/helm/charts/blob/master/stable/cert-manager/README.md
+        kubectl apply \
+            -f https://raw.githubusercontent.com/jetstack/cert-manager/release-0.6/deploy/manifests/00-crds.yaml
+    fi
+
     # for external-dns
     if [ "${NAME}" == "external-dns" ]; then
         replace_chart ${CHART} "AWS_ACCESS_KEY"
