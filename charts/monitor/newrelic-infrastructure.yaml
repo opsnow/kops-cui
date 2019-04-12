@@ -3,6 +3,6 @@
 
 nameOverride: newrelic-infrastructure
 
-cluster: CLUSTER_NAME
-
 licenseKey: LICENSE_KEY
+
+cluster: CLUSTER_NAME
