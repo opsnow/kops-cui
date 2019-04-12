@@ -1,7 +1,7 @@
 # chart-repo: stable/newrelic-infrastructure
 # chart-version: latest
 
-nameOverride: newrelic
+nameOverride: newrelic-infrastructure
 
 cluster: CLUSTER_NAME
 
