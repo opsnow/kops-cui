@@ -15,4 +15,4 @@ datadog:
 #     enabled: true
 
 kubeStateMetrics:
-  enabled: false
+  enabled: KUBE_STATE_METRICS

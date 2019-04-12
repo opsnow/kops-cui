@@ -460,6 +460,14 @@ helm_install() {
         replace_password ${CHART} "API_KEY" "****"
         # app key
         replace_password ${CHART} "APP_KEY" "****"
+
+        # kube-state-metrics
+        COUNT=$(kubectl get pods -n kube-system | grep kube-state-metrics | wc -l | xargs)
+        if [ "x${COUNT}" == "x0" ]; then
+            _replace "s/KUBE_STATE_METRICS/true/g" ${CHART}
+        else
+            _replace "s/KUBE_STATE_METRICS/false/g" ${CHART}
+        fi
     fi
 
     # for newrelic-infrastructure
