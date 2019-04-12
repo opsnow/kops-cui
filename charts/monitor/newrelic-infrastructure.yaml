@@ -1,5 +1,5 @@
 # chart-repo: stable/newrelic-infrastructure
-# chart-version: latest
+# chart-version: 0.8.0
 
 nameOverride: newrelic-infrastructure
 
