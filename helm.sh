@@ -420,6 +420,14 @@ helm_install() {
     # for prometheus
     if [ "${NAME}" == "prometheus" ]; then
         replace_chart ${CHART} "SLACK_TOKEN"
+
+        # kube-state-metrics
+        COUNT=$(kubectl get pods -n kube-system | grep kube-state-metrics | wc -l | xargs)
+        if [ "x${COUNT}" == "x0" ]; then
+            _replace "s/KUBE_STATE_METRICS/true/g" ${CHART}
+        else
+            _replace "s/KUBE_STATE_METRICS/false/g" ${CHART}
+        fi
     fi
 
     # for grafana
