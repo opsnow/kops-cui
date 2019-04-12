@@ -4,8 +4,15 @@
 nameOverride: datadog
 
 datadog:
+  clusterName: CLUSTER_NAME
   apiKey: API_KEY
   appKey: APP_KEY
 
-clusterAgent:
-  enabled: true
+# clusterAgent:
+#   enabled: true
+#   token: ""
+#   metricsProvider:
+#     enabled: true
+
+kubeStateMetrics:
+  enabled: KUBE_STATE_METRICS

@@ -42,6 +42,11 @@ alertmanager:
     #:EFS:storageClass: "efs"
     existingClaim: prometheus-alertmanager
 
+kubeStateMetrics:
+  ## If false, kube-state-metrics will not be installed
+  ##
+  enabled: KUBE_STATE_METRICS
+
 
 serverFiles:
   ## Alerts configuration
