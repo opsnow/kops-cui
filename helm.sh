@@ -327,23 +327,6 @@ helm_install() {
             -f https://raw.githubusercontent.com/jetstack/cert-manager/release-0.6/deploy/manifests/00-crds.yaml
     fi
 
-    # for external-dns
-    if [ "${NAME}" == "external-dns" ]; then
-        replace_chart ${CHART} "AWS_ACCESS_KEY"
-
-        if [ "${ANSWER}" != "" ]; then
-            replace_password ${CHART} "AWS_SECRET_KEY" "****"
-        fi
-    fi
-
-    # for cluster-autoscaler
-    if [ "${NAME}" == "cluster-autoscaler" ]; then
-        get_cluster_ip ${NAMESPACE} ${NAME}
-        if [ "${CLUSTER_IP}" != "" ]; then
-            EXTRA_VALUES="${EXTRA_VALUES} --set service.clusterIP=${CLUSTER_IP}"
-        fi
-    fi
-
     # for nginx-ingress
     if [ "${NAME}" == "nginx-ingress" ]; then
         get_base_domain
@@ -374,6 +357,23 @@ helm_install() {
         fi
     fi
 
+    # for external-dns
+    if [ "${NAME}" == "external-dns" ]; then
+        replace_chart ${CHART} "AWS_ACCESS_KEY"
+
+        if [ "${ANSWER}" != "" ]; then
+            replace_password ${CHART} "AWS_SECRET_KEY" "****"
+        fi
+    fi
+
+    # for cluster-autoscaler
+    if [ "${NAME}" == "cluster-autoscaler" ]; then
+        get_cluster_ip ${NAMESPACE} ${NAME}
+        if [ "${CLUSTER_IP}" != "" ]; then
+            EXTRA_VALUES="${EXTRA_VALUES} --set service.clusterIP=${CLUSTER_IP}"
+        fi
+    fi
+
     # for efs-provisioner
     if [ "${NAME}" == "efs-provisioner" ]; then
         efs_create
@@ -382,11 +382,6 @@ helm_install() {
     # for k8s-spot-termination-handler
     if [ "${NAME}" == "k8s-spot-termination-handler" ]; then
         replace_chart ${CHART} "SLACK_URL"
-    fi
-
-    # for prometheus
-    if [ "${NAME}" == "prometheus" ]; then
-        replace_chart ${CHART} "SLACK_TOKEN"
     fi
 
     # for vault
@@ -420,6 +415,11 @@ helm_install() {
     if [ "${NAME}" == "sonatype-nexus" ]; then
         # admin password
         replace_password ${CHART}
+    fi
+
+    # for prometheus
+    if [ "${NAME}" == "prometheus" ]; then
+        replace_chart ${CHART} "SLACK_TOKEN"
     fi
 
     # for grafana
@@ -655,6 +655,11 @@ helm_delete() {
     # for efs-provisioner
     if [ "${NAME}" == "efs-provisioner" ]; then
         efs_delete
+    fi
+
+    # for argo
+    if [ "${NAME}" == "argo" ]; then
+        delete_crds "argoproj.io"
     fi
 
     # helm delete
@@ -1285,7 +1290,6 @@ istio_init() {
     fi
 
     ISTIO_DIR=${ISTIO_TMP}/${NAME}-${VERSION}/install/kubernetes/helm/istio
-
 }
 
 istio_secret() {
@@ -1460,13 +1464,15 @@ istio_install() {
 
 istio_remote_install() {
     istio_init
+
     RNAME="istio-remote"
+
     RISTIO_DIR="${ISTIO_DIR}-remote"
+
     create_namespace ${NAMESPACE}
 
     CHART=${SHELL_DIR}/build/${THIS_NAME}-istio-${NAME}.yaml
     get_template charts/istio/${NAME}.yaml ${CHART}
-
 
     if [ -z ${PILOT_POD_IP} ]; then
         echo "PILOT_POD_IP=$PILOT_POD_IP"
@@ -1552,11 +1558,7 @@ istio_delete() {
     helm del --purge istio-init
 
     # delete crds
-    LIST="$(kubectl get crds | grep istio.io | awk '{print $1}')"
-    if [ "${LIST}" != "" ]; then
-        _command "kubectl delete crds *.istio.io"
-        kubectl delete crds ${LIST}
-    fi
+    delete_crds "istio.io"
 
     # delete ns
     _command "kubectl delete namespace ${NAMESPACE}"
@@ -1567,6 +1569,15 @@ istio_delete() {
 
     # save config (ISTIO)
     config_save
+}
+
+delete_crds() {
+    # delete crds
+    LIST="$(kubectl get crds | grep ${1} | awk '{print $1}')"
+    if [ "${LIST}" != "" ]; then
+        _command "kubectl delete crds *.${1}"
+        kubectl delete crds ${LIST}
+    fi
 }
 
 get_cluster() {
