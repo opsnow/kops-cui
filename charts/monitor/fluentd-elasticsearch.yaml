@@ -7,7 +7,7 @@ elasticsearch:
   host: CUSTOM_HOST
   port: CUSTOM_PORT
   buffer_chunk_limit: 8M
-  buffer_queue_limit: 16
+  buffer_queue_limit: 8
   # logstash_prefix: 'logstash'
 
 configMaps:
@@ -37,7 +37,7 @@ configMaps:
         flush_mode interval
         retry_type exponential_backoff
         flush_thread_count 2
-        flush_interval 3s
+        flush_interval 5s
         retry_forever
         retry_max_interval 30
         chunk_limit_size "#{ENV['OUTPUT_BUFFER_CHUNK_LIMIT']}"
