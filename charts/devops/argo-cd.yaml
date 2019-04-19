@@ -1,0 +1,17 @@
+# chart-repo: argo/argo-cd
+# chart-version: latest
+# chart-ingress: true
+
+ingress:
+  enabled: INGRESS_ENABLED
+  hosts:
+    - INGRESS_DOMAIN
+  annotations:
+    kubernetes.io/ingress.class: nginx
+    nginx.ingress.kubernetes.io/force-ssl-redirect: "true"
+
+config:
+  url: https://INGRESS_DOMAIN
+  helmRepositories:
+    - name: chartmuseum
+      url: https://chartmuseum-devops.coruscant.opsnow.com
