@@ -14,4 +14,4 @@ config:
   url: https://INGRESS_DOMAIN
   helmRepositories:
     - name: chartmuseum
-      url: https://chartmuseum-devops.coruscant.opsnow.com
+      url: https://chartmuseum-devops.BASE_DOMAIN
