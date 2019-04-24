@@ -12,10 +12,10 @@ sync:
     - name: incubator
       url: https://kubernetes-charts-incubator.storage.googleapis.com
     # Add your own repository
-    #:CUSTOM:- name: CUSTOM_NAME
-    #:CUSTOM:  url: CUSTOM_URL
-    #:CUSTOM:  schedule: "*/5 * * * *"
-    #:CUSTOM:  successfulJobsHistoryLimit: 1
+    - name: chartmuseum
+      url: https://chartmuseum-devops.BASE_DOMAIN
+      schedule: "*/5 * * * *"
+      successfulJobsHistoryLimit: 1
 
 service:
   type: SERVICE_TYPE

@@ -411,17 +411,6 @@ helm_install() {
         ${SHELL_DIR}/templates/jenkins/jobs.sh ${CHART}
     fi
 
-    # for monocular
-    if [ "${NAME}" == "monocular" ]; then
-        replace_chart ${CHART} "CUSTOM_NAME" "chartmuseum"
-
-        if [ "${ANSWER}" != "" ]; then
-            _replace "s/#:CUSTOM://g" ${CHART}
-
-            replace_chart ${CHART} "CUSTOM_URL" "https://chartmuseum.opsnow.com"
-        fi
-    fi
-
     # for sonatype-nexus
     if [ "${NAME}" == "sonatype-nexus" ]; then
         # admin password
