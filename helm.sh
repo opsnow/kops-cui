@@ -411,6 +411,17 @@ helm_install() {
         ${SHELL_DIR}/templates/jenkins/jobs.sh ${CHART}
     fi
 
+    # for monocular
+    if [ "${NAME}" == "monocular" ]; then
+        replace_chart ${CHART} "CUSTOM_NAME" "chartmuseum"
+
+        if [ "${ANSWER}" != "" ]; then
+            _replace "s/#:CUSTOM://g" ${CHART}
+
+            replace_chart ${CHART} "CUSTOM_URL" "https://chartmuseum.opsnow.com"
+        fi
+    fi
+
     # for sonatype-nexus
     if [ "${NAME}" == "sonatype-nexus" ]; then
         # admin password
@@ -725,6 +736,8 @@ helm_repo() {
             _REPO="https://storage.googleapis.com/kubernetes-charts-incubator"
         elif [ "${_NAME}" == "argo" ]; then
             _REPO="https://argoproj.github.io/argo-helm"
+        elif [ "${_NAME}" == "monocular" ]; then
+            _REPO="https://helm.github.io/monocular"
         fi
     fi
 
@@ -1935,13 +1948,16 @@ replace_chart() {
 
     if [ "${_DEFAULT}" != "" ]; then
         question "Enter ${_KEY} [${_DEFAULT}] : "
+        if [ "${ANSWER}" == "" ]; then
+            ANSWER=${_DEFAULT}
+        fi
     else
         question "Enter ${_KEY} : "
     fi
 
-    _result "${_KEY}: ${ANSWER:-${_DEFAULT}}"
+    _result "${_KEY}: ${ANSWER}"
 
-    _replace "s|${_KEY}|${ANSWER:-${_DEFAULT}}|g" ${CHART}
+    _replace "s|${_KEY}|${ANSWER}|g" ${CHART}
 }
 
 replace_password() {
@@ -1950,11 +1966,14 @@ replace_password() {
     _DEFAULT=${3:-password}
 
     password "Enter ${_KEY} [${_DEFAULT}] : "
+    if [ "${ANSWER}" == "" ]; then
+        ANSWER=${_DEFAULT}
+    fi
 
     echo
     _result "${_KEY}: [hidden]"
 
-    _replace "s|${_KEY}|${ANSWER:-${_DEFAULT}}|g" ${_CHART}
+    _replace "s|${_KEY}|${ANSWER}|g" ${_CHART}
 }
 
 replace_base64() {
@@ -1963,11 +1982,14 @@ replace_base64() {
     _DEFAULT=${3:-password}
 
     password "Enter ${_KEY} [${_DEFAULT}] : "
+    if [ "${ANSWER}" == "" ]; then
+        ANSWER=${_DEFAULT}
+    fi
 
     echo
     _result "${_KEY}: [encoded]"
 
-    _replace "s|${_KEY}|$(echo ${ANSWER:-${_DEFAULT}} | base64)|g" ${_CHART}
+    _replace "s|${_KEY}|$(echo ${ANSWER} | base64)|g" ${_CHART}
 }
 
 waiting_for() {
