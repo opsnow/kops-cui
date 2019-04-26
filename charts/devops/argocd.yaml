@@ -34,3 +34,9 @@ config:
 
 rbac:
   policyDefault: role:readonly
+  #:GITHUB:policyCsv: |
+  #:GITHUB:  p, role:org-admin, applications, *, */*, allow
+  #:GITHUB:  p, role:org-admin, clusters, *, *, allow
+  #:GITHUB:  p, role:org-admin, repositories, *, *, allow
+  #:GITHUB:  p, role:org-admin, projects, *, *, allow
+  #:GITHUB:  g, GITHUB_ORG:admin, role:org-admin
