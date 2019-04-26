@@ -677,6 +677,9 @@ helm_delete() {
     if [ "${NAME}" == "argo" ]; then
         delete_crds "argoproj.io"
     fi
+    if [ "${NAME}" == "argocd" ]; then
+        delete_crds "argoproj.io"
+    fi
 
     # helm delete
     _command "helm delete --purge ${NAME}"

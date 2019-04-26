@@ -2,6 +2,10 @@
 # chart-version: latest
 # chart-ingress: true
 
+server:
+  extraArgs:
+    - --insecure
+
 ingress:
   enabled: INGRESS_ENABLED
   hosts:
@@ -9,9 +13,13 @@ ingress:
   annotations:
     kubernetes.io/ingress.class: nginx
     nginx.ingress.kubernetes.io/force-ssl-redirect: "true"
+    nginx.ingress.kubernetes.io/ssl-passthrough: "true"
 
 config:
   url: https://INGRESS_DOMAIN
   helmRepositories:
     - name: chartmuseum
       url: https://chartmuseum-devops.BASE_DOMAIN
+
+rbac:
+  policyDefault: role:readonly
