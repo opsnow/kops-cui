@@ -401,6 +401,18 @@ helm_install() {
     if [ "${NAME}" == "argo" ]; then
         replace_chart ${CHART} "ARTIFACT_REPOSITORY" "${CLUSTER_NAME}-artifact"
     fi
+    # for argocd
+    if [ "${NAME}" == "argocd" ]; then
+        replace_chart ${CHART} "GITHUB_ORG"
+
+        if [ "${ANSWER}" != "" ]; then
+            _replace "s/#:GITHUB://g" ${CHART}
+
+            replace_password ${CHART} "GITHUB_CLIENT_ID" "****"
+
+            replace_password ${CHART} "GITHUB_CLIENT_SECRET" "****"
+        fi
+    fi
 
     # for jenkins
     if [ "${NAME}" == "jenkins" ]; then

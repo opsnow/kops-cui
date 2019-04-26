@@ -17,9 +17,20 @@ ingress:
 
 config:
   url: https://INGRESS_DOMAIN
-  helmRepositories:
-    - name: chartmuseum
-      url: https://chartmuseum-devops.BASE_DOMAIN
+  # helmRepositories:
+  #   - name: chartmuseum
+  #     url: https://chartmuseum-devops.BASE_DOMAIN
+  #:GITHUB:dexConfig:
+  #:GITHUB:  connectors:
+  #:GITHUB:    - type: github
+  #:GITHUB:      id: github
+  #:GITHUB:      name: GitHub
+  #:GITHUB:      config:
+  #:GITHUB:        clientID: GITHUB_CLIENT_ID
+  #:GITHUB:        clientSecret: GITHUB_CLIENT_SECRET
+  #:GITHUB:        orgs:
+  #:GITHUB:        - name: GITHUB_ORG
+  #:GITHUB:          teams:
 
 rbac:
   policyDefault: role:readonly
