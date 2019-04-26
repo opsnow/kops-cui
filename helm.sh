@@ -685,17 +685,18 @@ helm_delete() {
         efs_delete
     fi
 
-    # for argo
-    if [ "${NAME}" == "argo" ]; then
-        delete_crds "argoproj.io"
-    fi
-    if [ "${NAME}" == "argocd" ]; then
-        delete_crds "argoproj.io"
-    fi
-
     # helm delete
     _command "helm delete --purge ${NAME}"
     helm delete --purge ${NAME}
+
+    # for argo
+    if [ "${NAME}" == "argo" ]; then
+        COUNT=$(kubectl get pod -n devops | grep argo | grep Running | wc -l | xargs)
+
+        if [ "x${COUNT}" == "x0" ]; then
+            delete_crds "argoproj.io"
+        fi
+    fi
 
     # config save
     config_save
