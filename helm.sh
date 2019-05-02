@@ -328,29 +328,29 @@ helm_install() {
     fi
 
     # for nginx-ingress
-    if [ "${NAME}" == "nginx-ingress" ]; then
+    if [[ "${NAME}" == *"nginx-ingress" ]]; then
         get_base_domain
 
-        get_replicas ${NAMESPACE} nginx-ingress-controller
+        get_replicas ${NAMESPACE} ${NAME}-controller
         if [ "${REPLICAS}" != "" ]; then
             EXTRA_VALUES="${EXTRA_VALUES} --set controller.replicaCount=${REPLICAS}"
         fi
 
-        get_cluster_ip ${NAMESPACE} nginx-ingress-controller
+        get_cluster_ip ${NAMESPACE} ${NAME}-controller
         if [ "${CLUSTER_IP}" != "" ]; then
             EXTRA_VALUES="${EXTRA_VALUES} --set controller.service.clusterIP=${CLUSTER_IP}"
 
-            get_cluster_ip ${NAMESPACE} nginx-ingress-controller-metrics
+            get_cluster_ip ${NAMESPACE} ${NAME}-controller-metrics
             if [ "${CLUSTER_IP}" != "" ]; then
                 EXTRA_VALUES="${EXTRA_VALUES} --set controller.metrics.service.clusterIP=${CLUSTER_IP}"
             fi
 
-            get_cluster_ip ${NAMESPACE} nginx-ingress-controller-stats
+            get_cluster_ip ${NAMESPACE} ${NAME}-controller-stats
             if [ "${CLUSTER_IP}" != "" ]; then
                 EXTRA_VALUES="${EXTRA_VALUES} --set controller.stats.service.clusterIP=${CLUSTER_IP}"
             fi
 
-            get_cluster_ip ${NAMESPACE} nginx-ingress-default-backend
+            get_cluster_ip ${NAMESPACE} ${NAME}-default-backend
             if [ "${CLUSTER_IP}" != "" ]; then
                 EXTRA_VALUES="${EXTRA_VALUES} --set defaultBackend.service.clusterIP=${CLUSTER_IP}"
             fi
@@ -607,7 +607,7 @@ helm_install() {
     fi
 
     # for nginx-ingress
-    if [ "${NAME}" == "nginx-ingress" ]; then
+    if [[ "${NAME}" == *"nginx-ingress" ]]; then
         set_base_domain "${NAME}"
     fi
 
@@ -663,7 +663,7 @@ helm_delete() {
     fi
 
     # for nginx-ingress
-    if [ "${NAME}" == "nginx-ingress" ]; then
+    if [[ "${NAME}" == *"nginx-ingress" ]]; then
         ROOT_DOMAIN=
         BASE_DOMAIN=
     fi
