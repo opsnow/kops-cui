@@ -1485,16 +1485,13 @@ istio_install() {
     # waiting 2
     waiting_pod "${NAMESPACE}" "${NAME}"
 
+    # set_base_domain "istio-ingressgateway"
+
     _command "helm history ${NAME}"
     helm history ${NAME}
 
-    _command "kubectl get deploy,pod,svc -n ${NAMESPACE}"
-    kubectl get deploy,pod,svc -n ${NAMESPACE}
-
-    # set_base_domain "istio-ingressgateway"
-
-    _command "kubectl get ing -n ${NAMESPACE}"
-    kubectl get ing -n ${NAMESPACE}
+    _command "kubectl get deploy,pod,svc,ing -n ${NAMESPACE}"
+    kubectl get deploy,pod,svc,ing -n ${NAMESPACE}
 }
 
 istio_remote_install() {
