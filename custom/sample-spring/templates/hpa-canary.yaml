@@ -1,0 +1,32 @@
+{{ if and (not (empty .Values.istio)) (not (empty .Values.canary)) }}
+{{ if and (.Values.istio.enabled) (.Values.canary.enabled) }}
+{{ if .Values.hpa.enabled }}
+apiVersion: autoscaling/v2beta1
+kind: HorizontalPodAutoscaler
+metadata:
+  name: {{ include "fullname" . }}-canary
+  labels:
+    app: {{ include "fullname" . }}-canary
+    app.kubernetes.io/instance: {{ .Release.Name }}
+    app.kubernetes.io/managed-by: {{ .Release.Service }}
+    app.kubernetes.io/name: {{ include "fullname" . }}-canary
+    helm.sh/chart: {{ include "chart" . }}
+spec:
+  scaleTargetRef:
+    apiVersion: apps/v1
+    kind: Deployment
+    name: {{ include "fullname" . }}-canary
+  minReplicas: {{ .Values.hpa.min }}
+  maxReplicas: {{ .Values.hpa.max }}
+  metrics:
+    - type: Resource
+      resource:
+        name: cpu
+        targetAverageUtilization: {{ .Values.hpa.cpu }}
+    - type: Resource
+      resource:
+        name: memory
+        targetAverageUtilization: {{ .Values.hpa.mem }}
+{{ end }}
+{{ end }}
+{{ end }}

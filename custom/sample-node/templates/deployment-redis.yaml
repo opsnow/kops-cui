@@ -1,35 +1,28 @@
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: {{ template "fullname" . }}-redis
+  name: {{ include "fullname" . }}-redis
   labels:
-    draft: {{ default "draft-app" .Values.draft }}
-    chart: "{{ .Chart.Name }}-{{ .Chart.Version | replace "+" "_" }}"
-    app: {{ template "fullname" . }}-redis
-{{- if .Values.labels }}
-{{ toYaml .Values.labels | indent 4 }}
-{{- end }}
-{{- with .Values.annotations }}
-  annotations:
-{{ toYaml . | indent 4 }}
-{{- end }}
+    app: {{ include "fullname" . }}-redis
+    app.kubernetes.io/instance: {{ .Release.Name }}
+    app.kubernetes.io/managed-by: {{ .Release.Service }}
+    app.kubernetes.io/name: {{ include "fullname" . }}-redis
+    helm.sh/chart: {{ include "chart" . }}
 spec:
   replicas: 1
   selector:
     matchLabels:
-      app: {{ template "fullname" . }}-redis
+      app: {{ include "fullname" . }}-redis
+      # app.kubernetes.io/instance: {{ .Release.Name }}
+      # app.kubernetes.io/name: {{ include "fullname" . }}-redis
   template:
     metadata:
       labels:
-        app: {{ template "fullname" . }}-redis
-        version: master
-{{- if .Values.pod.labels }}
-{{ toYaml .Values.pod.labels | indent 8 }}
-{{- end }}
-{{- if .Values.pod.annotations }}
-      annotations:
-{{ toYaml .Values.pod.annotations | indent 8 }}
-{{- end }}
+        app: {{ include "fullname" . }}-redis
+        app.kubernetes.io/instance: {{ .Release.Name }}
+        app.kubernetes.io/managed-by: {{ .Release.Service }}
+        app.kubernetes.io/name: {{ include "fullname" . }}-redis
+        version: stable
     spec:
       containers:
       - name: redis

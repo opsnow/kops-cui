@@ -1,49 +1,97 @@
 replicaCount: 1
+
 profile: default
+
+namespace: development
+
 image:
-  repository: nalbam/sample-webpack
-  tag: alpine
+  repository: docker-registry.127.0.0.1.nip.io:30500/sample-webpack
+  tag: latest
   pullPolicy: Always
+
 labels: {}
 annotations: {}
+
 pod:
   labels: {}
   annotations: {}
+
 pdb: {}
+
 service:
   type: ClusterIP
-  labels: {}
-  annotations: {}
   externalPort: 80
   internalPort: 80
+  annotations: {}
+  labels: {}
+
 ingress:
   enabled: true
-  labels: {}
-  annotations: {}
+  subdomain: sample-webpack
   basedomain: 127.0.0.1.nip.io
-hpa:
+  hosts: {}
+  # hosts:
+  #   - sample-webpack.opsnow.com
+  annotations:
+    kubernetes.io/ingress.class: nginx
+    # nginx.ingress.kubernetes.io/force-ssl-redirect: "true"
+  labels: {}
+
+autoscaling:
   enabled: true
   min: 1
   max: 5
   cpu: 80
+  mem: 80
+
 resources:
   requests:
     cpu: 100m
     memory: 128Mi
   limits:
-    cpu: 150m
-    memory: 256Mi
+    cpu: 120m
+    memory: 153Mi
+
 readinessProbe:
   httpGet:
     path: /
     port: 80
   initialDelaySeconds: 3
-  periodSeconds: 15
-  failureThreshold: 6
+  periodSeconds: 10
+  failureThreshold: 3
+
 livenessProbe:
   httpGet:
     path: /
     port: 80
   initialDelaySeconds: 3
-  periodSeconds: 15
-  failureThreshold: 6
+  periodSeconds: 10
+  failureThreshold: 3
+
+# livenessProbe:
+#   exec:
+#     command:
+#     - cat
+#     - /tmp/healthy
+#   initialDelaySeconds: 3
+#   periodSeconds: 10
+# livenessProbe:
+#   tcpSocket:
+#     port: 80
+#   initialDelaySeconds: 3
+#   periodSeconds: 10
+
+# hostNetwork: true
+# dnsPolicy: Default
+
+nodeSelector: {}
+
+tolerations: []
+
+affinity: {}
+
+configmap:
+  enabled: false
+
+secret:
+  enabled: false
