@@ -185,6 +185,7 @@ istio_menu() {
     _echo "6. import config to secret"
     _echo "7. export config"
     _echo "8. show pod IPs"
+    echo
     _echo "9. remove"
 
     question
@@ -1423,10 +1424,10 @@ waiting_istio_init() {
     IDX=0
     while true; do
         RET=$(echo -e `kubectl get crds | grep 'istio.io\|certmanager.k8s.io' | wc -l`)
-        echo ${RET}
+        printf ${RET}
 
         if [ ${RET} -gt 52 ]; then
-            echo "init ok"
+            echo " init ok"
             break
         elif [ "x${IDX}" == "x${SEC}" ]; then
             _result "Timeout"
@@ -1455,25 +1456,25 @@ istio_install() {
     CHART=${SHELL_DIR}/build/${CLUSTER_NAME}/${NAME}.yaml
     get_template charts/istio/${NAME}.yaml ${CHART}
 
-    # ingress
-    if [ -z ${BASE_DOMAIN} ]; then
-        _replace "s/SERVICE_TYPE/LoadBalancer/g" ${CHART}
-        _replace "s/INGRESS_ENABLED/false/g" ${CHART}
-    else
-        _replace "s/SERVICE_TYPE/ClusterIP/g" ${CHART}
-        _replace "s/INGRESS_ENABLED/true/g" ${CHART}
-        _replace "s/BASE_DOMAIN/${BASE_DOMAIN}/g" ${CHART}
-    fi
+    # # ingress
+    # if [ -z ${BASE_DOMAIN} ]; then
+    #     _replace "s/SERVICE_TYPE/LoadBalancer/g" ${CHART}
+    #     _replace "s/INGRESS_ENABLED/false/g" ${CHART}
+    # else
+    #     _replace "s/SERVICE_TYPE/ClusterIP/g" ${CHART}
+    #     _replace "s/INGRESS_ENABLED/true/g" ${CHART}
+    #     _replace "s/BASE_DOMAIN/${BASE_DOMAIN}/g" ${CHART}
+    # fi
 
-    # istio secret
-    istio_secret
+    # # istio secret
+    # istio_secret
 
     # helm install
     _command "helm upgrade --install ${NAME} ${ISTIO_DIR} --namespace ${NAMESPACE} --values ${CHART}"
     helm upgrade --install ${NAME} ${ISTIO_DIR} --namespace ${NAMESPACE} --values ${CHART}
 
     # kiali sa
-    create_cluster_role_binding view ${NAMESPACE} kiali-service-account
+    # create_cluster_role_binding view ${NAMESPACE} kiali-service-account
 
     ISTIO=true
     CONFIG_SAVE=true
