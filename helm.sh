@@ -86,6 +86,9 @@ press_enter() {
         istio)
             istio_menu
             ;;
+        security)
+            security_menu
+            ;;
     esac
 }
 
@@ -101,6 +104,8 @@ main_menu() {
     _echo "5. devops.."
     _echo "6. sample.."
     _echo "7. batch.."
+    echo
+    _echo "s. add/remove sg rule private-nginx-ingress"
     echo
     _echo "i. istio.."
     echo
@@ -162,6 +167,9 @@ main_menu() {
             update_tools
             press_enter cluster
             ;;
+        s)
+            security_menu
+            ;;
         x)
             _success "Good bye!"
             ;;
@@ -169,6 +177,90 @@ main_menu() {
             main_menu
             ;;
     esac
+}
+
+security_menu() {
+    title
+
+    echo
+    _echo "1. add ingress rule"
+    _echo "2. remove ingress rule"
+
+    question
+
+    case ${ANSWER} in
+        1)
+            add_ing_rule
+            press_enter security
+            ;;
+        2)
+            remove_ing_rule
+            press_enter security
+            ;;
+        *)
+            main_menu
+            ;;
+    esac
+
+}
+
+add_ing_rule() {
+    listup_ing_rules
+
+    question "Input rule PROTOCOL. [TCP] : "
+    PROTOCOL=${ANSWER:-"tcp"}
+    question "Input rule PORT. [22] : "
+    PORT=${ANSWER:-"22"}
+    question "Input rule CIDR. [0.0.0.0/0] : "
+    CIDR=${ANSWER:-"0.0.0.0/0"}
+
+    _command "aws ec2 authorize-security-group-ingress --group-id ${SG_ID} --protocol ${PROTOCOL} --port ${PORT} --cidr ${CIDR}"
+    aws ec2 authorize-security-group-ingress --group-id ${SG_ID} --protocol ${PROTOCOL} --port ${PORT} --cidr ${CIDR}
+
+    listup_ing_rules
+
+}
+
+listup_ing_rules() {
+    SERVICE_NAME="nginx-ingress-private-controller"
+    ELB_DNS=$(kubectl -n kube-ingress get svc ${SERVICE_NAME} -o jsonpath='{.status.loadBalancer.ingress[0].hostname}')
+
+    ELB_ID=$(echo ${ELB_DNS} | cut -d'-' -f 1)
+
+    SG_ID=$(aws elb describe-load-balancers --load-balancer-name ${ELB_ID} | jq -r '.LoadBalancerDescriptions[] | .SecurityGroups[]')
+
+    _command "aws ec2 describe-security-groups --group-id ${SG_ID} | jq -r '.SecurityGroups[] | .IpPermissions'"
+    export SG_INGRESS_RULE=$(aws ec2 describe-security-groups --group-id ${SG_ID} | jq -r '.SecurityGroups[] | .IpPermissions')
+
+    echo $SG_INGRESS_RULE
+}
+
+remove_ing_rule() {
+
+    listup_ing_rules
+    question "Remove ALL? (YES/[no])] : "
+    REVOKE_RULE=${ANSWER:-"no"}
+
+    if [ "${REVOKE_RULE}" == "YES" ]; then
+        ALL_RULE=$(echo $SG_INGRESS_RULE | jq -rc . )
+
+        _command "aws ec2 revoke-security-group-ingress --group-id $SG_ID --ip-permissions $ALL_RULE"
+        aws ec2 revoke-security-group-ingress --group-id $SG_ID --ip-permissions "${ALL_RULE}"
+    else
+
+        question "Input rule PROTOCOL. [TCP] : "
+        PROTOCOL=${ANSWER:-"tcp"}
+        question "Input rule PORT. [22] : "
+        PORT=${ANSWER:-"22"}
+        question "Input rule CIDR. [0.0.0.0/0] : "
+        CIDR=${ANSWER:-"0.0.0.0/0"}
+
+        _command "aws ec2 revoke-security-group-ingress --group-id ${SG_ID} --protocol ${PROTOCOL} --port ${PORT} --cidr ${CIDR}"
+        aws ec2 revoke-security-group-ingress --group-id ${SG_ID} --protocol ${PROTOCOL} --port ${PORT} --cidr ${CIDR}
+    fi
+
+    listup_ing_rules
+
 }
 
 istio_menu() {
