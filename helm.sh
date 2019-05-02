@@ -185,6 +185,7 @@ istio_menu() {
     _echo "6. import config to secret"
     _echo "7. export config"
     _echo "8. show pod IPs"
+    echo
     _echo "9. remove"
 
     question
@@ -400,6 +401,18 @@ helm_install() {
     # for argo
     if [ "${NAME}" == "argo" ]; then
         replace_chart ${CHART} "ARTIFACT_REPOSITORY" "${CLUSTER_NAME}-artifact"
+    fi
+    # for argocd
+    if [ "${NAME}" == "argocd" ]; then
+        replace_chart ${CHART} "GITHUB_ORG"
+
+        if [ "${ANSWER}" != "" ]; then
+            _replace "s/#:GITHUB://g" ${CHART}
+
+            replace_password ${CHART} "GITHUB_CLIENT_ID" "****"
+
+            replace_password ${CHART} "GITHUB_CLIENT_SECRET" "****"
+        fi
     fi
 
     # for jenkins
@@ -673,14 +686,18 @@ helm_delete() {
         efs_delete
     fi
 
-    # for argo
-    if [ "${NAME}" == "argo" ]; then
-        delete_crds "argoproj.io"
-    fi
-
     # helm delete
     _command "helm delete --purge ${NAME}"
     helm delete --purge ${NAME}
+
+    # for argo
+    if [ "${NAME}" == "argo" ]; then
+        COUNT=$(kubectl get pod -n devops | grep argo | grep Running | wc -l | xargs)
+
+        if [ "x${COUNT}" == "x0" ]; then
+            delete_crds "argoproj.io"
+        fi
+    fi
 
     # config save
     config_save
@@ -725,6 +742,8 @@ helm_repo() {
             _REPO="https://storage.googleapis.com/kubernetes-charts-incubator"
         elif [ "${_NAME}" == "argo" ]; then
             _REPO="https://argoproj.github.io/argo-helm"
+        elif [ "${_NAME}" == "monocular" ]; then
+            _REPO="https://helm.github.io/monocular"
         fi
     fi
 
@@ -1405,10 +1424,10 @@ waiting_istio_init() {
     IDX=0
     while true; do
         RET=$(echo -e `kubectl get crds | grep 'istio.io\|certmanager.k8s.io' | wc -l`)
-        echo ${RET}
+        printf ${RET}
 
         if [ ${RET} -gt 52 ]; then
-            echo "init ok"
+            echo " init ok"
             break
         elif [ "x${IDX}" == "x${SEC}" ]; then
             _result "Timeout"
@@ -1437,25 +1456,25 @@ istio_install() {
     CHART=${SHELL_DIR}/build/${CLUSTER_NAME}/${NAME}.yaml
     get_template charts/istio/${NAME}.yaml ${CHART}
 
-    # ingress
-    if [ -z ${BASE_DOMAIN} ]; then
-        _replace "s/SERVICE_TYPE/LoadBalancer/g" ${CHART}
-        _replace "s/INGRESS_ENABLED/false/g" ${CHART}
-    else
-        _replace "s/SERVICE_TYPE/ClusterIP/g" ${CHART}
-        _replace "s/INGRESS_ENABLED/true/g" ${CHART}
-        _replace "s/BASE_DOMAIN/${BASE_DOMAIN}/g" ${CHART}
-    fi
+    # # ingress
+    # if [ -z ${BASE_DOMAIN} ]; then
+    #     _replace "s/SERVICE_TYPE/LoadBalancer/g" ${CHART}
+    #     _replace "s/INGRESS_ENABLED/false/g" ${CHART}
+    # else
+    #     _replace "s/SERVICE_TYPE/ClusterIP/g" ${CHART}
+    #     _replace "s/INGRESS_ENABLED/true/g" ${CHART}
+    #     _replace "s/BASE_DOMAIN/${BASE_DOMAIN}/g" ${CHART}
+    # fi
 
-    # istio secret
-    istio_secret
+    # # istio secret
+    # istio_secret
 
     # helm install
     _command "helm upgrade --install ${NAME} ${ISTIO_DIR} --namespace ${NAMESPACE} --values ${CHART}"
     helm upgrade --install ${NAME} ${ISTIO_DIR} --namespace ${NAMESPACE} --values ${CHART}
 
     # kiali sa
-    create_cluster_role_binding view ${NAMESPACE} kiali-service-account
+    # create_cluster_role_binding view ${NAMESPACE} kiali-service-account
 
     ISTIO=true
     CONFIG_SAVE=true
@@ -1935,13 +1954,16 @@ replace_chart() {
 
     if [ "${_DEFAULT}" != "" ]; then
         question "Enter ${_KEY} [${_DEFAULT}] : "
+        if [ "${ANSWER}" == "" ]; then
+            ANSWER=${_DEFAULT}
+        fi
     else
         question "Enter ${_KEY} : "
     fi
 
-    _result "${_KEY}: ${ANSWER:-${_DEFAULT}}"
+    _result "${_KEY}: ${ANSWER}"
 
-    _replace "s|${_KEY}|${ANSWER:-${_DEFAULT}}|g" ${CHART}
+    _replace "s|${_KEY}|${ANSWER}|g" ${CHART}
 }
 
 replace_password() {
@@ -1950,11 +1972,14 @@ replace_password() {
     _DEFAULT=${3:-password}
 
     password "Enter ${_KEY} [${_DEFAULT}] : "
+    if [ "${ANSWER}" == "" ]; then
+        ANSWER=${_DEFAULT}
+    fi
 
     echo
     _result "${_KEY}: [hidden]"
 
-    _replace "s|${_KEY}|${ANSWER:-${_DEFAULT}}|g" ${_CHART}
+    _replace "s|${_KEY}|${ANSWER}|g" ${_CHART}
 }
 
 replace_base64() {
@@ -1963,11 +1988,14 @@ replace_base64() {
     _DEFAULT=${3:-password}
 
     password "Enter ${_KEY} [${_DEFAULT}] : "
+    if [ "${ANSWER}" == "" ]; then
+        ANSWER=${_DEFAULT}
+    fi
 
     echo
     _result "${_KEY}: [encoded]"
 
-    _replace "s|${_KEY}|$(echo ${ANSWER:-${_DEFAULT}} | base64)|g" ${_CHART}
+    _replace "s|${_KEY}|$(echo ${ANSWER} | base64)|g" ${_CHART}
 }
 
 waiting_for() {

@@ -1,54 +1,54 @@
 # chart-repo: istio
-# chart-version: 1.1.1
+# chart-version: 1.1.4
 # chart-ingress: true
 
 # global:
 #   configValidation: false
 
-ingress:
-  enabled: true
+# ingress:
+#   enabled: true
 
-grafana:
-  enabled: true
+# grafana:
+#   enabled: true
 
-kiali:
-  enabled: true
-  ingress:
-    enabled: INGRESS_ENABLED
-    annotations:
-      - kubernetes.io/ingress.class: nginx
-      - nginx.ingress.kubernetes.io/force-ssl-redirect: true
-    hosts:
-      - kiali-istio.BASE_DOMAIN
-  dashboard:
-    secretName: istio-secret
-    # grafanaURL: http://grafana:3000
-    # jaegerURL: https://jaeger-istio.BASE_DOMAIN
+# kiali:
+#   enabled: true
+#   ingress:
+#     enabled: INGRESS_ENABLED
+#     annotations:
+#       - kubernetes.io/ingress.class: nginx
+#       - nginx.ingress.kubernetes.io/force-ssl-redirect: true
+#     hosts:
+#       - kiali-istio.BASE_DOMAIN
+#   dashboard:
+#     secretName: istio-secret
+#     # grafanaURL: http://grafana:3000
+#     # jaegerURL: https://jaeger-istio.BASE_DOMAIN
 
-tracing:
-  enabled: true
-  # ingress:
-  #   enabled: INGRESS_ENABLED
-  #   annotations:
-  #   - kubernetes.io/ingress.class: nginx
-  #   - nginx.ingress.kubernetes.io/force-ssl-redirect: true
-  #   hosts:
-  #   - tracing-istio.BASE_DOMAIN
-  # jaeger:
-  #   ingress:
-  #     enabled: INGRESS_ENABLED
-  #     annotations:
-  #     - kubernetes.io/ingress.class: nginx
-  #     - nginx.ingress.kubernetes.io/force-ssl-redirect: true
-  #     hosts:
-  #     - jaeger-istio.BASE_DOMAIN
+# tracing:
+#   enabled: true
+#   # ingress:
+#   #   enabled: INGRESS_ENABLED
+#   #   annotations:
+#   #   - kubernetes.io/ingress.class: nginx
+#   #   - nginx.ingress.kubernetes.io/force-ssl-redirect: true
+#   #   hosts:
+#   #   - tracing-istio.BASE_DOMAIN
+#   # jaeger:
+#   #   ingress:
+#   #     enabled: INGRESS_ENABLED
+#   #     annotations:
+#   #     - kubernetes.io/ingress.class: nginx
+#   #     - nginx.ingress.kubernetes.io/force-ssl-redirect: true
+#   #     hosts:
+#   #     - jaeger-istio.BASE_DOMAIN
 
-servicegraph:
-  enabled: true
-  # ingress:
-  #   enabled: INGRESS_ENABLED
-  #   annotations:
-  #   - kubernetes.io/ingress.class: nginx
-  #   - nginx.ingress.kubernetes.io/force-ssl-redirect: true
-  #   hosts:
-  #   - servicegraph-istio.BASE_DOMAIN
+# servicegraph:
+#   enabled: true
+#   # ingress:
+#   #   enabled: INGRESS_ENABLED
+#   #   annotations:
+#   #   - kubernetes.io/ingress.class: nginx
+#   #   - nginx.ingress.kubernetes.io/force-ssl-redirect: true
+#   #   hosts:
+#   #   - servicegraph-istio.BASE_DOMAIN

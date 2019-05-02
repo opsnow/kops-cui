@@ -1,0 +1,42 @@
+# chart-repo: argo/argo-cd
+# chart-version: latest
+# chart-ingress: true
+
+server:
+  extraArgs:
+    - --insecure
+
+ingress:
+  enabled: INGRESS_ENABLED
+  hosts:
+    - INGRESS_DOMAIN
+  annotations:
+    kubernetes.io/ingress.class: nginx
+    nginx.ingress.kubernetes.io/force-ssl-redirect: "true"
+    nginx.ingress.kubernetes.io/ssl-passthrough: "true"
+
+config:
+  url: https://INGRESS_DOMAIN
+  # helmRepositories:
+  #   - name: chartmuseum
+  #     url: https://chartmuseum-devops.BASE_DOMAIN
+  #:GITHUB:dexConfig:
+  #:GITHUB:  connectors:
+  #:GITHUB:    - type: github
+  #:GITHUB:      id: github
+  #:GITHUB:      name: GitHub
+  #:GITHUB:      config:
+  #:GITHUB:        clientID: GITHUB_CLIENT_ID
+  #:GITHUB:        clientSecret: GITHUB_CLIENT_SECRET
+  #:GITHUB:        orgs:
+  #:GITHUB:        - name: GITHUB_ORG
+  #:GITHUB:          teams:
+
+rbac:
+  policyDefault: role:readonly
+  #:GITHUB:policyCsv: |
+  #:GITHUB:  p, role:org-admin, applications, *, */*, allow
+  #:GITHUB:  p, role:org-admin, clusters, *, *, allow
+  #:GITHUB:  p, role:org-admin, repositories, *, *, allow
+  #:GITHUB:  p, role:org-admin, projects, *, *, allow
+  #:GITHUB:  g, GITHUB_ORG:admin, role:org-admin

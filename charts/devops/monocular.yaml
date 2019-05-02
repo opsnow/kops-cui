@@ -1,0 +1,30 @@
+# chart-repo: monocular/monocular
+# chart-version: latest
+# chart-ingress: true
+
+fullnameOverride: monocular
+
+sync:
+  repos:
+    # Official repositories
+    - name: stable
+      url: https://kubernetes-charts.storage.googleapis.com
+    - name: incubator
+      url: https://kubernetes-charts-incubator.storage.googleapis.com
+    # Add your own repository
+    - name: chartmuseum
+      url: https://chartmuseum-devops.BASE_DOMAIN
+      schedule: "*/5 * * * *"
+      successfulJobsHistoryLimit: 1
+
+service:
+  type: SERVICE_TYPE
+
+ingress:
+  enabled: INGRESS_ENABLED
+  hosts:
+    - INGRESS_DOMAIN
+  annotations:
+    kubernetes.io/ingress.class: nginx
+    nginx.ingress.kubernetes.io/rewrite-target: /$1
+    nginx.ingress.kubernetes.io/force-ssl-redirect: "true"
