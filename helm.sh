@@ -328,7 +328,7 @@ helm_install() {
     fi
 
     # for nginx-ingress
-    if [[ "${NAME}" == *"nginx-ingress" ]]; then
+    if [[ "${NAME}" == "nginx-ingress"* ]]; then
         get_base_domain
 
         get_replicas ${NAMESPACE} ${NAME}-controller
@@ -607,7 +607,7 @@ helm_install() {
     fi
 
     # for nginx-ingress
-    if [[ "${NAME}" == *"nginx-ingress" ]]; then
+    if [[ "${NAME}" == "nginx-ingress"* ]]; then
         set_base_domain "${NAME}"
     fi
 
@@ -663,7 +663,7 @@ helm_delete() {
     fi
 
     # for nginx-ingress
-    if [[ "${NAME}" == *"nginx-ingress" ]]; then
+    if [[ "${NAME}" == "nginx-ingress"* ]]; then
         ROOT_DOMAIN=
         BASE_DOMAIN=
     fi
