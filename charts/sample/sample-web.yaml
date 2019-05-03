@@ -2,7 +2,7 @@
 # chart-version: latest
 # chart-ingress: true
 
-fullnameOverride: sample-web-sample
+fullnameOverride: sample-web
 
 profile: dev
 
