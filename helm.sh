@@ -655,15 +655,20 @@ helm_install() {
 helm_delete() {
     NAME=
 
+    TEMP=${SHELL_DIR}/build/${CLUSTER_NAME}/helm-temp
     LIST=${SHELL_DIR}/build/${CLUSTER_NAME}/helm-list
 
     _command "helm ls --all"
 
-    printf "\n     %-25s %-60s %-10s %-12s %s" "NAMESPACE" "NAME" "REVISION" "STATUS" "CHART"
+    # find all
+    helm ls --all --output json \
+        | jq -r '"NAMESPACE NAME STATUS REVISION CHART",
+                (.Releases[] | "\(.Namespace) \(.Name) \(.Status) \(.Revision) \(.Chart)")' \
+        | column -t > ${TEMP}
 
-    # find
-    helm ls --all | grep -v "NAME" \
-        | awk '{printf "%-25s %-60s %-10s %-12s %s\n", $11, $1, $2, $8, $9}' | sort > ${LIST}
+    printf "\n     $(head -1 ${TEMP})"
+
+    cat ${TEMP} | grep -v "NAMESPACE" | sort > ${LIST}
 
     # select
     select_one
