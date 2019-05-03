@@ -320,6 +320,7 @@ helm_install() {
     # global
     _replace "s/AWS_REGION/${REGION}/g" ${CHART}
     _replace "s/CLUSTER_NAME/${CLUSTER_NAME}/g" ${CHART}
+    _replace "s/NAMESPACE/${NAMESPACE}/g" ${CHART}
 
     # for cert-manager
     if [ "${NAME}" == "cert-manager" ]; then
