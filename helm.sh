@@ -651,7 +651,10 @@ helm_install() {
 
     # for nginx-ingress-private
     if [ "${NAME}" == "nginx-ingress-private" ]; then
-        remove_ing_rule
+        question "ingress rule delete all? (YES/[no]) : "
+        if [ "${ANSWER}" == "YES" ]; then
+            remove_ing_rule
+        fi
     fi
 
     # for efs-provisioner
