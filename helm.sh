@@ -320,6 +320,7 @@ helm_install() {
     # global
     _replace "s/AWS_REGION/${REGION}/g" ${CHART}
     _replace "s/CLUSTER_NAME/${CLUSTER_NAME}/g" ${CHART}
+    _replace "s/NAMESPACE/${NAMESPACE}/g" ${CHART}
 
     # for cert-manager
     if [ "${NAME}" == "cert-manager" ]; then
@@ -658,9 +659,11 @@ helm_delete() {
 
     _command "helm ls --all"
 
+    printf "\n     %-25s %-60s %-10s %-12s %s" "NAMESPACE" "NAME" "REVISION" "STATUS" "CHART"
+
     # find
-    helm ls --all | grep -v "NAME" | sort \
-        | awk '{printf "%-55s %-20s %-5s %-12s %s\n", $1, $11, $2, $8, $9}' > ${LIST}
+    helm ls --all | grep -v "NAME" \
+        | awk '{printf "%-25s %-60s %-10s %-12s %s\n", $11, $1, $2, $8, $9}' | sort > ${LIST}
 
     # select
     select_one
@@ -669,7 +672,7 @@ helm_delete() {
         return
     fi
 
-    NAME="$(echo ${SELECTED} | awk '{print $1}')"
+    NAME="$(echo ${SELECTED} | awk '{print $2}')"
 
     if [ "${NAME}" == "" ]; then
         return

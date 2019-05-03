@@ -1,13 +1,15 @@
 apiVersion: v1
 kind: Service
 metadata:
-  name: {{ template "fullname" . }}
+  name: {{ include "fullname" . }}
   labels:
-    draft: {{ default "draft-app" .Values.draft }}
-    chart: "{{ .Chart.Name }}-{{ .Chart.Version | replace "+" "_" }}"
-    app: {{ template "fullname" . }}
-{{- if .Values.service.labels }}
-{{ toYaml .Values.service.labels | indent 4 }}
+    app: {{ include "fullname" . }}
+    app.kubernetes.io/instance: {{ .Release.Name }}
+    app.kubernetes.io/managed-by: {{ .Release.Service }}
+    app.kubernetes.io/name: {{ include "fullname" . }}
+    helm.sh/chart: {{ include "chart" . }}
+{{- with .Values.service.labels }}
+{{ toYaml . | indent 4 }}
 {{- end }}
 {{- with .Values.service.annotations }}
   annotations:
@@ -26,4 +28,6 @@ spec:
     nodePort: {{ .Values.service.nodePort }}
 {{- end }}
   selector:
-    app: {{ template "fullname" . }}
+    app: {{ include "fullname" . }}
+    # app.kubernetes.io/instance: {{ .Release.Name }}
+    # app.kubernetes.io/name: {{ include "fullname" . }}

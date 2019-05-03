@@ -3,13 +3,15 @@
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: {{ template "fullname" . }}-canary
+  name: {{ include "fullname" . }}-canary
   labels:
-    draft: {{ default "draft-app" .Values.draft }}
-    chart: "{{ .Chart.Name }}-{{ .Chart.Version | replace "+" "_" }}"
-    app: {{ template "fullname" . }}
-{{- if .Values.labels }}
-{{ toYaml .Values.labels | indent 4 }}
+    app: {{ include "fullname" . }}-canary
+    app.kubernetes.io/instance: {{ .Release.Name }}
+    app.kubernetes.io/managed-by: {{ .Release.Service }}
+    app.kubernetes.io/name: {{ include "fullname" . }}-canary
+    helm.sh/chart: {{ include "chart" . }}
+{{- with .Values.labels }}
+{{ toYaml . | indent 4 }}
 {{- end }}
 {{- with .Values.annotations }}
   annotations:
@@ -19,24 +21,29 @@ spec:
   replicas: 1
   selector:
     matchLabels:
-      app: {{ template "fullname" . }}
+      app: {{ include "fullname" . }}-canary
+      # app.kubernetes.io/instance: {{ .Release.Name }}
+      # app.kubernetes.io/name: {{ include "fullname" . }}-canary
   template:
     metadata:
       labels:
-        app: {{ template "fullname" . }}
+        app: {{ include "fullname" . }}-canary
+        app.kubernetes.io/instance: {{ .Release.Name }}
+        app.kubernetes.io/managed-by: {{ .Release.Service }}
+        app.kubernetes.io/name: {{ include "fullname" . }}-canary
         version: canary
-{{- if .Values.pod.labels }}
-{{ toYaml .Values.pod.labels | indent 8 }}
+{{- with .Values.pod.labels }}
+{{ toYaml . | indent 8 }}
 {{- end }}
       annotations:
         buildID: {{ .Values.buildID }}
-{{- if .Values.pod.annotations }}
-{{ toYaml .Values.pod.annotations | indent 8 }}
+{{- with .Values.pod.annotations }}
+{{ toYaml . | indent 8 }}
 {{- end }}
     spec:
       containers:
       - name: {{ .Chart.Name }}
-        image: "{{ .Values.image.repository }}:{{ .Values.image.tag }}"
+        image: "{{ .Values.image.repository }}:{{ .Values.canary.tag }}"
         imagePullPolicy: {{ .Values.image.pullPolicy }}
         ports:
         - containerPort: {{ .Values.service.internalPort }}
@@ -56,11 +63,23 @@ spec:
 {{ end }}
 {{ if .Values.configmap.enabled }}
           - configMapRef:
-              name: {{ template "fullname" . }}
+              name: {{ include "fullname" . }}
 {{ end }}
 {{ if .Values.secret.enabled }}
           - secretRef:
-              name: {{ template "fullname" . }}
+              name: {{ include "fullname" . }}
 {{ end }}
+{{- with .Values.nodeSelector }}
+      nodeSelector:
+{{ toYaml . | nindent 8 }}
+{{- end }}
+{{- with .Values.affinity }}
+      affinity:
+{{ toYaml . | nindent 8 }}
+{{- end }}
+{{- with .Values.tolerations }}
+      tolerations:
+{{ toYaml . | nindent 8 }}
+{{- end }}
 {{ end }}
 {{ end }}

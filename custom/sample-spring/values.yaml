@@ -1,49 +1,97 @@
 replicaCount: 1
+
 profile: default
+
+namespace: development
+
 image:
-  repository: nalbam/sample-spring
-  tag: alpine
+  repository: docker-registry.127.0.0.1.nip.io:30500/sample-spring
+  tag: latest
   pullPolicy: Always
+
 labels: {}
 annotations: {}
+
 pod:
   labels: {}
   annotations: {}
+
 pdb: {}
+
 service:
   type: ClusterIP
-  labels: {}
-  annotations: {}
   externalPort: 80
   internalPort: 8080
+  annotations: {}
+  labels: {}
+
 ingress:
   enabled: true
-  labels: {}
-  annotations: {}
+  subdomain: sample-spring
   basedomain: 127.0.0.1.nip.io
-hpa:
+  hosts: {}
+  # hosts:
+  #   - sample-spring.opsnow.com
+  annotations:
+    kubernetes.io/ingress.class: nginx
+    # nginx.ingress.kubernetes.io/force-ssl-redirect: "true"
+  labels: {}
+
+autoscaling:
   enabled: true
   min: 1
   max: 5
   cpu: 80
+  mem: 80
+
 resources:
   requests:
     cpu: 500m
     memory: 1024Mi
   limits:
-    cpu: 1000m
-    memory: 2048Mi
+    cpu: 600m
+    memory: 1252Mi
+
 readinessProbe:
   httpGet:
     path: /
     port: 8080
   initialDelaySeconds: 30
-  periodSeconds: 15
-  failureThreshold: 6
+  periodSeconds: 10
+  failureThreshold: 3
+
 livenessProbe:
   httpGet:
     path: /
     port: 8080
   initialDelaySeconds: 30
-  periodSeconds: 15
-  failureThreshold: 6
+  periodSeconds: 10
+  failureThreshold: 3
+
+# livenessProbe:
+#   exec:
+#     command:
+#     - cat
+#     - /tmp/healthy
+#   initialDelaySeconds: 15
+#   periodSeconds: 10
+# livenessProbe:
+#   tcpSocket:
+#     port: 8080
+#   initialDelaySeconds: 15
+#   periodSeconds: 10
+
+# hostNetwork: true
+# dnsPolicy: Default
+
+nodeSelector: {}
+
+tolerations: []
+
+affinity: {}
+
+configmap:
+  enabled: false
+
+secret:
+  enabled: false

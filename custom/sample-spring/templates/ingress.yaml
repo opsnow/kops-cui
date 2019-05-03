@@ -4,13 +4,15 @@
 apiVersion: extensions/v1beta1
 kind: Ingress
 metadata:
-  name: {{ template "fullname" . }}
+  name: {{ include "fullname" . }}
   labels:
-    draft: {{ default "draft-app" .Values.draft }}
-    chart: "{{ .Chart.Name }}-{{ .Chart.Version | replace "+" "_" }}"
-    app: {{ template "fullname" . }}
-{{- if .Values.ingress.labels }}
-{{ toYaml .Values.ingress.labels | indent 4 }}
+    app: {{ include "fullname" . }}
+    app.kubernetes.io/instance: {{ .Release.Name }}
+    app.kubernetes.io/managed-by: {{ .Release.Service }}
+    app.kubernetes.io/name: {{ include "fullname" . }}
+    helm.sh/chart: {{ include "chart" . }}
+{{- with .Values.ingress.labels }}
+{{ toYaml . | indent 4 }}
 {{- end }}
 {{- with .Values.ingress.annotations }}
   annotations:
@@ -18,14 +20,14 @@ metadata:
 {{- end }}
 spec:
   rules:
-{{ if not (empty .Values.ingress.basedomain) }}
-  - host: {{ .Release.Name }}.{{ .Values.ingress.basedomain }}
+{{ if and .Values.ingress.subdomain .Values.ingress.basedomain }}
+  - host: {{ .Values.ingress.subdomain }}.{{ .Values.ingress.basedomain }}
     http:
       paths:
       - path: /
         backend:
-          serviceName: {{ template "fullname" . }}
-          servicePort: {{ .Values.service.externalPort }}
+          serviceName: {{ $fullName }}
+          servicePort: {{ $servicePort }}
 {{ end }}
 {{ range .Values.ingress.hosts }}
   - host: {{ . }}
@@ -35,11 +37,5 @@ spec:
         backend:
           serviceName: {{ $fullName }}
           servicePort: {{ $servicePort }}
-{{ end }}
-{{ if (not (empty .Values.ingress.tls)) }}
-  tls:
-  - hosts:
-    - {{ .Release.Name }}.{{ .Values.ingress.basedomain }}
-    secretName: {{ template "fullname" . }}-tls
 {{ end }}
 {{ end }}

@@ -1,13 +1,15 @@
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: {{ template "fullname" . }}
+  name: {{ include "fullname" . }}
   labels:
-    draft: {{ default "draft-app" .Values.draft }}
-    chart: "{{ .Chart.Name }}-{{ .Chart.Version | replace "+" "_" }}"
-    app: {{ template "fullname" . }}
-{{- if .Values.labels }}
-{{ toYaml .Values.labels | indent 4 }}
+    app: {{ include "fullname" . }}
+    app.kubernetes.io/instance: {{ .Release.Name }}
+    app.kubernetes.io/managed-by: {{ .Release.Service }}
+    app.kubernetes.io/name: {{ include "fullname" . }}
+    helm.sh/chart: {{ include "chart" . }}
+{{- with .Values.labels }}
+{{ toYaml . | indent 4 }}
 {{- end }}
 {{- with .Values.annotations }}
   annotations:
@@ -17,19 +19,24 @@ spec:
   replicas: {{ .Values.replicaCount }}
   selector:
     matchLabels:
-      app: {{ template "fullname" . }}
+      app: {{ include "fullname" . }}
+      # app.kubernetes.io/instance: {{ .Release.Name }}
+      # app.kubernetes.io/name: {{ include "fullname" . }}
   template:
     metadata:
       labels:
-        app: {{ template "fullname" . }}
-        version: master
-{{- if .Values.pod.labels }}
-{{ toYaml .Values.pod.labels | indent 8 }}
+        app: {{ include "fullname" . }}
+        app.kubernetes.io/instance: {{ .Release.Name }}
+        app.kubernetes.io/managed-by: {{ .Release.Service }}
+        app.kubernetes.io/name: {{ include "fullname" . }}
+        version: stable
+{{- with .Values.pod.labels }}
+{{ toYaml . | indent 8 }}
 {{- end }}
       annotations:
         buildID: {{ .Values.buildID }}
-{{- if .Values.pod.annotations }}
-{{ toYaml .Values.pod.annotations | indent 8 }}
+{{- with .Values.pod.annotations }}
+{{ toYaml . | indent 8 }}
 {{- end }}
     spec:
       containers:
@@ -38,8 +45,12 @@ spec:
         imagePullPolicy: {{ .Values.image.pullPolicy }}
         ports:
         - containerPort: {{ .Values.service.internalPort }}
-        hostNetwork: true
-        dnsPolicy: ClusterFirstWithHostNet
+{{ if .Values.hostNetwork }}
+        hostNetwork: {{ .Values.hostNetwork }}
+{{ end }}
+{{ if .Values.dnsPolicy }}
+        dnsPolicy: {{ .Values.dnsPolicy }}
+{{ end }}
         resources:
 {{ toYaml .Values.resources | indent 10 }}
         readinessProbe:
@@ -49,14 +60,28 @@ spec:
         env:
           - name: PROFILE
             value: {{ .Values.profile }}
+          - name: NAMESPACE
+            value: {{ .Values.namespace }}
 {{ if or .Values.configmap.enabled .Values.secret.enabled }}
         envFrom:
 {{ end }}
 {{ if .Values.configmap.enabled }}
           - configMapRef:
-              name: {{ template "fullname" . }}
+              name: {{ include "fullname" . }}
 {{ end }}
 {{ if .Values.secret.enabled }}
           - secretRef:
-              name: {{ template "fullname" . }}
+              name: {{ include "fullname" . }}
 {{ end }}
+{{- with .Values.nodeSelector }}
+      nodeSelector:
+{{ toYaml . | nindent 8 }}
+{{- end }}
+{{- with .Values.affinity }}
+      affinity:
+{{ toYaml . | nindent 8 }}
+{{- end }}
+{{- with .Values.tolerations }}
+      tolerations:
+{{ toYaml . | nindent 8 }}
+{{- end }}

@@ -2,7 +2,11 @@
 # chart-version: latest
 # chart-ingress: true
 
+fullnameOverride: sample-webpack-sample
+
 profile: dev
+
+namespaces: sample
 
 image:
   repository: nalbam/sample-webpack
@@ -23,6 +27,7 @@ service:
 
 ingress:
   enabled: INGRESS_ENABLED
+  subdomain: sample-webpack-NAMESPACE
   basedomain: BASE_DOMAIN
   annotations:
     kubernetes.io/ingress.class: nginx
