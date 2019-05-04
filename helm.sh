@@ -1609,8 +1609,8 @@ istio_delete() {
     _command "helm delete --purge ${NAME}"
     helm delete --purge ${NAME}
 
-    _command "helm del --purge istio-init"
-    helm del --purge istio-init
+    _command "helm delete --purge istio-init"
+    helm delete --purge istio-init
 
     # delete crds
     delete_crds "istio.io"
