@@ -427,8 +427,8 @@ helm_install() {
 
             _result "New Application: https://github.com/organizations/${ANSWER}/settings/applications"
 
-            _result "Homepage: https://argocd-devops.${BASE_DOMAIN}"
-            _result "Callback: https://argocd-devops.${BASE_DOMAIN}/api/dex/callback"
+            _result "Homepage: https://${NAME}-${NAMESPACE}.${BASE_DOMAIN}"
+            _result "Callback: https://${NAME}-${NAMESPACE}.${BASE_DOMAIN}/api/dex/callback"
 
             replace_password ${CHART} "GITHUB_CLIENT_ID" "****"
 
