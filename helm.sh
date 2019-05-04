@@ -312,6 +312,21 @@ helm_install() {
     if [ "${LATEST}" != "" ]; then
         _result "latest chart version: ${LATEST}"
 
+        if [ "${VERSION}" != "" ] && [ "${VERSION}" != "latest" ] && [ "${VERSION}" != "${LATEST}" ]; then
+            LIST=${SHELL_DIR}/build/${CLUSTER_NAME}/version-list
+            echo "${VERSION} " > ${LIST}
+            echo "${LATEST} (latest) " >> ${LIST}
+
+            # select
+            select_one
+
+            if [ "${SELECTED}" != "" ]; then
+                VERSION="$(echo "${SELECTED}" | cut -d' ' -f1)"
+            fi
+
+            _result "${VERSION}"
+        fi
+
         if [ "${VERSION}" == "" ] || [ "${VERSION}" == "latest" ]; then
             _replace "s/chart-version:.*/chart-version: ${LATEST}/g" ${CHART}
         fi
