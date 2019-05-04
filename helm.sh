@@ -171,6 +171,31 @@ main_menu() {
     esac
 }
 
+listup_ing_rules() {
+    SERVICE_NAME="nginx-ingress-private-controller"
+    ELB_DNS=$(kubectl -n kube-ingress get svc ${SERVICE_NAME} -o jsonpath='{.status.loadBalancer.ingress[0].hostname}')
+
+    ELB_ID=$(echo ${ELB_DNS} | cut -d'-' -f 1)
+
+    SG_ID=$(aws elb describe-load-balancers --load-balancer-name ${ELB_ID} | jq -r '.LoadBalancerDescriptions[] | .SecurityGroups[]')
+
+    _command "aws ec2 describe-security-groups --group-id ${SG_ID} | jq -r '.SecurityGroups[] | .IpPermissions'"
+    export SG_INGRESS_RULE=$(aws ec2 describe-security-groups --group-id ${SG_ID} | jq -r '.SecurityGroups[] | .IpPermissions')
+
+    echo $SG_INGRESS_RULE
+}
+
+remove_ing_rule() {
+
+    listup_ing_rules
+    ALL_RULE=$(echo $SG_INGRESS_RULE | jq -rc . )
+
+    _command "aws ec2 revoke-security-group-ingress --group-id $SG_ID --ip-permissions $ALL_RULE"
+    aws ec2 revoke-security-group-ingress --group-id $SG_ID --ip-permissions "${ALL_RULE}"
+    listup_ing_rules
+
+}
+
 istio_menu() {
     title
 
@@ -643,6 +668,14 @@ helm_install() {
     # for nginx-ingress
     if [[ "${NAME}" == "nginx-ingress"* ]]; then
         set_base_domain "${NAME}"
+    fi
+
+    # for nginx-ingress-private
+    if [ "${NAME}" == "nginx-ingress-private" ]; then
+        question "ingress rule delete all? (YES/[no]) : "
+        if [ "${ANSWER}" == "YES" ]; then
+            remove_ing_rule
+        fi
     fi
 
     # for efs-provisioner
