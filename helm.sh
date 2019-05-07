@@ -666,7 +666,7 @@ helm_install() {
     fi
 
     # for nginx-ingress
-    if [[ "${NAME}" == "nginx-ingress"* ]]; then
+    if [ "${NAME}" == "nginx-ingress" ]; then
         set_base_domain "${NAME}"
     fi
 
