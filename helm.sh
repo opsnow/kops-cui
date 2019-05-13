@@ -337,6 +337,21 @@ helm_install() {
     if [ "${LATEST}" != "" ]; then
         _result "latest chart version: ${LATEST}"
 
+        if [ "${VERSION}" != "" ] && [ "${VERSION}" != "latest" ] && [ "${VERSION}" != "${LATEST}" ]; then
+            LIST=${SHELL_DIR}/build/${CLUSTER_NAME}/version-list
+            echo "${VERSION} " > ${LIST}
+            echo "${LATEST} (latest) " >> ${LIST}
+
+            # select
+            select_one
+
+            if [ "${SELECTED}" != "" ]; then
+                VERSION="$(echo "${SELECTED}" | cut -d' ' -f1)"
+            fi
+
+            _result "${VERSION}"
+        fi
+
         if [ "${VERSION}" == "" ] || [ "${VERSION}" == "latest" ]; then
             _replace "s/chart-version:.*/chart-version: ${LATEST}/g" ${CHART}
         fi
@@ -434,6 +449,11 @@ helm_install() {
 
         if [ "${ANSWER}" != "" ]; then
             _replace "s/#:GITHUB://g" ${CHART}
+
+            _result "New Application: https://github.com/organizations/${ANSWER}/settings/applications"
+
+            _result "Homepage: https://${NAME}-${NAMESPACE}.${BASE_DOMAIN}"
+            _result "Callback: https://${NAME}-${NAMESPACE}.${BASE_DOMAIN}/api/dex/callback"
 
             replace_password ${CHART} "GITHUB_CLIENT_ID" "****"
 
@@ -688,15 +708,20 @@ helm_install() {
 helm_delete() {
     NAME=
 
+    TEMP=${SHELL_DIR}/build/${CLUSTER_NAME}/helm-temp
     LIST=${SHELL_DIR}/build/${CLUSTER_NAME}/helm-list
 
     _command "helm ls --all"
 
-    printf "\n     %-25s %-60s %-10s %-12s %s" "NAMESPACE" "NAME" "REVISION" "STATUS" "CHART"
+    # find all
+    helm ls --all --output json \
+        | jq -r '"NAMESPACE NAME STATUS REVISION CHART",
+                (.Releases[] | "\(.Namespace) \(.Name) \(.Status) \(.Revision) \(.Chart)")' \
+        | column -t > ${TEMP}
 
-    # find
-    helm ls --all | grep -v "NAME" \
-        | awk '{printf "%-25s %-60s %-10s %-12s %s\n", $11, $1, $2, $8, $9}' | sort > ${LIST}
+    printf "\n     $(head -1 ${TEMP})"
+
+    cat ${TEMP} | grep -v "NAMESPACE" | sort > ${LIST}
 
     # select
     select_one
@@ -860,6 +885,8 @@ create_cluster_role_binding() {
 
     if [ "${_TOKEN}" == "true" ]; then
         SECRET=$(kubectl get secret -n ${_NAMESPACE} | grep ${_ACCOUNT}-token | awk '{print $1}')
+
+        _command "kubectl describe secret ${SECRET} -n ${_NAMESPACE}"
         kubectl describe secret ${SECRET} -n ${_NAMESPACE} | grep 'token:'
     fi
 }
@@ -1622,8 +1649,8 @@ istio_delete() {
     _command "helm delete --purge ${NAME}"
     helm delete --purge ${NAME}
 
-    _command "helm del --purge istio-init"
-    helm del --purge istio-init
+    _command "helm delete --purge istio-init"
+    helm delete --purge istio-init
 
     # delete crds
     delete_crds "istio.io"
