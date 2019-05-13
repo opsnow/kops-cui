@@ -1,6 +1,6 @@
 image:
-  repository: quay.io/opsnow-tools/elasticsearch-snapshot
-  tag: latest
+  repository: opsnowtools/elasticsearch-snapshot
+  tag: v0.0.5
 
 schedule: "0 0 * * *"
 
