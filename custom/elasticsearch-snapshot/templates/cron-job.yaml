@@ -1,11 +1,13 @@
 apiVersion: batch/v1beta1
 kind: CronJob
 metadata:
-  name: {{ template "fullname" . }}
+  name: {{ include "fullname" . }}
   labels:
-    draft: {{ default "draft-app" .Values.draft }}
-    chart: "{{ .Chart.Name }}-{{ .Chart.Version | replace "+" "_" }}"
-    app: {{ template "fullname" . }}
+    app: {{ include "fullname" . }}
+    app.kubernetes.io/instance: {{ .Release.Name }}
+    app.kubernetes.io/managed-by: {{ .Release.Service }}
+    app.kubernetes.io/name: {{ include "fullname" . }}
+    helm.sh/chart: {{ include "chart" . }}
 spec:
   schedule: "{{ .Values.schedule }}"
   jobTemplate:
@@ -15,13 +17,19 @@ spec:
           containers:
           - name: {{ .Chart.Name }}
             image: "{{ .Values.image.repository }}:{{ .Values.image.tag }}"
+{{- with .Values.env }}
             env:
-              - name: AWS_BUCKET
-                value: "{{ .Values.env.aws_bucket }}"
-              - name: AWS_REGION
-                value: "{{ .Values.env.aws_region }}"
-              - name: ES_HOST
-                value: "{{ .Values.env.es_host }}"
-              - name: SLACK_TOKEN
-                value: "{{ .Values.env.slack_token }}"
+{{ toYaml . | indent 14 }}
+{{- end }}
+{{ if or .Values.configmap.enabled .Values.secret.enabled }}
+            envFrom:
+{{ end }}
+{{ if .Values.configmap.enabled }}
+              - configMapRef:
+                  name: {{ include "fullname" . }}
+{{ end }}
+{{ if .Values.secret.enabled }}
+              - secretRef:
+                  name: {{ include "fullname" . }}
+{{ end }}
           restartPolicy: {{ .Values.restart }}
