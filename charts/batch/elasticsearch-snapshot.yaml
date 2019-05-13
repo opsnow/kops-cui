@@ -3,11 +3,12 @@
 
 image:
   repository: opsnowtools/elasticsearch-snapshot
-  tag: latest
+  tag: v0.1.1
 
 schedule: "SCHEDULE"
 
 restart: RESTART
 
-secret:
+configmap:
   enabled: true
+  name: "CONFIGMAP_NAME"

@@ -10,6 +10,8 @@ env: {}
 
 configmap:
   enabled: false
+  name: "CONFIGMAP_NAME"
 
 secret:
   enabled: false
+  name: "SECRET_NAME"

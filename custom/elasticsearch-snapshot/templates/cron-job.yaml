@@ -26,10 +26,10 @@ spec:
 {{ end }}
 {{ if .Values.configmap.enabled }}
               - configMapRef:
-                  name: {{ include "fullname" . }}
+                  name: {{ .Values.configmap.name }}
 {{ end }}
 {{ if .Values.secret.enabled }}
               - secretRef:
-                  name: {{ include "fullname" . }}
+                  name: {{ .Values.secret.name }}
 {{ end }}
           restartPolicy: {{ .Values.restart }}
