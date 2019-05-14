@@ -662,7 +662,7 @@ helm_install() {
     fi
 
     # for nginx-ingress
-    if [ "${NAME}" == "nginx-ingress" ]; then
+    if [[ "${NAME}" == "nginx-ingress"* ]]; then
         set_base_domain "${NAME}"
     fi
 
@@ -1998,6 +1998,11 @@ get_base_domain() {
 
         TEXT="external-dns.alpha.kubernetes.io/hostname"
         _replace "s@${TEXT}:.*@${TEXT}: \"${SUB_DOMAIN}.${BASE_DOMAIN}.\"@" ${CHART}
+    fi
+
+    # private ingress controller should not be BASE_DOMAIN
+    if [[ "${BASE_DOMAIN}" == *"private"* ]]; then
+        BASE_DOMAIN=PREV_BASE_DOMAIN
     fi
 
     CONFIG_SAVE=true
