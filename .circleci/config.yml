@@ -3,38 +3,67 @@
 #
 version: 2
 jobs:
-  build:
+  package:
     docker:
       - image: circleci/python
-    working_directory: /tmp/workspace
+    working_directory: ~/works
     steps:
       - checkout
       - run:
-          name: "Build"
+          name: Package
           command: |
-            ./version.sh ${CIRCLE_PROJECT_USERNAME} ${CIRCLE_PROJECT_REPONAME}
+            mkdir target
+            curl -sLo target/builder.sh repo.opsnow.io/valve-ctl/builder
+            bash ./target/builder.sh package
       - persist_to_workspace:
-          root: /tmp/workspace
+          root: ~/works
           paths:
-            - target/*
+            - target
+  publish:
+    docker:
+      - image: opspresso/awscli
+    working_directory: ~/works
+    steps:
+      - attach_workspace:
+          at: ~/works
+      - run:
+          name: Publish
+          command: |
+            bash ./target/builder.sh publish
   release:
     docker:
       - image: circleci/golang
+    working_directory: ~/works
     steps:
       - attach_workspace:
-          at: workspace
+          at: ~/works
       - run:
-          name: "Release"
+          name: Release
           command: |
-            go get github.com/tcnksm/ghr
-            VERSION=$(cat workspace/target/VERSION)
-            ghr -t ${GITHUB_TOKEN} -u ${CIRCLE_PROJECT_USERNAME} -r ${CIRCLE_PROJECT_REPONAME} -c ${CIRCLE_SHA1} -delete ${VERSION} workspace/target/
+            bash ./target/builder.sh release
+  slack:
+    docker:
+      - image: circleci/python
+    working_directory: ~/works
+    steps:
+      - attach_workspace:
+          at: ~/works
+      - run:
+          name: Slack
+          command: |
+            bash ./target/builder.sh slack
 
 workflows:
   version: 2
   apply:
     jobs:
-      - build
+      - package
+      - publish:
+          requires:
+            - package
       - release:
           requires:
-            - build
+            - package
+      - slack:
+          requires:
+            - release
