@@ -2004,10 +2004,12 @@ get_base_domain() {
         _replace "s@${TEXT}:.*@${TEXT}: \"${SUB_DOMAIN}.${BASE_DOMAIN}.\"@" ${CHART}
     fi
 
-    CONFIG_SAVE=true
+    # private ingress controller should not be BASE_DOMAIN
     if [[ "${BASE_DOMAIN}" == *"private"* ]]; then
-        CONFIG_SAVE=
+        BASE_DOMAIN=PREV_BASE_DOMAIN
     fi
+
+    CONFIG_SAVE=true
 }
 
 replace_chart() {
