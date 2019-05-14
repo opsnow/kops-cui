@@ -666,7 +666,7 @@ helm_install() {
     fi
 
     # for nginx-ingress
-    if [ "${NAME}" == "nginx-ingress" ]; then
+    if [[ "${NAME}" == "nginx-ingress"* ]]; then
         set_base_domain "${NAME}"
     fi
 
@@ -2005,6 +2005,9 @@ get_base_domain() {
     fi
 
     CONFIG_SAVE=true
+    if [[ "${BASE_DOMAIN}" == *"private"* ]]; then
+        CONFIG_SAVE=
+    fi
 }
 
 replace_chart() {
