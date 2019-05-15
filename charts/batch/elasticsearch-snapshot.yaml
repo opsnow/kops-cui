@@ -1,12 +1,14 @@
 # chart-repo: custom/elasticsearch-snapshot
 # chart-version: latest
 
+image:
+  repository: opsnowtools/elasticsearch-snapshot
+  tag: v0.1.3
+
 schedule: "SCHEDULE"
 
 restart: RESTART
 
-env:
-  aws_bucket: AWS_BUCKET
-  aws_region: AWS_REGION
-  es_host: ES_HOST
-  slack_token: SLACK_TOKEN
+configmap:
+  enabled: true
+  name: "CONFIGMAP_NAME"
