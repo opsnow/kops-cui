@@ -204,7 +204,7 @@ _result "install helm..."
 if [ "${OS_TYPE}" == "brew" ]; then
     command -v helm > /dev/null || brew install kubernetes-helm
 else
-    VERSION=$(curl -s https://api.github.com/repos/helm/helm/releases/latest | jq -r '.tag_name')
+    # VERSION=$(curl -s https://api.github.com/repos/helm/helm/releases/latest | jq -r '.tag_name')
     VERSION="v2.13.1"
 
     if [ "${HELM}" != "${VERSION}" ] || [ "$(command -v helm)" == "" ]; then
