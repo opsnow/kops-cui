@@ -8,11 +8,11 @@ datadog:
   apiKey: API_KEY
   appKey: APP_KEY
 
-# clusterAgent:
-#   enabled: true
-#   token: ""
-#   metricsProvider:
-#     enabled: true
+clusterAgent:
+  enabled: true
+  token: APP_KEY
+  metricsProvider:
+    enabled: true
 
 kubeStateMetrics:
   enabled: KUBE_STATE_METRICS
