@@ -249,7 +249,7 @@ if [ "${OS_TYPE}" == "brew" ]; then
     command -v aws-iam-authenticator > /dev/null || brew install aws-iam-authenticator
 else
     VERSION=$(curl -s https://api.github.com/repos/kubernetes-sigs/aws-iam-authenticator/releases/latest | jq -r '.tag_name' | cut -d'v' -f2)
-    # VERSION=0.3.0
+    VERSION=0.3.0
 
     if [ "${AWS_AUTH}" != "${VERSION}" ] || [ "$(command -v draft)" == "" ]; then
         _result " ${AWS_AUTH} >> ${VERSION}"
