@@ -2002,7 +2002,7 @@ get_base_domain() {
 
     # private ingress controller should not be BASE_DOMAIN
     if [[ "${BASE_DOMAIN}" == *"private"* ]]; then
-        BASE_DOMAIN=PREV_BASE_DOMAIN
+        BASE_DOMAIN="${PREV_BASE_DOMAIN}"
     fi
 
     CONFIG_SAVE=true
