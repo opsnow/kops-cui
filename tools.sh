@@ -205,6 +205,7 @@ if [ "${OS_TYPE}" == "brew" ]; then
     command -v helm > /dev/null || brew install kubernetes-helm
 else
     VERSION=$(curl -s https://api.github.com/repos/helm/helm/releases/latest | jq -r '.tag_name')
+    VERSION="v2.13.1"
 
     if [ "${HELM}" != "${VERSION}" ] || [ "$(command -v helm)" == "" ]; then
         _result " ${HELM} >> ${VERSION}"
@@ -248,8 +249,8 @@ _result "install aws-iam-authenticator..."
 if [ "${OS_TYPE}" == "brew" ]; then
     command -v aws-iam-authenticator > /dev/null || brew install aws-iam-authenticator
 else
-    VERSION=$(curl -s https://api.github.com/repos/kubernetes-sigs/aws-iam-authenticator/releases/latest | jq -r '.tag_name' | cut -d'v' -f2)
-    VERSION=0.3.0
+    # VERSION=$(curl -s https://api.github.com/repos/kubernetes-sigs/aws-iam-authenticator/releases/latest | jq -r '.tag_name' | cut -d'v' -f2)
+    VERSION="0.3.0"
 
     if [ "${AWS_AUTH}" != "${VERSION}" ] || [ "$(command -v draft)" == "" ]; then
         _result " ${AWS_AUTH} >> ${VERSION}"
