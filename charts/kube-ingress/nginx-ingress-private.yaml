@@ -10,6 +10,8 @@ controller:
     enabled: true
     minReplicas: 2
     maxReplicas: 11
+    targetCPUUtilizationPercentage: 75
+    targetMemoryUtilizationPercentage: 75
   # podAnnotations:
   #   cluster-autoscaler.kubernetes.io/safe-to-evict: "true"
   config:
