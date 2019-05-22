@@ -15,6 +15,9 @@ datadog:
     - name: DD_TAGS
       value: "cluster_name:CLUSTER_NAME"
 
+daemonset:
+  enabled: false
+
 deployment:
   enabled: true
 
