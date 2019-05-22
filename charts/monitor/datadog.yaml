@@ -13,6 +13,9 @@ clusterAgent:
   token: APP_KEY
   metricsProvider:
     enabled: true
+  env:
+    - name: DD_TAGS
+      value: "cluster_name:CLUSTER_NAME"
 
 kubeStateMetrics:
   enabled: KUBE_STATE_METRICS
