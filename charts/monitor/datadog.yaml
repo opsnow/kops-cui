@@ -7,6 +7,11 @@ datadog:
   clusterName: CLUSTER_NAME
   apiKey: API_KEY
   appKey: APP_KEY
+  apmEnabled: true
+  logsEnabled: true
+  env:
+    - name: DD_TAGS
+      value: "cluster_name:CLUSTER_NAME"
 
 clusterAgent:
   enabled: true
