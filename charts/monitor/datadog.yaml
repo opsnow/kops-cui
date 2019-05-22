@@ -1,7 +1,5 @@
 # chart-repo: stable/datadog
 # chart-version: 1.26.0
-# chart-value-API_KEY:
-# chart-value-APP_KEY:
 
 nameOverride: datadog
 
