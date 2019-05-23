@@ -18,8 +18,8 @@ daemonset:
   enabled: true
   useHostPort: true
 
-# deployment:
-#   enabled: true
+deployment:
+  enabled: true
 
 # clusterAgent:
 #   enabled: true
