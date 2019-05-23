@@ -8,25 +8,33 @@ datadog:
   apiKey: API_KEY
   appKey: APP_KEY
   apmEnabled: true
-  logsEnabled: true
+  # logsEnabled: true
+  # logsConfigContainerCollectAll: true
   env:
     - name: DD_TAGS
       value: "cluster_name:CLUSTER_NAME"
 
 daemonset:
-  enabled: false
-
-deployment:
   enabled: true
+  useHostPort: true
 
-clusterAgent:
-  enabled: true
-  token: APP_KEY
-  metricsProvider:
-    enabled: true
-  env:
-    - name: DD_TAGS
-      value: "cluster_name:CLUSTER_NAME"
+# deployment:
+#   enabled: true
+
+# clusterAgent:
+#   enabled: true
+#   token: APP_KEY
+#   metricsProvider:
+#     enabled: true
+#   env:
+#     - name: DD_TAGS
+#       value: "cluster_name:CLUSTER_NAME"
+
+env:
+  - name: DD_AGENT_HOST
+    valueFrom:
+      fieldRef:
+        fieldPath: status.hostIP
 
 kubeStateMetrics:
   enabled: KUBE_STATE_METRICS
