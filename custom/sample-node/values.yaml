@@ -37,6 +37,17 @@ ingress:
     # nginx.ingress.kubernetes.io/force-ssl-redirect: "true"
   labels: {}
 
+ingress-istio:
+  enabled: true
+  subdomain: sample-node
+  basedomain: 127.0.0.1.nip.io
+  hosts: {}
+  # hosts:
+  #   - sample-node.opsnow.com
+  annotations:
+    kubernetes.io/ingress.class: istio
+  labels: {}
+
 autoscaling:
   enabled: true
   min: 1
@@ -68,6 +79,14 @@ livenessProbe:
   periodSeconds: 10
   failureThreshold: 3
 
+# readinessProbe:
+#   exec:
+#     command:
+#     - sh
+#     - -c
+#     - ps aux | grep -v grep | grep node
+#   initialDelaySeconds: 3
+#   periodSeconds: 10
 # livenessProbe:
 #   exec:
 #     command:
