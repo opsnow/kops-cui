@@ -11,44 +11,59 @@
 # grafana:
 #   enabled: true
 
-# kiali:
-#   enabled: true
-#   ingress:
-#     enabled: INGRESS_ENABLED
-#     annotations:
-#       - kubernetes.io/ingress.class: nginx
-#       - nginx.ingress.kubernetes.io/force-ssl-redirect: true
-#     hosts:
-#       - kiali-istio.BASE_DOMAIN
-#   dashboard:
-#     secretName: istio-secret
-#     # grafanaURL: http://grafana:3000
-#     # jaegerURL: https://jaeger-istio.BASE_DOMAIN
+gateways:
+  istio-ingressgateway:
+    sds:
+      enabled: true
 
-# tracing:
-#   enabled: true
-#   # ingress:
-#   #   enabled: INGRESS_ENABLED
-#   #   annotations:
-#   #   - kubernetes.io/ingress.class: nginx
-#   #   - nginx.ingress.kubernetes.io/force-ssl-redirect: true
-#   #   hosts:
-#   #   - tracing-istio.BASE_DOMAIN
-#   # jaeger:
-#   #   ingress:
-#   #     enabled: INGRESS_ENABLED
-#   #     annotations:
-#   #     - kubernetes.io/ingress.class: nginx
-#   #     - nginx.ingress.kubernetes.io/force-ssl-redirect: true
-#   #     hosts:
-#   #     - jaeger-istio.BASE_DOMAIN
+global:
+  k8sIngress:
+    enabled: true
+    enableHttps: true
+    gatewayName: ingressgateway
 
-# servicegraph:
-#   enabled: true
-#   # ingress:
-#   #   enabled: INGRESS_ENABLED
-#   #   annotations:
-#   #   - kubernetes.io/ingress.class: nginx
-#   #   - nginx.ingress.kubernetes.io/force-ssl-redirect: true
-#   #   hosts:
-#   #   - servicegraph-istio.BASE_DOMAIN
+certmanager:
+  enabled: true
+  email: sre@bespinglobal.com
+
+kiali:
+  enabled: true
+  # ingress:
+  #   enabled: INGRESS_ENABLED
+  #   annotations:
+  #     - kubernetes.io/ingress.class: nginx
+  #     - nginx.ingress.kubernetes.io/force-ssl-redirect: true
+  #   hosts:
+  #     - kiali-istio.BASE_DOMAIN
+  # dashboard:
+  #   secretName: istio-secret
+    # grafanaURL: http://grafana:3000
+    # jaegerURL: https://jaeger-istio.BASE_DOMAIN
+
+tracing:
+  enabled: true
+  # ingress:
+  #   enabled: INGRESS_ENABLED
+  #   annotations:
+  #   - kubernetes.io/ingress.class: nginx
+  #   - nginx.ingress.kubernetes.io/force-ssl-redirect: true
+  #   hosts:
+  #   - tracing-istio.BASE_DOMAIN
+  # jaeger:
+  #   ingress:
+  #     enabled: INGRESS_ENABLED
+  #     annotations:
+  #     - kubernetes.io/ingress.class: nginx
+  #     - nginx.ingress.kubernetes.io/force-ssl-redirect: true
+  #     hosts:
+  #     - jaeger-istio.BASE_DOMAIN
+
+servicegraph:
+  enabled: true
+  # ingress:
+  #   enabled: INGRESS_ENABLED
+  #   annotations:
+  #   - kubernetes.io/ingress.class: nginx
+  #   - nginx.ingress.kubernetes.io/force-ssl-redirect: true
+  #   hosts:
+  #   - servicegraph-istio.BASE_DOMAIN

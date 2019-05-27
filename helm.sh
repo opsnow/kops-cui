@@ -364,9 +364,14 @@ helm_install() {
 
     # for cert-manager
     if [ "${NAME}" == "cert-manager" ]; then
+        # Install the CustomResourceDefinition resources separately
         # https://github.com/helm/charts/blob/master/stable/cert-manager/README.md
         kubectl apply \
             -f https://raw.githubusercontent.com/jetstack/cert-manager/release-0.6/deploy/manifests/00-crds.yaml
+
+        # Label the cert-manager namespace to disable resource validation
+        kubectl label namespace ${NAMESPACE} certmanager.k8s.io/disable-validation=true
+
     fi
 
     # for nginx-ingress
@@ -754,6 +759,12 @@ helm_delete() {
         if [ "x${COUNT}" == "x0" ]; then
             delete_crds "argoproj.io"
         fi
+    fi
+
+    # for cert-manager
+    if [ "${NAME}" == "cert-manager" ]; then
+        # delete crds
+        delete_crds "certmanager.k8s.io"
     fi
 
     # config save
@@ -1512,6 +1523,8 @@ istio_install() {
         waiting_istio_init
     fi
 
+    get_base_domain
+
     CHART=${SHELL_DIR}/build/${CLUSTER_NAME}/${NAME}.yaml
     get_template charts/istio/${NAME}.yaml ${CHART}
 
@@ -1544,7 +1557,7 @@ istio_install() {
     # waiting 2
     waiting_pod "${NAMESPACE}" "${NAME}"
 
-    # set_base_domain "istio-ingressgateway"
+    set_base_domain "istio-ingressgateway"
 
     _command "helm history ${NAME}"
     helm history ${NAME}
