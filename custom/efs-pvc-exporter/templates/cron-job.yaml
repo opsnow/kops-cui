@@ -1,0 +1,32 @@
+apiVersion: batch/v1beta1
+kind: CronJob
+metadata:
+  name: {{ include "fullname" . }}
+  labels:
+    app: {{ include "fullname" . }}
+    app.kubernetes.io/instance: {{ .Release.Name }}
+    app.kubernetes.io/managed-by: {{ .Release.Service }}
+    app.kubernetes.io/name: {{ include "fullname" . }}
+    helm.sh/chart: {{ include "chart" . }}
+spec:
+  schedule: "{{ .Values.schedule }}"
+  jobTemplate:
+    spec:
+      template:
+        spec:
+          serviceAccountName: "{{ .Values.serviceAccount }}"
+          containers:
+          - name: {{ .Chart.Name }}
+            image: "{{ .Values.image.repository }}:{{ .Values.image.tag }}"
+{{- with .Values.env }}
+            env:
+{{ toYaml . | indent 14 }}
+{{- end }}
+{{ if or .Values.configmap.enabled .Values.secret.enabled }}
+            envFrom:
+{{ end }}
+{{ if .Values.secret.enabled }}
+              - secretRef:
+                  name: {{ .Values.secret.name }}
+{{ end }}
+          restartPolicy: {{ .Values.restart }}
