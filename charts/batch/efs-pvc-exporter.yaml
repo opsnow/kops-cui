@@ -1,0 +1,20 @@
+# chart-repo: custom/efs-pvc-exporter
+# chart-version: latest
+
+image:
+  repository: opsnowtools/efs-pvc-exporter
+  tag: v0.1.7
+
+schedule: "0 16 * * 4"
+
+restart: OnFailure
+
+serviceAccount: efs-pvc-exporter-sa
+namespace: batch
+roleRef: pvc-view
+
+configmap:
+  enabled: false
+
+secret:
+  enabled: false
