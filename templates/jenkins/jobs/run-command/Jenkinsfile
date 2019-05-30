@@ -12,6 +12,16 @@ podTemplate(label: label, containers: [
     stage("Command") {
       container("builder") {
         sh """
+          rm -rf ${home}/.aws && mkdir -p ${home}/.aws
+          rm -rf ${home}/.kube && mkdir -p ${home}/.kube
+
+          kubectl get secret kube-config-${CLUSTER} -n devops -o json | jq -r .data.aws | base64 -d > ${home}/aws_config
+          kubectl get secret kube-config-${CLUSTER} -n devops -o json | jq -r .data.text | base64 -d > ${home}/kube_config
+          cp ${home}/aws_config ${home}/.aws/config && \
+          cp ${home}/kube_config ${home}/.kube/config
+
+          kubectl config current-context
+
           $COMMAND
         """
       }
