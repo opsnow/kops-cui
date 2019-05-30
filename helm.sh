@@ -567,6 +567,16 @@ helm_install() {
         replace_chart ${CHART} "CONFIGMAP_NAME" "${NAME}"
     fi
 
+    # for efs-pvc-exporter
+    if [ "${NAME}" == "efs-pvc-exporter" ]; then
+        _replace "s/AWS_REGION/${REGION}/g" ${CHART}
+
+        replace_chart ${CHART} "SCHEDULE" "* * * * *"
+
+        replace_chart ${CHART} "RESTART" "OnFailure" # "Always", "OnFailure", "Never"
+    fi
+
+
     # for efs-mount
     if [ "${EFS_ID}" != "" ]; then
         _replace "s/#:EFS://g" ${CHART}
