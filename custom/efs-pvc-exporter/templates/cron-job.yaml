@@ -18,15 +18,3 @@ spec:
           containers:
           - name: {{ .Chart.Name }}
             image: "{{ .Values.image.repository }}:{{ .Values.image.tag }}"
-{{- with .Values.env }}
-            env:
-{{ toYaml . | indent 14 }}
-{{- end }}
-{{ if or .Values.configmap.enabled .Values.secret.enabled }}
-            envFrom:
-{{ end }}
-{{ if .Values.secret.enabled }}
-              - secretRef:
-                  name: {{ .Values.secret.name }}
-{{ end }}
-          restartPolicy: {{ .Values.restart }}
