@@ -7,6 +7,11 @@
     <hudson.model.ParametersDefinitionProperty>
     <parameterDefinitions>
         <hudson.model.StringParameterDefinition>
+        <name>CLUSTER</name>
+        <description></description>
+        <defaultValue>dev</defaultValue>
+        </hudson.model.StringParameterDefinition>
+        <hudson.model.StringParameterDefinition>
         <name>COMMAND</name>
         <description></description>
         <defaultValue>kubectl get all --all-namespaces</defaultValue>
