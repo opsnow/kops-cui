@@ -558,13 +558,18 @@ helm_install() {
 
     # for elasticsearch-snapshot
     if [ "${NAME}" == "elasticsearch-snapshot" ]; then
-        _replace "s/AWS_REGION/${REGION}/g" ${CHART}
-
         replace_chart ${CHART} "SCHEDULE" "0 0 * * *"
 
         replace_chart ${CHART} "RESTART" "OnFailure" # "Always", "OnFailure", "Never"
 
         replace_chart ${CHART} "CONFIGMAP_NAME" "${NAME}"
+    fi
+
+    # for efs-pvc-exporter
+    if [ "${NAME}" == "efs-pvc-exporter" ]; then
+        replace_chart ${CHART} "SCHEDULE" "* * * * *"
+
+        replace_chart ${CHART} "RESTART" "OnFailure" # "Always", "OnFailure", "Never"
     fi
 
     # for efs-mount
