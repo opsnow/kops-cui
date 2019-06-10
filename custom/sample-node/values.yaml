@@ -68,6 +68,14 @@ livenessProbe:
   periodSeconds: 10
   failureThreshold: 3
 
+# readinessProbe:
+#   exec:
+#     command:
+#     - sh
+#     - -c
+#     - ps aux | grep -v grep | grep node
+#   initialDelaySeconds: 3
+#   periodSeconds: 10
 # livenessProbe:
 #   exec:
 #     command:

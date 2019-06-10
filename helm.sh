@@ -2019,7 +2019,7 @@ get_base_domain() {
     fi
 
     # private ingress controller should not be BASE_DOMAIN
-    if [[ "${BASE_DOMAIN}" == *"private"* ]]; then
+    if [[ "${BASE_DOMAIN}" == *"private"* ]] || [[ "${BASE_DOMAIN}" == "istio"* ]]; then
         BASE_DOMAIN="${PREV_BASE_DOMAIN}"
     fi
 
