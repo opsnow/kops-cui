@@ -42,7 +42,7 @@ prepare() {
         fi
     fi
 
-    REGION="$(aws configure get default.region)"
+    REGION="$(aws configure get region)"
 }
 
 run() {
@@ -2020,7 +2020,13 @@ get_base_domain() {
 
     # private ingress controller should not be BASE_DOMAIN
     if [[ "${BASE_DOMAIN}" == *"private"* ]] || [[ "${BASE_DOMAIN}" == "istio"* ]]; then
+
+      question "Replace BASE_DOMAIN? ( YES(${BASE_DOMAIN}) / [No(${PREV_BASE_DOMAIN})] ) : "
+
+      if [ "${ANSWER}" != "YES" ]; then
         BASE_DOMAIN="${PREV_BASE_DOMAIN}"
+      fi
+
     fi
 
     CONFIG_SAVE=true
