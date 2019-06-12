@@ -92,6 +92,49 @@ serverFiles:
               summary: 'High Memory Usage(> 90%)'
               description: 'The memory usage of the instance({{ $labels.instance }}) has exceeds 90 percent for more than 5 minutes.'
 
+      - name: PodCrashingLooping
+        rules:
+          - alert: PodCrashingLooping
+            expr: rate(kube_pod_container_status_running{job="kubernetes-service-endpoints"}[5m]) >0
+            for: 5m
+            labels:
+              severity: Critical
+            annotations:
+              summary: "Pod Crash Looping(> 5m)"
+              description: 'Namespace : {{ $labels.namespace }} Pod : {{ $labels.pod }} -- crash'
+
+      - name: KubeNodeNotReady
+        rules:
+          - alert: KubeNodeNotReady
+            expr: kube_node_status_condition{job="kubernetes-service-endpoints",condition="Ready",status="true"} == 0
+            for: 5m
+            labels:
+              severity: Critical
+            annotations:
+              summary: "Kube Node Fail :  {{ $labels.condition }}"
+              description: "Node {{ $labels.node }} is failed. Check node!!"
+
+      - name: AvgResponseTime
+        rules:
+          - alert: AvgResponseTime
+            expr: (sum(rate(nginx_ingress_controller_response_duration_seconds_sum[5m])) by (host) !=0) / (sum(rate(nginx_ingress_controller_response_duration_seconds_count[5m])) by (host) !=0) > 5
+            for: 5m
+            labels:
+              severity: Warning
+            annotations:
+              summary: "Average Response Time(> 5s)"
+              description: "{{ $labels.host }}'s Average Response Time is over 5sec"
+
+      - name: HPAMaxUsage
+        rules:
+          - alert: HPAMaxUsage
+            expr: (kube_hpa_status_current_replicas ) / (kube_hpa_spec_max_replicas != 1) < 1
+            for: 5m
+            labels:
+              severity: Warning
+            annotations:
+              summary: "HPA Max Usage"
+              description: "{{ $labels.hpa }} is using HPA Max."
 
 alertmanagerFiles:
   alertmanager.yml:
@@ -124,4 +167,4 @@ alertmanagerFiles:
       group_wait: 10s
       group_interval: 1m
       receiver: default-receiver
-      repeat_interval: 3h
+      repeat_interval: 8h
