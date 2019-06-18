@@ -95,13 +95,13 @@ serverFiles:
       - name: PodCrashingLooping
         rules:
           - alert: PodCrashingLooping
-            expr: rate(kube_pod_container_status_running{job="kubernetes-service-endpoints"}[5m]) >0
+            expr: round(increase(kube_pod_container_status_restarts_total[30m])) > 0
             for: 5m
             labels:
               severity: Critical
             annotations:
-              summary: "Pod Crash Looping(> 5m)"
-              description: 'Namespace : {{ $labels.namespace }} Pod : {{ $labels.pod }} -- crash'
+              summary: "Pod Crash Looping(> 30m)"
+              description: 'Namespace : {{ $labels.namespace }} Pod : {{ $labels.pod }} -- crash {{ $value }} times'
 
       - name: KubeNodeNotReady
         rules:
