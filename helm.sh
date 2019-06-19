@@ -42,7 +42,7 @@ prepare() {
         fi
     fi
 
-    REGION="$(aws configure get default.region)"
+    REGION="$(aws configure get region)"
 }
 
 run() {
@@ -212,6 +212,9 @@ istio_menu() {
     _echo "8. show pod IPs"
     echo
     _echo "9. remove"
+    echo
+    _echo "k. kiali service open"
+    _echo "j. jaeger service open"
 
     question
 
@@ -252,10 +255,61 @@ istio_menu() {
             istio_delete
             press_enter istio
             ;;
+        k)
+            apply_vs_kiali
+            press_enter istio
+            ;;
+        j)
+            apply_vs_jaeger
+            press_enter istio
+            ;;
         *)
             main_menu
             ;;
     esac
+}
+
+apply_vs_kiali() {
+    
+    DEFAULT_ADDR="kiali.${ISTIO_DOMAIN}"
+    question "Enter host address for Kiali [${DEFAULT_ADDR}] : "
+
+    KIALI_DOMAIN=${ANSWER:-${DEFAULT_ADDR}}
+
+    CHART=${SHELL_DIR}/build/${CLUSTER_NAME}/istio-${NAME}.yaml
+    get_template charts/istio/vs-kiali.yaml ${CHART}
+
+    _replace "s/REPLACE_ME/${KIALI_DOMAIN}/g" ${CHART}
+
+
+    _command "kubectl apply -f ${CHART}"
+    kubectl apply -f ${CHART}
+
+    echo
+    _result "Connect - http://${KIALI_DOMAIN}/kiali"
+    _result "Default ID/PW : admin/admin"
+
+}
+
+apply_vs_jaeger() {
+    
+    DEFAULT_ADDR="jaeger.${ISTIO_DOMAIN}"
+    question "Enter host address for Jaeger [${DEFAULT_ADDR}] : "
+
+    JAEGER_DOMAIN=${ANSWER:-${DEFAULT_ADDR}}
+
+    CHART=${SHELL_DIR}/build/${CLUSTER_NAME}/istio-${NAME}.yaml
+    get_template charts/istio/vs-jaeger.yaml ${CHART}
+    
+    _replace "s/REPLACE_ME/${JAEGER_DOMAIN}/g" ${CHART}
+
+
+    _command "kubectl apply -f ${CHART}"
+    kubectl apply -f ${CHART}
+
+    echo
+    _result "Connect - http://${JAEGER_DOMAIN}"
+
 }
 
 charts_menu() {
@@ -1562,7 +1616,17 @@ istio_install() {
     # waiting 2
     waiting_pod "${NAMESPACE}" "${NAME}"
 
+
+    # Route53 set record with ISTIO_DOMAIN not BASE_DOMAIN
+    PREV_BASE_DOMAIN=${BASE_DOMAIN}
+    PREV_ISTIO_DOMAIN=${ISTIO_DOMAIN}
+
+    BASE_DOMAIN=${ISTIO_DOMAIN}
     set_base_domain "istio-ingressgateway"
+    
+    ISTIO_DOMAIN=${PREV_ISTIO_DOMAIN}
+    BASE_DOMAIN=${PREV_BASE_DOMAIN}
+
 
     _command "helm history ${NAME}"
     helm history ${NAME}
@@ -1996,6 +2060,9 @@ get_base_domain() {
         question "Enter your ingress domain [${DEFAULT}] : "
 
         BASE_DOMAIN=${ANSWER:-${DEFAULT}}
+        if [[ "${BASE_DOMAIN}" == "istio"* ]]; then
+            ISTIO_DOMAIN=${BASE_DOMAIN}
+        fi
     fi
 
     # certificate
@@ -2020,7 +2087,13 @@ get_base_domain() {
 
     # private ingress controller should not be BASE_DOMAIN
     if [[ "${BASE_DOMAIN}" == *"private"* ]] || [[ "${BASE_DOMAIN}" == "istio"* ]]; then
+
+      question "Replace BASE_DOMAIN? ( YES(${BASE_DOMAIN}) / [No(${PREV_BASE_DOMAIN})] ) : "
+
+      if [ "${ANSWER}" != "YES" ]; then
         BASE_DOMAIN="${PREV_BASE_DOMAIN}"
+      fi
+
     fi
 
     CONFIG_SAVE=true
