@@ -86,7 +86,7 @@ prepare() {
 	aws s3 ls 2>temp
 
 	if grep -q "Unable to" temp; then
-		echo "There is no aws config in here"
+		echo "There is no aws config in here" 
 		aws configure
 		REGION="$(aws configure get default.region)"
 	else
