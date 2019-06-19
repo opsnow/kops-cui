@@ -95,13 +95,13 @@ if [ "${OS_TYPE}" == "apt" ]; then
     sudo apt update && sudo apt upgrade -y
     command -v jq > /dev/null || sudo apt install -y jq
     command -v git > /dev/null || sudo apt install -y git
-    command -v pip > /dev/null || sudo apt install -y python-pip
+    command -v pip > /dev/null || sudo apt install -y python3-pip
     command -v ab > /dev/null || sudo apt install -y apache2-utils
 elif [ "${OS_TYPE}" == "yum" ]; then
     sudo yum update -y
     command -v jq > /dev/null || sudo yum install -y jq
     command -v git > /dev/null || sudo yum install -y git
-    command -v pip > /dev/null || sudo yum install -y python-pip
+    command -v pip > /dev/null || sudo yum install -y python3-pip
     command -v ab > /dev/null || sudo yum install -y httpd-tools
 elif [ "${OS_TYPE}" == "brew" ]; then
     brew update && brew upgrade
@@ -123,7 +123,7 @@ _result "install aws-cli..."
 if [ "${OS_TYPE}" == "brew" ]; then
     command -v aws > /dev/null || brew install awscli
 else
-    pip install --upgrade --user awscli
+    pip3 install --upgrade awscli
 fi
 
 aws --version | xargs
@@ -167,6 +167,7 @@ else
         _result " ${TERRAFORM} >> ${VERSION}"
 
         curl -LO "https://releases.hashicorp.com/terraform/${VERSION}/terraform_${VERSION}_${OS_NAME}_amd64.zip"
+        apt-get -y install unzip
         unzip terraform_${VERSION}_${OS_NAME}_amd64.zip && rm -rf terraform_${VERSION}_${OS_NAME}_amd64.zip
         sudo mv terraform /usr/local/bin/terraform
 
