@@ -86,7 +86,7 @@ prepare() {
 	aws s3 ls 2>temp
 
 	if grep -q "Unable to" temp; then
-		echo "There is no aws config in here" 
+		echo "There is no aws config in here"
 		aws configure
 		REGION="$(aws configure get default.region)"
 	else
@@ -470,11 +470,11 @@ save_kops_config() {
 read_state_store() {
     # state store list
     LIST=${SHELL_DIR}/build/${THIS_NAME}/kops-state-store-list
-    
-	_command "aws s3 ls | grep kops-state"
+
+    _command "aws s3 ls | grep kops-state"
     aws s3 ls | grep kops-state | awk '{print $3}' > ${LIST}
     
-	# select
+    # select
     select_one
 
     KOPS_STATE_STORE="${SELECTED}"
