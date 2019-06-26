@@ -59,6 +59,7 @@ serverFiles:
             expr: count (kube_node_labels{node=~"^.*$"}) - count (kube_node_labels{node=~"^.*$"} offset 2m) != 0
             labels:
               severity: Warning
+              cluster: CLUSTER_NAME
             annotations:
               summary: 'Instance Count Changed'
               description: 'The number of instances changed. (delta: {{ $value }})'
@@ -68,6 +69,7 @@ serverFiles:
             expr: up{job="kubernetes-nodes"} == 0
             labels:
               severity: Warning
+              cluster: CLUSTER_NAME
             annotations:
               summary: 'Instance Down'
               description: 'The instance({{ $labels.instance }}) is down.'
@@ -78,6 +80,7 @@ serverFiles:
             for: 5m
             labels:
               severity: Warning
+              cluster: CLUSTER_NAME
             annotations:
               summary: 'High CPU Usage(> 70%)'
               description: 'The CPU usage of the instance({{ $labels.instance }}) has exceeded 70 percent for more than 5 minutes.'
@@ -88,6 +91,7 @@ serverFiles:
             for: 5m
             labels:
               severity: Warning
+              cluster: CLUSTER_NAME
             annotations:
               summary: 'High Memory Usage(> 90%)'
               description: 'The memory usage of the instance({{ $labels.instance }}) has exceeds 90 percent for more than 5 minutes.'
@@ -99,6 +103,7 @@ serverFiles:
             for: 5m
             labels:
               severity: Critical
+              cluster: CLUSTER_NAME
             annotations:
               summary: "Pod Crash Looping(> 30m)"
               description: 'Namespace : {{ $labels.namespace }} Pod : {{ $labels.pod }} -- crash {{ $value }} times'
@@ -110,6 +115,7 @@ serverFiles:
             for: 5m
             labels:
               severity: Critical
+              cluster: CLUSTER_NAME
             annotations:
               summary: "Kube Node Fail :  {{ $labels.condition }}"
               description: "Node {{ $labels.node }} is failed. Check node!!"
@@ -121,6 +127,7 @@ serverFiles:
             for: 5m
             labels:
               severity: Warning
+              cluster: CLUSTER_NAME
             annotations:
               summary: "Average Response Time(> 5s)"
               description: "{{ $labels.host }}'s Average Response Time is over 5sec"
@@ -132,6 +139,7 @@ serverFiles:
             for: 5m
             labels:
               severity: Warning
+              cluster: CLUSTER_NAME
             annotations:
               summary: "HPA Max Usage"
               description: "{{ $labels.hpa }} is using HPA Max."
