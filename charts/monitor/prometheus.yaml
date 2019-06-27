@@ -161,6 +161,7 @@ alertmanagerFiles:
             pretext: '{{ .CommonAnnotations.summary }}'
             text: |-
               {{ range .Alerts }}
+                *Cluster:* {{ .Labels.cluster }}
                 *Alert:* {{ .Annotations.summary }} - `{{ .Labels.severity }}`
                 *Description:* {{ .Annotations.description }}
                 *Details:*
