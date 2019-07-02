@@ -3,6 +3,10 @@
 
 nameOverride: datadog
 
+# Use 6.9.0-jmx to enable jmx fetch collection
+image:
+  tag: 6.9.0-jmx
+
 datadog:
   clusterName: CLUSTER_NAME
   apiKey: API_KEY
