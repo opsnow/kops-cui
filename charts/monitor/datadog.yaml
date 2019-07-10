@@ -5,6 +5,7 @@ nameOverride: datadog
 
 # Use 6.9.0-jmx to enable jmx fetch collection
 image:
+  repository: datadog/dogstatsd
   tag: 6.9.0-jmx
 
 datadog:
