@@ -18,6 +18,14 @@ datadog:
   env:
     - name: DD_TAGS
       value: "cluster_name:CLUSTER_NAME"
+  confd:
+    jmx.yaml: |-
+      ad_identifiers:
+        - openjdk
+      instance_config:
+      instances:
+        - host: "%%host%%"
+          port: "%%port_0%%"
 
 daemonset:
   enabled: true
