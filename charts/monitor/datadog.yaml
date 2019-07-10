@@ -26,6 +26,7 @@ datadog:
       instances:
         - host: "%%host%%"
           port: "%%port_0%%"
+  nonLocalTraffic: true
 
 daemonset:
   enabled: true
