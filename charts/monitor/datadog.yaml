@@ -5,7 +5,8 @@ nameOverride: datadog
 
 # Use 6.9.0-jmx to enable jmx fetch collection
 image:
-  tag: 6.9.0-jmx
+  repository: datadog/agent
+  tag: 6.12.1-jmx
 
 datadog:
   clusterName: CLUSTER_NAME
@@ -17,6 +18,7 @@ datadog:
   env:
     - name: DD_TAGS
       value: "cluster_name:CLUSTER_NAME"
+  nonLocalTraffic: true
 
 daemonset:
   enabled: true
