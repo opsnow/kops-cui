@@ -5,7 +5,8 @@ nameOverride: datadog
 
 # Use 6.9.0-jmx to enable jmx fetch collection
 image:
-  repository: datadog/dogstatsd
+  repository: datadog/agent
+  tag: 6.12.1-jmx
 
 datadog:
   clusterName: CLUSTER_NAME
@@ -17,8 +18,6 @@ datadog:
   env:
     - name: DD_TAGS
       value: "cluster_name:CLUSTER_NAME"
-    - name: DD_ENABLE_GOHAI
-      value: "false"
 
 daemonset:
   enabled: true
