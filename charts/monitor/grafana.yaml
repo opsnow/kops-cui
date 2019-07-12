@@ -90,7 +90,7 @@ dashboards:
       datasource: Prometheus
     nginx-ingress:
       # url: https://raw.githubusercontent.com/kubernetes/ingress-nginx/master/deploy/grafana/dashboards/nginx.json
-      # https://grafana.com/dashboards/9679
+      # https://grafana.com/dashboards/10516
       gnetId: 10516
       revision: 1
       datasource: Prometheus
