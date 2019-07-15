@@ -4,6 +4,8 @@
 nameOverride: nginx-ingress-private
 
 controller:
+  publishService:
+    enabled: true
   # kind: DaemonSet
   replicaCount: 2
   autoscaling:

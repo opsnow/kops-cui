@@ -1,19 +1,22 @@
 # chart-repo: stable/external-dns
 # chart-version: latest
 
-nameOverride: external-dns
+nameOverride: external-dns-azure
 
 # podAnnotations:
 #   cluster-autoscaler.kubernetes.io/safe-to-evict: "true"
 
+provider: azure
+
+azure:
+  secretName: azure-config-file
+
+domainFilters:
+  - ake.opsnow.io
+
 sources:
   - service
-  # - ingress
-
-aws:
-  accessKey: AWS_ACCESS_KEY
-  secretKey: AWS_SECRET_KEY
-  region: AWS_REGION
+  - ingress
 
 rbac:
   create: true

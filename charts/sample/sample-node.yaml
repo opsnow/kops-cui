@@ -24,6 +24,8 @@ pod:
 
 service:
   type: SERVICE_TYPE
+#  annotations:
+#    external-dns.alpha.kubernetes.io/hostname: sample-node.opsnow.io
 
 ingress:
   enabled: INGRESS_ENABLED
