@@ -1,5 +1,5 @@
 # chart-repo: stable/grafana
-# chart-version: 3.0.1
+# chart-version: 3.5.10
 # chart-ingress: true
 # chart-pvc: grafana ReadWriteOnce 5Gi
 # chart-pdb: N 1
@@ -79,18 +79,18 @@ dashboardProviders:
 dashboards:
   default:
     kube-cluster:
-      # https://grafana.com/dashboards/9797
-      gnetId: 9797
-      revision: 5
+      # https://grafana.com/dashboards/10512
+      gnetId: 10512
+      revision: 1
       datasource: Prometheus
     kube-deployment:
-      # https://grafana.com/dashboards/9679
-      gnetId: 9679
-      revision: 5
+      # https://grafana.com/dashboards/10515
+      gnetId: 10515
+      revision: 1
       datasource: Prometheus
     nginx-ingress:
       # url: https://raw.githubusercontent.com/kubernetes/ingress-nginx/master/deploy/grafana/dashboards/nginx.json
-      # https://grafana.com/dashboards/9679
-      gnetId: 9909
-      revision: 2
+      # https://grafana.com/dashboards/10516
+      gnetId: 10516
+      revision: 1
       datasource: Prometheus
