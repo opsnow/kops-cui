@@ -135,7 +135,7 @@ serverFiles:
       - name: HPAMaxUsage
         rules:
           - alert: HPAMaxUsage
-            expr: (kube_hpa_status_current_replicas ) / (kube_hpa_spec_max_replicas != 1) < 1
+            expr: (kube_hpa_status_current_replicas) / (kube_hpa_spec_max_replicas) == 1
             for: 5m
             labels:
               severity: Warning
