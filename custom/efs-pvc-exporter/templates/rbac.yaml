@@ -7,7 +7,7 @@ metadata:
 apiVersion: rbac.authorization.k8s.io/v1
 kind: ClusterRole
 metadata:
-name: valve:{{ .Values.rolename }}
+  name: valve:{{ .Values.rolename }}
 rules:
 - apiGroups: [""]
   resources: ["pods", "persistentvolumeclaims"]
@@ -20,11 +20,11 @@ rules:
 apiVersion: rbac.authorization.k8s.io/v1beta1
 kind: ClusterRoleBinding
 metadata:
-name: valve:{{ .Values.rolename }}:{{ include "fullname" . }}
+  name: {{ include "fullname" . }}
 subjects:
 - kind: ServiceAccount
   name: {{ include "fullname" . }}
-  namespace: {{ .Release.Namespace }}
+  namespace: "{{ .Values.namespace }}"
 roleRef:
   kind: ClusterRole
   name: valve:{{ .Values.rolename }}

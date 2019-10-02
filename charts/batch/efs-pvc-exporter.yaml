@@ -1,9 +1,9 @@
 # chart-repo: custom/efs-pvc-exporter
-# chart-version: latest
+# chart-version: v0.1.13
 
 image:
   repository: opsnowtools/efs-pvc-exporter
-  tag: v0.1.7
+  tag: v0.1.13
 
 rolename: efs-viewer
 
