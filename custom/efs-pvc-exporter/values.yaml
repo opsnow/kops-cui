@@ -2,7 +2,7 @@ image:
   repository: opsnowtools/efs-pvc-exporter
   tag: v0.1.13
 
-schedule: "0 0 * * 4"
+schedule: "0 18 * * 4"
 
 rolename: efs-viewer
 
